@@ -48,6 +48,7 @@ struct MeditationAudioPlayerView: View {
     let onTogglePlay: () -> Void
     let onRewind: (Double) -> Void
     let onSeek: (Double) -> Void
+    let onUserInteraction: () -> Void
 
     init(
         player: AVPlayer,
@@ -55,7 +56,8 @@ struct MeditationAudioPlayerView: View {
         rewindInterval: Double = 15,
         onTogglePlay: @escaping () -> Void,
         onRewind: @escaping (Double) -> Void,
-        onSeek: @escaping (Double) -> Void
+        onSeek: @escaping (Double) -> Void,
+        onUserInteraction: @escaping () -> Void
     ) {
         self.observer = MeditationPlayerObserver(player: player)
         self._isPlaying = isPlaying
@@ -63,12 +65,14 @@ struct MeditationAudioPlayerView: View {
         self.onTogglePlay = onTogglePlay
         self.onRewind = onRewind
         self.onSeek = onSeek
+        self.onUserInteraction = onUserInteraction
     }
 
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 24) {
                 Button {
+                    onUserInteraction()
                     let newTime = max(observer.currentTime - rewindInterval, 0)
                     observer.currentTime = newTime
                     onRewind(rewindInterval)
@@ -77,7 +81,10 @@ struct MeditationAudioPlayerView: View {
                         .font(.system(size: 22, weight: .semibold))
                 }
 
-                Button(action: onTogglePlay) {
+                Button {
+                    onUserInteraction()
+                    onTogglePlay()
+                } label: {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 24, weight: .bold))
                         .frame(width: 44, height: 44)
@@ -92,11 +99,13 @@ struct MeditationAudioPlayerView: View {
                     value: Binding(
                         get: { observer.currentTime },
                         set: { newValue in
+                            onUserInteraction()
                             observer.currentTime = newValue
                         }
                     ),
                     in: 0...(observer.duration.isFinite && observer.duration > 0 ? observer.duration : 1),
                     onEditingChanged: { editing in
+                        onUserInteraction()
                         observer.isScrubbing = editing
                         if !editing {
                             onSeek(observer.currentTime)
@@ -136,7 +145,8 @@ struct MeditationAudioPlayerView_Previews: PreviewProvider {
             rewindInterval: 15,
             onTogglePlay: {},
             onRewind: { _ in },
-            onSeek: { _ in }
+            onSeek: { _ in },
+            onUserInteraction: {}
         )
         .padding()
         .background(Color.black)
