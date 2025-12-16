@@ -9,11 +9,16 @@ struct PrayerMeditationView: View {
     @State private var audioPlayer: AVPlayer?
     @State private var videoItem: AVPlayerItem?
 
+    private let rewindInterval: Double = 15
+    private let autoHideDelay: TimeInterval = 4
+
     @State private var isPlaying = false
     @State private var rateObserver: NSKeyValueObservation?
+    @State private var controlsVisible = true
+    @State private var hideControlsWorkItem: DispatchWorkItem?
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             if let player = videoPlayer {
                 VideoPlayer(player: player) // keeps native controls
                     .ignoresSafeArea()
@@ -28,6 +33,32 @@ struct PrayerMeditationView: View {
                     .background(.ultraThinMaterial, in: Circle())
                     .offset(y: 140)
             }
+
+            if meditation.type == .video, let audioPlayer {
+                VStack {
+                    Spacer()
+                    MeditationAudioPlayerView(
+                        player: audioPlayer,
+                        isPlaying: $isPlaying,
+                        rewindInterval: rewindInterval,
+                        onTogglePlay: togglePlayback,
+                        onRewind: rewind,
+                        onSeek: seek,
+                        onUserInteraction: resetAutoHideControls
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                    .opacity(controlsVisible ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.25), value: controlsVisible)
+                    .allowsHitTesting(controlsVisible)
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard meditation.type == .video else { return }
+            withAnimation(.easeInOut) { controlsVisible = true }
+            resetAutoHideControls()
         }
         .onAppear {
             setupAudioSession()
@@ -35,6 +66,7 @@ struct PrayerMeditationView: View {
             startPlayback()
             observeVideoRateForSync()
             loopVideo()
+            resetAutoHideControls()
         }
         .onDisappear { teardown() }
         .navigationBarBackButtonHidden(true)
@@ -79,6 +111,40 @@ struct PrayerMeditationView: View {
         isPlaying = true
     }
 
+    private func togglePlayback() {
+        if isPlaying {
+            videoPlayer?.pause()
+            audioPlayer?.pause()
+        } else {
+            videoPlayer?.play()
+            audioPlayer?.play()
+        }
+        isPlaying.toggle()
+    }
+
+    private func rewind(by interval: Double) {
+        let currentSeconds = audioPlayer?.currentTime().seconds ?? 0
+        let newTime = max(currentSeconds - interval, 0)
+        let target = CMTime(seconds: newTime, preferredTimescale: 600)
+        audioPlayer?.seek(to: target)
+        videoPlayer?.seek(to: target)
+        if isPlaying {
+            videoPlayer?.play()
+            audioPlayer?.play()
+        }
+    }
+
+    private func seek(to seconds: Double) {
+        let safeSeconds = max(seconds, 0)
+        let target = CMTime(seconds: safeSeconds, preferredTimescale: 600)
+        audioPlayer?.seek(to: target)
+        videoPlayer?.seek(to: target)
+        if isPlaying {
+            videoPlayer?.play()
+            audioPlayer?.play()
+        }
+    }
+
     private func loopVideo() {
         guard let item = videoItem else { return }
         NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { _ in
@@ -102,10 +168,7 @@ struct PrayerMeditationView: View {
     }
 
     private func setupAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch { print("Audio session error: \(error)") }
+        AudioSessionManager.shared.configureForBackgroundPlayback()
     }
 
     private func teardown() {
@@ -117,6 +180,22 @@ struct PrayerMeditationView: View {
         audioPlayer = nil
         videoPlayer = nil
         videoItem = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionManager.shared.deactivate()
+        hideControlsWorkItem?.cancel()
+    }
+
+    private func resetAutoHideControls() {
+        guard meditation.type == .video else { return }
+        controlsVisible = true
+        hideControlsWorkItem?.cancel()
+
+        let workItem = DispatchWorkItem {
+            withAnimation(.easeInOut) {
+                controlsVisible = false
+            }
+        }
+        hideControlsWorkItem = workItem
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + autoHideDelay, execute: workItem)
     }
 }
