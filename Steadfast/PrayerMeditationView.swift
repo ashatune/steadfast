@@ -9,11 +9,13 @@ struct PrayerMeditationView: View {
     @State private var audioPlayer: AVPlayer?
     @State private var videoItem: AVPlayerItem?
 
+    private let rewindInterval: Double = 15
+
     @State private var isPlaying = false
     @State private var rateObserver: NSKeyValueObservation?
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             if let player = videoPlayer {
                 VideoPlayer(player: player) // keeps native controls
                     .ignoresSafeArea()
@@ -27,6 +29,22 @@ struct PrayerMeditationView: View {
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
                     .offset(y: 140)
+            }
+
+            if meditation.type == .video, let audioPlayer {
+                VStack {
+                    Spacer()
+                    MeditationAudioPlayerView(
+                        player: audioPlayer,
+                        isPlaying: $isPlaying,
+                        rewindInterval: rewindInterval,
+                        onTogglePlay: togglePlayback,
+                        onRewind: rewind,
+                        onSeek: seek
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                }
             }
         }
         .onAppear {
@@ -77,6 +95,40 @@ struct PrayerMeditationView: View {
         videoPlayer?.play()
         audioPlayer?.play()
         isPlaying = true
+    }
+
+    private func togglePlayback() {
+        if isPlaying {
+            videoPlayer?.pause()
+            audioPlayer?.pause()
+        } else {
+            videoPlayer?.play()
+            audioPlayer?.play()
+        }
+        isPlaying.toggle()
+    }
+
+    private func rewind(by interval: Double) {
+        let currentSeconds = audioPlayer?.currentTime().seconds ?? 0
+        let newTime = max(currentSeconds - interval, 0)
+        let target = CMTime(seconds: newTime, preferredTimescale: 600)
+        audioPlayer?.seek(to: target)
+        videoPlayer?.seek(to: target)
+        if isPlaying {
+            videoPlayer?.play()
+            audioPlayer?.play()
+        }
+    }
+
+    private func seek(to seconds: Double) {
+        let safeSeconds = max(seconds, 0)
+        let target = CMTime(seconds: safeSeconds, preferredTimescale: 600)
+        audioPlayer?.seek(to: target)
+        videoPlayer?.seek(to: target)
+        if isPlaying {
+            videoPlayer?.play()
+            audioPlayer?.play()
+        }
     }
 
     private func loopVideo() {
