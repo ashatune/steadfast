@@ -79,7 +79,9 @@ struct Provider: TimelineProvider {
             )
         }
 
-        let fallback = AnchorOfDayStore.fallbackPayload()
+        // Store and return the same fallback the app would use so both stay aligned
+        let fallback = AnchorOfDayStore.fallbackPayload(anchorDate: Calendar.current.startOfDay(for: Date()))
+        AnchorOfDayStore.save(fallback)
         return AnchorEntry(
             date: fallback.anchorDate,
             text: fallback.text,

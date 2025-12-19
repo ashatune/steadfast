@@ -201,8 +201,11 @@ final class AppViewModel: ObservableObject {
             )
             print("🟢 Saved anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         } else {
-            AnchorOfDayStore.clear()
-            print("🟡 Cleared anchor for widget @ \(Date())")
+            // Keep widget + app aligned with the same default when no anchor is available
+            let fallback = AnchorOfDayStore.fallbackPayload(anchorDate: Calendar.current.startOfDay(for: anchorDate))
+            AnchorOfDayStore.save(fallback)
+            anchorOfDay = Verse(ref: fallback.ref, text: fallback.text, breathIn: nil, breathOut: nil, audioFile: nil, inhaleCue: fallback.inhale, exhaleCue: fallback.exhale)
+            print("🟡 Stored fallback anchor for widget @ \(fallback.lastUpdated) ref=\(fallback.ref)")
         }
 
         // Reload widget timelines so data refreshes promptly
