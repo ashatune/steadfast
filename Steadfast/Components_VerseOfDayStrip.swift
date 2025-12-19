@@ -2,25 +2,24 @@ import SwiftUI
 
 // VerseOfDayStrip.swift
 struct VerseOfDayStrip: View {
-    let verses: [Verse]
+    let verse: Verse
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles").foregroundStyle(Theme.accent)
-                Text("Today’s Anchors").font(.title3).bold()
+                Text("Anchor of the Day").font(.title3).bold()
             }
-            ForEach(verses, id: \.self) { v in
-                NavigationLink {
-                    AnchorBreathView(verse: v,
-                                     totalDuration: 90,
-                                     inhaleSecs: 4,
-                                     holdSecs: 4,
-                                     exhaleSecs: 6,
-                                     bgm: .local(name: "wanderingMeditation", ext: "mp3"))
-                } label: {
-                    VerseCard(verse: v) // VerseCard can keep its own surface style
-                }
+
+            NavigationLink {
+                AnchorBreathView(verse: verse,
+                                 totalDuration: 90,
+                                 inhaleSecs: 4,
+                                 holdSecs: 4,
+                                 exhaleSecs: 6,
+                                 bgm: .local(name: "wanderingMeditation", ext: "mp3"))
+            } label: {
+                VerseCard(verse: verse) // VerseCard keeps its own surface style
             }
         }
         // ❌ No extra background/padding wrapper — keeps the page uniform

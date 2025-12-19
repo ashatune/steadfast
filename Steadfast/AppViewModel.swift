@@ -122,7 +122,8 @@ final class AppViewModel: ObservableObject {
             todayVerses = picks
 
             // ✅ Compute one anchor for the day (single source of truth)
-            anchorOfDay = computeAnchorFor(date: date)
+            let anchor = computeAnchorFor(date: date) ?? AnchorService.shared.anchorsForToday(count: 1).first
+            anchorOfDay = anchor
 
             // ✅ Schedule 11:00am anchor-verse notification with the SAME verse
             let (title, body) = anchorBannerLine()
