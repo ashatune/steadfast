@@ -15,29 +15,28 @@ struct AnchorPayload: Codable, Equatable {
     let lastUpdated: Date
 }
 
+/// Legacy compatibility shim. Delegates to AnchorOfDayStore so app + widget stay in sync.
 enum SharedStore {
-    static let groupID = "group.ashatune.Steadfast"
-    static let key = "widget_payload"
-
-    private static var defaults: UserDefaults? { UserDefaults(suiteName: groupID) }
-
     static func save(_ payload: AnchorPayload) {
-        guard let d = defaults else { return }
-        let data = try? JSONEncoder().encode(payload)
-        d.set(data, forKey: key)
-        d.synchronize()
+        let bridged = AnchorOfDayPayload(
+            id: payload.ref,
+            ref: payload.ref,
+            text: "",
+            inhale: payload.inhale,
+            exhale: payload.exhale,
+            anchorDate: .now,
+            lastUpdated: payload.lastUpdated
+        )
+        AnchorOfDayStore.save(bridged)
     }
 
     static func load() -> AnchorPayload? {
-        guard let d = defaults, let data = d.data(forKey: key) else { return nil }
-        return try? JSONDecoder().decode(AnchorPayload.self, from: data)
+        guard let payload = AnchorOfDayStore.load() else { return nil }
+        return AnchorPayload(ref: payload.ref, inhale: payload.inhale, exhale: payload.exhale, lastUpdated: payload.lastUpdated)
     }
 
     static func nuke() {
-        guard let d = defaults else { return }
-        d.removeObject(forKey: key)
-        d.synchronize()
+        AnchorOfDayStore.clear()
     }
 }
-
 

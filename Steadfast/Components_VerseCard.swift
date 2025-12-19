@@ -53,9 +53,9 @@ struct VerseCard: View {
                     .font(.headline)
                     .foregroundStyle(.white)
 
-                // ✅ New: robust subtitle that always shows something useful
-                Text(verse.ref)
-                    .font(.headline).bold()
+                // ✅ Subtitle now shows a single, meaningful preview (not a duplicate ref)
+                Text(previewLine)
+                    .font(.subheadline)
                     .foregroundStyle(Theme.ink) // or .white if dark card
 
                 VStack(alignment: .leading, spacing: 2) {

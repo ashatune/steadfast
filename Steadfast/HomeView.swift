@@ -2,7 +2,6 @@ import SwiftUI
 import Combine
 
 struct HomeView: View {
-    @StateObject private var anchorVM = AnchorStripViewModel(count: 2)
     @AppStorage("displayName") private var storedDisplayName = ""
 
     @EnvironmentObject var vm: AppViewModel
@@ -20,6 +19,11 @@ struct HomeView: View {
 
     private let sidePadding: CGFloat = 16
     private let sectionSpacing: CGFloat = 6
+
+    // Single, canonical anchor of the day used across the home screen
+    private var anchorOfDay: Verse {
+        vm.anchorOfDay ?? AnchorService.shared.anchorsForToday(count: 1).first ?? Verse(ref: "Psalm 56:3")
+    }
 
     var body: some View {
         NavigationStack {
@@ -79,7 +83,6 @@ struct HomeView: View {
 
         // Tick greeting + refresh anchors
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
-        .onAppear { anchorVM.refreshNow() }
         .onChange(of: vm.pendingDeepLink) { dest in
             guard let dest = dest else { return }
             if dest == .anchor {
@@ -111,8 +114,8 @@ struct HomeView: View {
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
 
-                // Today’s Anchors
-                VerseOfDayStrip(verses: anchorVM.todays)
+                // Today’s Anchor
+                VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
                     .padding(.bottom, 16)
             }
