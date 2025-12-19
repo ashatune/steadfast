@@ -5,6 +5,12 @@ enum MediaSource: Equatable {
     case remote(url: URL)                     // Firebase Storage downloadURL later
 }
 
+enum PrayerMeditationType: String, Equatable {
+    case video
+    case audio
+    case text
+}
+
 struct PrayerMeditation: Identifiable, Equatable {
     let id: UUID
     let title: String
@@ -12,6 +18,7 @@ struct PrayerMeditation: Identifiable, Equatable {
     let audio: MediaSource
     let subtitle: String?
     let coverName: String?
+    let type: PrayerMeditationType
     
     init(
         id: UUID = UUID(),
@@ -19,7 +26,8 @@ struct PrayerMeditation: Identifiable, Equatable {
         video: MediaSource,
         audio: MediaSource,
         subtitle: String? = nil,
-        coverName: String? = nil
+        coverName: String? = nil,
+        type: PrayerMeditationType = .video
     ) {
         self.id = id
         self.title = title
@@ -27,5 +35,6 @@ struct PrayerMeditation: Identifiable, Equatable {
         self.audio = audio
         self.subtitle = subtitle
         self.coverName = coverName
+        self.type = type
     }
 }
