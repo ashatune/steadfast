@@ -78,6 +78,10 @@ struct SteadfastApp: App {
                 flags.update(from: cfg)
                 evaluateGate()
             }
+            // Handle deep links from widget / URL scheme
+            .onOpenURL { url in
+                appVM.handleDeepLink(url)
+            }
         }
     }
 

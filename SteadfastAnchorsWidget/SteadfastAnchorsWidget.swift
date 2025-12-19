@@ -2,13 +2,11 @@ import WidgetKit
 import SwiftUI
 import Foundation
 
-// MARK: - Shared App Group ID
-private let appGroupID = "group.ashatune.Steadfast"
-
 
 // MARK: - Entry
 struct AnchorEntry: TimelineEntry {
     let date: Date
+    let text: String
     let ref: String
     let inhale: String
     let exhale: String
@@ -21,6 +19,7 @@ struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> AnchorEntry {
         AnchorEntry(
             date: .now,
+            text: "Cast all your anxiety on Him because He cares for you.",
             ref: "1 Peter 5:7",
             inhale: "Cast all your care",
             exhale: "for He cares for you",
@@ -45,31 +44,52 @@ struct Provider: TimelineProvider {
     }
 
     private func loadCurrentEntry() -> AnchorEntry? {
-        // 1) Try the new single-payload path
-        if let p = SharedStore.load() {
-            print("🔵 Widget READ payload @ \(p.lastUpdated)")
-            return AnchorEntry(date: .now, ref: p.ref, inhale: p.inhale, exhale: p.exhale, lastUpdated: p.lastUpdated)
+        if let payload = AnchorOfDayStore.load() {
+            print("🔵 Widget READ anchor payload @ \(payload.lastUpdated)")
+            return AnchorEntry(
+                date: payload.anchorDate,
+                text: payload.text,
+                ref: payload.ref,
+                inhale: payload.inhale,
+                exhale: payload.exhale,
+                lastUpdated: payload.lastUpdated
+            )
         }
 
-        // 2) Fallback: legacy keys (keeps compatibility during transition)
-        let groupID = "group.ashatune.Steadfast"
-        guard let shared = UserDefaults(suiteName: groupID) else {
-            print("🔴 Widget: UserDefaults suite not found.")
-            return nil
+        // Fallback: legacy SharedStore (keeps compatibility during transition)
+        if let compat = SharedStore.load() {
+            print("🟡 Widget migrated legacy SharedStore payload.")
+            let migrated = AnchorOfDayPayload(
+                id: compat.ref,
+                ref: compat.ref,
+                text: "",
+                inhale: compat.inhale,
+                exhale: compat.exhale,
+                anchorDate: .now,
+                lastUpdated: compat.lastUpdated
+            )
+            AnchorOfDayStore.save(migrated)
+            return AnchorEntry(
+                date: migrated.anchorDate,
+                text: migrated.text,
+                ref: migrated.ref,
+                inhale: migrated.inhale,
+                exhale: migrated.exhale,
+                lastUpdated: migrated.lastUpdated
+            )
         }
 
-        let ref    = shared.string(forKey: "widget_ref") ?? ""
-        let inhale = shared.string(forKey: "widget_inhale") ?? ""
-        let exhale = shared.string(forKey: "widget_exhale") ?? ""
-
-        guard !ref.isEmpty || !inhale.isEmpty || !exhale.isEmpty else { return nil }
-
-        // Optional: migrate legacy keys into the new payload so future reads are unified
-        let migrated = AnchorPayload(ref: ref, inhale: inhale, exhale: exhale, lastUpdated: .now)
-        SharedStore.save(migrated)
-        print("🟡 Widget migrated legacy keys into payload.")
-
-        return AnchorEntry(date: .now, ref: ref, inhale: inhale, exhale: exhale, lastUpdated: migrated.lastUpdated)
+        // Store and return the same fallback the app would use so both stay aligned
+        let fallback = AnchorOfDayStore.fallbackPayload(anchorDate: Calendar.current.startOfDay(for: Date()))
+        AnchorOfDayStore.save(fallback)
+        return AnchorEntry(
+            date: fallback.anchorDate,
+            text: fallback.text,
+            ref: fallback.ref,
+            inhale: fallback.inhale,
+            exhale: fallback.exhale,
+            lastUpdated: fallback.lastUpdated
+        )
     }
 
 }
@@ -157,6 +177,16 @@ struct HomeScreenAnchorView: View {
     var entry: AnchorEntry
     final class AnchorWidgetBundleSentinel {}
 
+    private var anchorDeepLink: URL? {
+        var comps = URLComponents()
+        comps.scheme = "steadfast"
+        comps.host = "anchor-of-day"
+        comps.queryItems = [
+            URLQueryItem(name: "id", value: entry.ref)
+        ]
+        return comps.url
+    }
+
     var body: some View {
         ZStack(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 4) {
@@ -206,7 +236,7 @@ struct HomeScreenAnchorView: View {
                 Text("Missing widgetBG").font(.caption2).foregroundStyle(.white)
             }
         }
-        .widgetURL(URL(string: "steadfast://open/anchor-breathe"))
+        .widgetURL(anchorDeepLink)
     }
 }
 
@@ -225,4 +255,3 @@ struct AnchorWidget: Widget {
                             .accessoryRectangular, .accessoryInline, .accessoryCircular]) // 👈
     }
 }
-

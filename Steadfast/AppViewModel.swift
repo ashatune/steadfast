@@ -14,8 +14,9 @@ extension AppViewModel {
 
 final class AppViewModel: ObservableObject {
     
-    private let appGroupID = "group.ashatune.Steadfast"
+    private let appGroupID = AnchorOfDayStore.appGroupID
     @Published var pendingDeepLink: DeepLinkDestination?
+    @Published var pendingAnchorID: String?
 
     // MARK: Personalization / UI
     enum FocusArea: String, CaseIterable, Identifiable { case health, worry, panic, sleep, grief, general
@@ -114,43 +115,73 @@ final class AppViewModel: ObservableObject {
     }
 
     // MARK: Refresh & Selection
-        func refreshToday(date: Date = .now) {
-            // Build today's candidate list (kept if you use elsewhere)
-            var picks: [Verse] = []
-            let packs = prioritizedPacks()
-            for p in packs { if let v = p.verses.first { picks.append(v) } }
-            todayVerses = picks
+    func refreshToday(date: Date = .now) {
+        // Build today's candidate list (kept if you use elsewhere)
+        var picks: [Verse] = []
+        let packs = prioritizedPacks()
+        for p in packs { if let v = p.verses.first { picks.append(v) } }
+        todayVerses = picks
 
-            // ✅ Compute one anchor for the day (single source of truth)
-            anchorOfDay = computeAnchorFor(date: date)
+        // ✅ Compute one anchor for the day (single source of truth)
+        let anchor = computeAnchorFor(date: date) ?? AnchorService.shared.anchorsForToday(count: 1).first
+        anchorOfDay = anchor
 
-            // ✅ Schedule 11:00am anchor-verse notification with the SAME verse
-            let (title, body) = anchorBannerLine()
-            NotificationManager.shared.scheduleAnchorVerseAt11IfEnabled(
-                title: title,
-                body: body
-            )
+        // ✅ Schedule 11:00am anchor-verse notification with the SAME verse
+        let (title, body) = anchorBannerLine()
+        NotificationManager.shared.scheduleAnchorVerseAt11IfEnabled(
+            title: title,
+            body: body
+        )
 
-            // ✅ Push SAME verse to widget + reload its timeline
-            pushAnchorToWidget()
+        // ✅ Persist SAME verse for the widget + reload its timeline
+        syncAnchorWithWidget(anchor: anchor, anchorDate: date)
+    }
+
+    // MARK: - Deep link handling
+    func handleDeepLink(_ url: URL) {
+        guard url.scheme?.lowercased() == "steadfast" else { return }
+
+        let path = url.path.lowercased()
+        let host = url.host?.lowercased()
+
+        // Recognize anchor routes like steadfast://anchor-of-day or steadfast://open/anchor
+        if host == "anchor-of-day" || path.contains("/anchor-of-day") || path.contains("/anchor") {
+            let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            pendingAnchorID = comps?.queryItems?.first(where: { $0.name == "id" })?.value
+            pendingDeepLink = .anchor
+            return
         }
+
+        if host == "morning" || path.contains("/morning") {
+            pendingDeepLink = .morning
+            return
+        }
+        if host == "midday" || path.contains("/midday") {
+            pendingDeepLink = .midday
+            return
+        }
+        if host == "evening" || path.contains("/evening") {
+            pendingDeepLink = .evening
+            return
+        }
+    }
 
     /// Deterministically choose the anchor for a given date from prioritized packs.
-        /// Strategy: flatten all verses in prioritized packs, then pick by (daysSinceReference % count)
-        private func computeAnchorFor(date: Date) -> Verse? {
-            let packs = prioritizedPacks()
-            let all = packs.flatMap { $0.verses }
-            guard !all.isEmpty else { return nil }
+    /// Strategy: flatten all verses in prioritized packs, then pick by (daysSinceReference % count)
+    private func computeAnchorFor(date: Date) -> Verse? {
+        let packs = prioritizedPacks()
+        let all = packs.flatMap { $0.verses }
+        guard !all.isEmpty else { return nil }
 
-            let cal = Calendar.current
-            // Reference epoch: 2024-01-01 (any fixed date works)
-            let ref = DateComponents(calendar: cal, year: 2024, month: 1, day: 1).date ?? Date(timeIntervalSince1970: 0)
-            let days = cal.dateComponents([.day], from: cal.startOfDay(for: ref), to: cal.startOfDay(for: date)).day ?? 0
-            let idx = abs(days) % all.count
-            return all[idx]
-        }
+        let cal = Calendar.current
+        // Reference epoch: 2024-01-01 (any fixed date works)
+        let ref = DateComponents(calendar: cal, year: 2024, month: 1, day: 1).date ?? Date(timeIntervalSince1970: 0)
+        let days = cal.dateComponents([.day], from: cal.startOfDay(for: ref), to: cal.startOfDay(for: date)).day ?? 0
+        let idx = abs(days) % all.count
+        return all[idx]
+    }
 
-        /// Build the notification banner line from anchorOfDay (nil-safe)
+    /// Build the notification banner line from anchorOfDay (nil-safe)
     private func anchorBannerLine() -> (String, String) {
         let title = "Anchor Verse of the Day"
         guard let v = anchorOfDay else {
@@ -190,65 +221,39 @@ final class AppViewModel: ObservableObject {
     }
 
 
-        /// Write shared values for the WIDGET using the SAME anchorOfDay and reload
-    private func pushAnchorToWidget() {
-        guard let v = anchorOfDay else {
-            if let shared = UserDefaults(suiteName: appGroupID) {
-                shared.removeObject(forKey: "widget_ref")
-                shared.removeObject(forKey: "widget_inhale")
-                shared.removeObject(forKey: "widget_exhale")
-                shared.set(Date().timeIntervalSince1970, forKey: "widget_updated_at")
-                shared.synchronize()
-                print("🟡 Cleared widget data @ \(Date())")
-            }
-            WidgetCenter.shared.reloadTimelines(ofKind: "AnchorWidget")
-            return
-        }
-
-        let ref = v.ref.trimmingCharacters(in: .whitespacesAndNewlines)
-        let safeRef = ref.isEmpty ? "Psalm 46:10" : ref
-
-        // Prefer cues, then seconds, then split from text as a last resort
-        let textWords = v.text
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .components(separatedBy: .whitespaces)
-            .filter { !$0.isEmpty }
-
-        let inhale: String = {
-            if let cue = v.inhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
-            if let secs = v.breathIn { return "Inhale \(secs)s" }
-            // fallback: first 4 words of text
-            return textWords.prefix(4).joined(separator: " ")
-        }()
-
-        let exhale: String = {
-            if let cue = v.exhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
-            if let secs = v.breathOut { return "Exhale \(secs)s" }
-            // fallback: remaining words
-            return textWords.dropFirst(4).joined(separator: " ")
-        }()
-
-        if let shared = UserDefaults(suiteName: appGroupID) {
-            shared.set(safeRef, forKey: "widget_ref")
-            shared.set(inhale, forKey: "widget_inhale")
-            shared.set(exhale, forKey: "widget_exhale")
-            shared.set(Date().timeIntervalSince1970, forKey: "widget_updated_at")
-            shared.synchronize()
-            print("🟢 WROTE widget data @ \(Date())\n  ref=\(safeRef)\n  inhale=\(inhale)\n  exhale=\(exhale)")
+    /// Write shared values for the WIDGET using the SAME anchorOfDay and reload
+    private func syncAnchorWithWidget(anchor: Verse?, anchorDate: Date) {
+        if let v = anchor {
+            let payload = AnchorOfDayStore.save(
+                verse: v,
+                anchorDate: Calendar.current.startOfDay(for: anchorDate),
+                lastUpdated: .now
+            )
+            print("🟢 Saved anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         } else {
-            print("🔴 UserDefaults(suiteName:) returned nil. Check App Group entitlements.")
+            // Keep widget + app aligned with the same default when no anchor is available
+            let fallback = AnchorOfDayStore.fallbackPayload(anchorDate: Calendar.current.startOfDay(for: anchorDate))
+            AnchorOfDayStore.save(fallback)
+            anchorOfDay = Verse(ref: fallback.ref, text: fallback.text, breathIn: nil, breathOut: nil, audioFile: nil, inhaleCue: fallback.inhale, exhaleCue: fallback.exhale)
+            print("🟡 Stored fallback anchor for widget @ \(fallback.lastUpdated) ref=\(fallback.ref)")
         }
 
+        // Reload widget timelines so data refreshes promptly
         WidgetCenter.shared.reloadTimelines(ofKind: "AnchorWidget")
-
     }
 
 
 
     // AppViewModel.swift
     func setTodayAnchor(ref: String, inhale: String, exhale: String) {
-        let payload = AnchorPayload(ref: ref, inhale: inhale, exhale: exhale, lastUpdated: .now)
-        SharedStore.save(payload)
+        let verse = Verse(ref: ref, text: "", breathIn: nil, breathOut: nil, audioFile: nil, inhaleCue: inhale, exhaleCue: exhale)
+        anchorOfDay = verse
+        let payload = AnchorOfDayStore.save(
+            verse: verse,
+            anchorDate: Calendar.current.startOfDay(for: .now),
+            lastUpdated: .now
+        )
+        print("🟢 Manually set anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         WidgetCenter.shared.reloadTimelines(ofKind: "AnchorWidget")
     }
 
