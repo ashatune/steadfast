@@ -16,6 +16,7 @@ final class AppViewModel: ObservableObject {
     
     private let appGroupID = AnchorOfDayStore.appGroupID
     @Published var pendingDeepLink: DeepLinkDestination?
+    @Published var pendingAnchorID: String?
 
     // MARK: Personalization / UI
     enum FocusArea: String, CaseIterable, Identifiable { case health, worry, panic, sleep, grief, general
@@ -134,6 +135,35 @@ final class AppViewModel: ObservableObject {
 
         // ✅ Persist SAME verse for the widget + reload its timeline
         syncAnchorWithWidget(anchor: anchor, anchorDate: date)
+    }
+
+    // MARK: - Deep link handling
+    func handleDeepLink(_ url: URL) {
+        guard url.scheme?.lowercased() == "steadfast" else { return }
+
+        let path = url.path.lowercased()
+        let host = url.host?.lowercased()
+
+        // Recognize anchor routes like steadfast://anchor-of-day or steadfast://open/anchor
+        if host == "anchor-of-day" || path.contains("/anchor-of-day") || path.contains("/anchor") {
+            let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            pendingAnchorID = comps?.queryItems?.first(where: { $0.name == "id" })?.value
+            pendingDeepLink = .anchor
+            return
+        }
+
+        if host == "morning" || path.contains("/morning") {
+            pendingDeepLink = .morning
+            return
+        }
+        if host == "midday" || path.contains("/midday") {
+            pendingDeepLink = .midday
+            return
+        }
+        if host == "evening" || path.contains("/evening") {
+            pendingDeepLink = .evening
+            return
+        }
     }
 
     /// Deterministically choose the anchor for a given date from prioritized packs.

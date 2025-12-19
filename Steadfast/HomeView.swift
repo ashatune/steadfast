@@ -90,6 +90,19 @@ struct HomeView: View {
                 vm.pendingDeepLink = nil
             }
         }
+
+        // Hidden navigation trigger for deep links
+        NavigationLink("", isActive: $showAnchorFlow) {
+            AnchorBreathView(
+                verse: anchorOfDay,
+                totalDuration: 90,
+                inhaleSecs: 4,
+                holdSecs: 4,
+                exhaleSecs: 6,
+                bgm: .local(name: "wanderingMeditation", ext: "mp3")
+            )
+        }
+        .hidden()
     }
 
     // MARK: - Home content

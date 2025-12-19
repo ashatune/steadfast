@@ -177,6 +177,16 @@ struct HomeScreenAnchorView: View {
     var entry: AnchorEntry
     final class AnchorWidgetBundleSentinel {}
 
+    private var anchorDeepLink: URL? {
+        var comps = URLComponents()
+        comps.scheme = "steadfast"
+        comps.host = "anchor-of-day"
+        comps.queryItems = [
+            URLQueryItem(name: "id", value: entry.ref)
+        ]
+        return comps.url
+    }
+
     var body: some View {
         ZStack(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 4) {
@@ -226,7 +236,7 @@ struct HomeScreenAnchorView: View {
                 Text("Missing widgetBG").font(.caption2).foregroundStyle(.white)
             }
         }
-        .widgetURL(URL(string: "steadfast://open/anchor-breathe"))
+        .widgetURL(anchorDeepLink)
     }
 }
 
