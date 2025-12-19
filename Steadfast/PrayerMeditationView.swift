@@ -20,7 +20,7 @@ struct PrayerMeditationView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             if let player = videoPlayer {
-                VideoPlayer(player: player) // keeps native controls
+                MeditationVideoPlayerContainer(player: player)
                     .ignoresSafeArea()
             } else {
                 Color.black.ignoresSafeArea()
@@ -197,5 +197,37 @@ struct PrayerMeditationView: View {
         hideControlsWorkItem = workItem
 
         DispatchQueue.main.asyncAfter(deadline: .now() + autoHideDelay, execute: workItem)
+    }
+}
+
+private struct MeditationVideoPlayerContainer: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> PlayerView {
+        PlayerView(player: player)
+    }
+
+    func updateUIView(_ uiView: PlayerView, context: Context) {
+        uiView.update(player: player)
+    }
+
+    final class PlayerView: UIView {
+        override static var layerClass: AnyClass { AVPlayerLayer.self }
+
+        private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+
+        init(player: AVPlayer) {
+            super.init(frame: .zero)
+            playerLayer.player = player
+            playerLayer.videoGravity = .resizeAspectFill
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        func update(player: AVPlayer) {
+            playerLayer.player = player
+        }
     }
 }
