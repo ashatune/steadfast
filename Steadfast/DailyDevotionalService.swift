@@ -26,37 +26,70 @@ final class DailyDevotionalService {
     func fetchDevotionalForToday(completion: @escaping (DailyDevotional) -> Void) {
         let today = calendar.startOfDay(for: Date())
         let dateKey = Self.dateFormatter.string(from: today)
+        let todayString = dateKey
         let placeholder = DailyDevotional.placeholder(for: today)
 
         #if canImport(FirebaseFirestore)
         let db = Firestore.firestore()
         let collection = db.collection(collectionName)
 
-        // First, try today's document by ID (yyyy-MM-dd)
-        collection.document(dateKey).getDocument { snapshot, _ in
-            if
-                let snapshot = snapshot,
-                snapshot.exists,
-                let mapped = self.map(document: snapshot, fallbackDate: today)
-            {
-                completion(mapped)
+        // Query: find the most recent devotional on or before today (assumes `date` stored as "yyyy-MM-dd" string for ordering)
+        let stringQuery = collection
+            .whereField("date", isLessThanOrEqualTo: todayString)
+            .order(by: "date", descending: true)
+            .limit(to: 1)
+
+        let timestampQuery = collection
+            .whereField("date", isLessThanOrEqualTo: Timestamp(date: today))
+            .order(by: "date", descending: true)
+            .limit(to: 1)
+
+        func handleSnapshot(_ snapshot: QuerySnapshot?, fallback: () -> Void) {
+            guard
+                let document = snapshot?.documents.first,
+                let mapped = self.map(document: document, fallbackDate: today)
+            else {
+                fallback()
                 return
             }
+            completion(mapped)
+        }
 
-            // Fallback: most recent by date
-            collection
-                .order(by: "date", descending: true)
-                .limit(to: 1)
-                .getDocuments { snapshot, _ in
-                    guard
-                        let document = snapshot?.documents.first,
-                        let mapped = self.map(document: document, fallbackDate: today)
-                    else {
+        stringQuery.getDocuments { snapshot, error in
+            if let error = error {
+                print("DailyDevotionalService string query error: \(error)")
+                // Fallback for Timestamp-backed `date`
+                timestampQuery.getDocuments { tsSnapshot, tsError in
+                    if let tsError = tsError {
+                        print("DailyDevotionalService timestamp query error: \(tsError)")
                         completion(placeholder)
                         return
                     }
-                    completion(mapped)
+                    handleSnapshot(tsSnapshot) {
+                        completion(placeholder)
+                    }
                 }
+                return
+            }
+
+            // If no doc matched string query, try timestamp query
+            if snapshot?.documents.isEmpty ?? true {
+                timestampQuery.getDocuments { tsSnapshot, tsError in
+                    if let tsError = tsError {
+                        print("DailyDevotionalService timestamp query error: \(tsError)")
+                        completion(placeholder)
+                        return
+                    }
+                    handleSnapshot(tsSnapshot) {
+                        completion(placeholder)
+                    }
+                }
+                return
+            }
+
+            handleSnapshot(snapshot) {
+                completion(placeholder)
+            }
         }
         #else
         completion(placeholder)
