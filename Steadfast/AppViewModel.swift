@@ -9,6 +9,7 @@ extension AppViewModel {
         case midday
         case evening
         case anchor
+        case devotional
     }
 }
 
@@ -149,6 +150,11 @@ final class AppViewModel: ObservableObject {
             let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
             pendingAnchorID = comps?.queryItems?.first(where: { $0.name == "id" })?.value
             pendingDeepLink = .anchor
+            return
+        }
+
+        if host == "devotional" || path.contains("/devotional") {
+            pendingDeepLink = .devotional
             return
         }
 
