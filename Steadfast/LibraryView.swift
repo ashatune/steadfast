@@ -24,28 +24,17 @@ struct LibraryView: View {
                     }
                     .buttonStyle(.plain)
 
-                    // Saved devotionals entry
+                    // Saved devotionals entry (hero style)
                     NavigationLink {
                         SavedDevotionalsView()
                     } label: {
-                        LargeActionCard(
+                        SavedDevotionalsHeroCard(
                             title: "Saved Devotionals",
                             subtitle: "Revisit your bookmarked devotionals",
-                            systemImage: "bookmark.fill"
+                            imageName: "SavedDevotionalsCardImage",
+                            height: 160 // match Bible card height
                         )
                         .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    // Saved devotionals entry
-                    NavigationLink {
-                        SavedDevotionalsView()
-                    } label: {
-                        LargeActionCard(
-                            title: "Saved Devotionals",
-                            subtitle: "Revisit your bookmarked devotionals",
-                            systemImage: "bookmark.fill"
-                        )
                     }
                     .buttonStyle(.plain)
                     
@@ -141,5 +130,56 @@ struct LargeActionCard: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         .shadow(color: Theme.line.opacity(0.15), radius: 6, x: 0, y: 3)
         .contentShape(Rectangle())
+    }
+}
+
+struct SavedDevotionalsHeroCard: View {
+    let title: String
+    let subtitle: String
+    let imageName: String
+    var height: CGFloat = 160
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            if let _ = UIImage(named: imageName) {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: height)
+                    .clipped()
+            } else {
+                // TODO: Add asset named "SavedDevotionalsCardImage" for full effect
+                Color(UIColor.systemGray5)
+                    .frame(height: height)
+            }
+
+            LinearGradient(
+                colors: [.black.opacity(0.0), .black.opacity(0.25), .black.opacity(0.55)],
+                startPoint: .top, endPoint: .bottom
+            )
+
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "bookmark.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.headline).foregroundStyle(.white)
+                    Text(subtitle).font(.caption).foregroundStyle(.white.opacity(0.9))
+                }
+
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            .padding(16)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.18)))
+        .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(subtitle)")
     }
 }
