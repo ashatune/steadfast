@@ -171,7 +171,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func cancelDailyCheckins() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids + [morningDevotionalId])
     }
 
     func openSystemSettings() {
@@ -256,6 +256,10 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         center.add(req) { err in
             if let err = err { print("🔔 devotional add err:", err) }
         }
+    }
+
+    func cancelMorningDevotional() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [morningDevotionalId])
     }
 
     // Helper: next HH:mm (today if still ahead, otherwise tomorrow)
