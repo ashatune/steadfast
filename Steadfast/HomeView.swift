@@ -9,6 +9,9 @@ struct HomeView: View {
     @EnvironmentObject var flags: FeatureFlags
     @State private var showProfileSheet = false
     @State private var now = Date()
+    @StateObject private var devotionalVM = DailyDevotionalViewModel()
+    @State private var showDevotionalDetail = false
+    @State private var devotionalDeepLinkPending = false
 
     enum TopTab { case home, reframe }
     @State private var topTab: TopTab = .home
@@ -88,6 +91,9 @@ struct HomeView: View {
             if dest == .anchor {
                 showAnchorFlow = true
                 vm.pendingDeepLink = nil
+            } else if dest == .devotional {
+                devotionalDeepLinkPending = true
+                devotionalVM.refresh()
             }
         }
 
@@ -101,6 +107,12 @@ struct HomeView: View {
                 exhaleSecs: 6,
                 bgm: .local(name: "wanderingMeditation", ext: "mp3")
             )
+        }
+        .hidden()
+        NavigationLink("", isActive: $showDevotionalDetail) {
+            if let devotional = devotionalVM.devotional {
+                DailyDevotionalDetailView(devotional: devotional)
+            }
         }
         .hidden()
     }
@@ -127,6 +139,9 @@ struct HomeView: View {
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
 
+                devotionalSection
+                    .padding(.horizontal, sidePadding)
+
                 // Today’s Anchor
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
@@ -134,6 +149,17 @@ struct HomeView: View {
             }
         }
         .background(Theme.bg.ignoresSafeArea())
+        .task {
+            devotionalVM.loadDevotionalIfNeeded()
+        }
+        .onChange(of: devotionalVM.devotional) { _ in
+            guard devotionalDeepLinkPending else { return }
+            if devotionalVM.devotional != nil {
+                showDevotionalDetail = true
+                devotionalDeepLinkPending = false
+                vm.pendingDeepLink = nil
+            }
+        }
     }
 
     // MARK: - Tab button (underline style)
@@ -181,6 +207,22 @@ struct HomeView: View {
         case 5..<12:  return "Good morning"
         case 12..<18: return "Good afternoon"
         default:      return "Good evening"
+        }
+    }
+
+    @ViewBuilder
+    private var devotionalSection: some View {
+        if let devotional = devotionalVM.devotional {
+            NavigationLink {
+                DailyDevotionalDetailView(devotional: devotional)
+            } label: {
+                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+        } else {
+            DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
+                .frame(maxWidth: .infinity)
         }
     }
 }

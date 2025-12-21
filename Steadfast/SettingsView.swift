@@ -24,11 +24,13 @@ struct SettingsView: View {
                     }
 
                     Toggle("Enable daily reminders", isOn: $vm.notifEnabled)
-                        .onChange(of: vm.notifEnabled) { _ in apply() }
+                        .onChange(of: vm.notifEnabled) { on in handleMasterToggle(on) }
 
                     // Morning
                     HStack {
                         Toggle("Morning", isOn: $vm.morningEnabled)
+                            .disabled(!vm.notifEnabled)
+                            .onChange(of: vm.morningEnabled) { _ in apply() }
                         Spacer()
                         DatePicker("", selection: $vm.morningTime, displayedComponents: .hourAndMinute)
                             .labelsHidden()
@@ -38,6 +40,8 @@ struct SettingsView: View {
                     // Midday
                     HStack {
                         Toggle("Midday", isOn: $vm.middayEnabled)
+                            .disabled(!vm.notifEnabled)
+                            .onChange(of: vm.middayEnabled) { _ in apply() }
                         Spacer()
                         DatePicker("", selection: $vm.middayTime, displayedComponents: .hourAndMinute)
                             .labelsHidden()
@@ -47,19 +51,20 @@ struct SettingsView: View {
                     // Evening
                     HStack {
                         Toggle("Evening", isOn: $vm.eveningEnabled)
+                            .disabled(!vm.notifEnabled)
+                            .onChange(of: vm.eveningEnabled) { _ in apply() }
                         Spacer()
                         DatePicker("", selection: $vm.eveningTime, displayedComponents: .hourAndMinute)
                             .labelsHidden()
                             .disabled(!vm.notifEnabled || !vm.eveningEnabled)
                             .onChange(of: vm.eveningTime) { _ in apply() }
                     }
-
-                    Button {
-                        requestAndApply()
-                    } label: {
-                        Label("Save & Schedule", systemImage: "bell.badge")
+                } footer: {
+                    if authStatus == .denied {
+                        Text("Notifications are off in iOS Settings. Enable them in Settings > Notifications to receive reminders.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.inkSecondary)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
                 
                 /*Button {
@@ -180,15 +185,19 @@ struct SettingsView: View {
 
     private var statusBadge: some View {
         Group {
-            switch authStatus {
-            case .authorized, .provisional, .ephemeral:
-                Label("On", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-            case .denied:
-                Label("Off", systemImage: "xmark.circle.fill").foregroundStyle(.red)
-            case .notDetermined:
-                Label("Ask", systemImage: "questionmark.circle.fill").foregroundStyle(.orange)
-            @unknown default:
-                Label("Unknown", systemImage: "questionmark.circle").foregroundStyle(.orange)
+            if !vm.notifEnabled {
+                Label("Off", systemImage: "xmark.circle.fill").foregroundStyle(.gray)
+            } else {
+                switch authStatus {
+                case .authorized, .provisional, .ephemeral:
+                    Label("On", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                case .denied:
+                    Label("Off", systemImage: "xmark.circle.fill").foregroundStyle(.red)
+                case .notDetermined:
+                    Label("Ask", systemImage: "questionmark.circle.fill").foregroundStyle(.orange)
+                @unknown default:
+                    Label("Unknown", systemImage: "questionmark.circle").foregroundStyle(.orange)
+                }
             }
         }
         .font(.footnote.weight(.semibold))
@@ -200,18 +209,29 @@ struct SettingsView: View {
         }
     }
 
-    private func requestAndApply() {
+    private func handleMasterToggle(_ isOn: Bool) {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
-                if settings.authorizationStatus == .denied {
-                    showingDeniedAlert = true
-                } else if settings.authorizationStatus == .notDetermined {
-                    NotificationManager.shared.requestAndScheduleDailyCheckins()
+                authStatus = settings.authorizationStatus
+
+                if !isOn {
+                    apply() // persists + cancels
+                    return
+                }
+
+                switch settings.authorizationStatus {
+                case .authorized, .provisional, .ephemeral:
                     apply()
-                } else {
+                case .denied:
+                    showingDeniedAlert = true
+                    vm.notifEnabled = false
+                    apply()
+                case .notDetermined:
+                    NotificationManager.shared.requestAndScheduleDailyCheckins()
+                    refreshAuth()
+                @unknown default:
                     apply()
                 }
-                refreshAuth()
             }
         }
     }
@@ -229,7 +249,12 @@ struct SettingsView: View {
 
         ud.synchronize()
 
-        NotificationManager.shared.scheduleDailyFromSettings()
+        if vm.notifEnabled {
+            NotificationManager.shared.scheduleDailyFromSettings()
+        } else {
+            NotificationManager.shared.cancelDailyCheckins()
+            NotificationManager.shared.cancelMorningDevotional()
+        }
         dumpPending() // optional debug print
     }
 }
