@@ -3,9 +3,9 @@ import Foundation
 import FirebaseFirestore
 #endif
 
-/// Loads the day's devotional from Firestore.
-/// Expects a `dailyDevotions` collection with fields:
-/// - `date`: either a `Timestamp` or string in `yyyy-MM-dd`
+/// Loads the most recent devotional from Firestore (ordered by `date`).
+/// Firestore documents must include a `date` field that can be ordered
+/// (`yyyy-MM-dd` string or `Timestamp`). Other fields:
 /// - `title`, `verseReference`, `verseText`, `body`
 /// - `cta` (optional)
 ///
@@ -23,17 +23,16 @@ final class DailyDevotionalService {
     /// Fetches today's devotional from Firestore or falls back to a local placeholder.
     func fetchDevotionalForToday(completion: @escaping (DailyDevotional) -> Void) {
         let today = calendar.startOfDay(for: Date())
-        let dateKey = Self.dateFormatter.string(from: today)
 
         #if canImport(FirebaseFirestore)
         let db = Firestore.firestore()
         db.collection(collectionName)
-            .whereField("date", isEqualTo: dateKey)
+            .order(by: "date", descending: true)
             .limit(to: 1)
             .getDocuments { snapshot, _ in
                 guard
                     let document = snapshot?.documents.first,
-                    let mapped = self.map(document: document, fallbackDate: today)
+                    let mapped = self.map(document: document, fallbackDate: Date())
                 else {
                     completion(DailyDevotional.placeholder(for: today))
                     return
