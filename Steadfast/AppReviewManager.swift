@@ -12,6 +12,13 @@ final class AppReviewManager {
     private let eventsKey        = "steadfast.review.meaningfulEvents"
     private let didReviewKey     = "steadfast.review.didReview"
     private let lastPromptKey    = "steadfast.review.lastPromptDate"
+    private let firstLaunchKey   = "steadfast.review.firstLaunch"
+    private let promptAttemptsKey = "steadfast.review.promptAttempts"
+
+    // DEBUG override to force attempts during development
+    #if DEBUG
+    var debugAlwaysPrompt: Bool = false
+    #endif
 
     private init() {}
 
@@ -21,6 +28,9 @@ final class AppReviewManager {
     func registerLaunch() {
         let newCount = defaults.integer(forKey: launchesKey) + 1
         defaults.set(newCount, forKey: launchesKey)
+        if defaults.object(forKey: firstLaunchKey) == nil {
+            defaults.set(Date(), forKey: firstLaunchKey)
+        }
     }
 
     /// Call when the user completes a grounding / daily rhythm / SOS success.
@@ -29,10 +39,19 @@ final class AppReviewManager {
         defaults.set(newCount, forKey: eventsKey)
     }
 
+    func attemptPromptIfEligible() {
+        let hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
+        guard shouldPrompt(hasCompletedOnboarding: hasCompletedOnboarding) else { return }
+        requestInAppReviewIfAvailable()
+    }
+
     // MARK: - Decision logic
 
     /// Returns true if we *should* show our custom review prompt right now.
-    func shouldShowPrompt(hasCompletedOnboarding: Bool) -> Bool {
+    private func shouldPrompt(hasCompletedOnboarding: Bool) -> Bool {
+        #if DEBUG
+        if debugAlwaysPrompt { return true }
+        #endif
         // Don’t ask people who haven't finished onboarding
         guard hasCompletedOnboarding else { return false }
 
@@ -45,8 +64,16 @@ final class AppReviewManager {
         // Wait until they've used the app a bit
         guard launches >= 5 else { return false }
 
-        // Require at least one "happy path" event (finished a flow, etc.)
-        guard events >= 1 else { return false }
+        // Require multiple "happy path" events (finished flows, etc.)
+        guard events >= 3 else { return false }
+
+        // Require a few days since first launch
+        if let first = defaults.object(forKey: firstLaunchKey) as? Date {
+            if let days = Calendar.current.dateComponents([.day], from: first, to: Date()).day,
+               days < 3 {
+                return false
+            }
+        }
 
         // Optional: don't show more than once every 30 days
         if let last = defaults.object(forKey: lastPromptKey) as? Date {
@@ -56,11 +83,17 @@ final class AppReviewManager {
             }
         }
 
+        // Cap attempts to avoid spamming
+        let attempts = defaults.integer(forKey: promptAttemptsKey)
+        guard attempts < 3 else { return false }
+
         return true
     }
 
     func markPromptShown() {
         defaults.set(Date(), forKey: lastPromptKey)
+        let attempts = defaults.integer(forKey: promptAttemptsKey) + 1
+        defaults.set(attempts, forKey: promptAttemptsKey)
     }
 
     /// Mark that the user either *left* a review or chose "No thanks".
