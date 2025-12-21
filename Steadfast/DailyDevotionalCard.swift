@@ -86,7 +86,7 @@ struct DailyDevotionalCard: View {
     }
 
     @ViewBuilder
-    private var backgroundView: some View {
+    private var remoteImageOverlay: some View {
         if let imageURL = devotional?.imageURL {
             AsyncImage(url: imageURL) { phase in
                 switch phase {
@@ -95,6 +95,7 @@ struct DailyDevotionalCard: View {
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 case .failure(_):
                     EmptyView() // fallback still visible underneath
                 case .empty:
