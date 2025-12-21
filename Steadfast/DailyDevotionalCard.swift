@@ -121,11 +121,20 @@ struct DailyDevotionalCard: View {
     }
 
     private var fallbackBackground: some View {
-        LinearGradient(
-            colors: [Theme.surface, Theme.support.opacity(0.35)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        ZStack {
+            // TODO: Add "DefaultDevotionalImage" to Assets.xcassets for the devotional fallback artwork.
+            Image("DefaultDevotionalImage")
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+
+            LinearGradient(
+                colors: [.black.opacity(0.05), .black.opacity(0.35)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
     }
 }
 
