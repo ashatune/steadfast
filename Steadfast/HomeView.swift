@@ -104,8 +104,7 @@ struct HomeView: View {
                 totalDuration: 90,
                 inhaleSecs: 4,
                 holdSecs: 4,
-                exhaleSecs: 6,
-                bgm: .local(name: "wanderingMeditation", ext: "mp3")
+                exhaleSecs: 6
             )
         }
         .hidden()

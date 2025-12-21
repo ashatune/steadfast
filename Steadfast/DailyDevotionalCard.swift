@@ -133,6 +133,7 @@ struct DailyDevotionalCard: View {
 
 struct DailyDevotionalDetailView: View {
     let devotional: DailyDevotional
+    @EnvironmentObject private var savedStore: SavedDevotionalsStore
 
     var body: some View {
         ScrollView {
@@ -164,5 +165,16 @@ struct DailyDevotionalDetailView: View {
         .background(Theme.bg.ignoresSafeArea())
         .navigationTitle("Daily Devotional")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    savedStore.toggleSave(devotional: devotional)
+                } label: {
+                    Image(systemName: savedStore.isSaved(devotionalID: devotional.id) ? "bookmark.fill" : "bookmark")
+                        .font(.headline)
+                }
+                .accessibilityLabel(savedStore.isSaved(devotionalID: devotional.id) ? "Remove bookmark" : "Save devotional")
+            }
+        }
     }
 }
