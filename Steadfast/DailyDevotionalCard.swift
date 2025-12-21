@@ -3,7 +3,7 @@ import SwiftUI
 struct DailyDevotionalCard: View {
     let devotional: DailyDevotional?
     let isLoading: Bool
-    var height: CGFloat = 260
+    var height: CGFloat = 200
 
     private let cornerRadius: CGFloat = 16
 
@@ -15,9 +15,9 @@ struct DailyDevotionalCard: View {
             content
                 .padding(16)
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .frame(maxWidth: .infinity)
         .frame(height: height)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(Theme.line)
@@ -115,6 +115,7 @@ struct DailyDevotionalCard: View {
             .resizable()
             .scaledToFill()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
     }
 
     private var gradientOverlay: some View {
