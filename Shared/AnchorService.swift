@@ -3,6 +3,7 @@ import Foundation
 
 final class AnchorService {
     static let shared = AnchorService()
+    private let defaultAudioFilename = "wanderingMeditation.mp3"
 
     private let anchors: [Verse] = [
         Verse(ref: "Philippians 4:6–7",
@@ -330,6 +331,12 @@ final class AnchorService {
             shuffled[(day + i) % shuffled.count]
         }
     }
+
+    func audioFileName(for ref: String) -> String? {
+        anchors.first(where: { $0.ref == ref })?.audioFile
+    }
+
+    var defaultAnchorAudioFilename: String? { anchors.first?.audioFile ?? defaultAudioFilename }
 
     private func deterministicallyShuffled<T>(_ arr: [T], seed: Int) -> [T] {
         var rng = SeededRNG(seed: UInt64(bitPattern: Int64(seed)))
