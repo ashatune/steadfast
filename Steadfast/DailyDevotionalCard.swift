@@ -133,6 +133,9 @@ struct DailyDevotionalCard: View {
 
 struct DailyDevotionalDetailView: View {
     let devotional: DailyDevotional
+    @EnvironmentObject private var savedStore: SavedDevotionalsStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var showMeditation = false
 
     var body: some View {
         ScrollView {
@@ -157,6 +160,21 @@ struct DailyDevotionalDetailView: View {
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 12) {
+                    Button("Meditate on this verse") {
+                        showMeditation = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.top, 8)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -164,5 +182,32 @@ struct DailyDevotionalDetailView: View {
         .background(Theme.bg.ignoresSafeArea())
         .navigationTitle("Daily Devotional")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    savedStore.toggleSave(devotional: devotional)
+                } label: {
+                    Image(systemName: savedStore.isSaved(devotionalID: devotional.id) ? "bookmark.fill" : "bookmark")
+                        .font(.headline)
+                }
+                .accessibilityLabel(savedStore.isSaved(devotionalID: devotional.id) ? "Remove bookmark" : "Save devotional")
+            }
+        }
+        .background(
+            NavigationLink(
+                "",
+                isActive: $showMeditation,
+                destination: {
+                    AnchorBreathView(
+                        verse: Verse(ref: devotional.verseReference, text: devotional.verseText),
+                        totalDuration: 60,
+                        inhaleSecs: 4,
+                        holdSecs: 4,
+                        exhaleSecs: 6
+                    )
+                }
+            )
+            .hidden()
+        )
     }
 }

@@ -35,6 +35,9 @@ struct AnchorBreathView: View {
     @State private var showCompletion: Bool = false
 
     enum Phase { case inhale, hold, exhale }
+    private var resolvedBgm: MediaSource? {
+        bgm ?? VerseAudioResolver.track(for: verse)
+    }
 
     var body: some View {
         ZStack {
@@ -269,7 +272,9 @@ struct AnchorBreathView: View {
             }
         }
 
-        if !isMusicMuted { musicQueue?.play() }
+        if !isMusicMuted, musicQueue?.timeControlStatus != .playing {
+            musicQueue?.play()
+        }
     }
 
     private func animateScale(to target: CGFloat, duration: Double) {
@@ -281,12 +286,14 @@ struct AnchorBreathView: View {
     // MARK: - Music
 
     private func configureMusicIfNeeded() {
-        guard let bgm = bgm, let url = url(for: bgm) else { return }
-        let item = AVPlayerItem(url: url)
-        let q = AVQueuePlayer(items: [])
-        let looper = AVPlayerLooper(player: q, templateItem: item)
-        musicQueue = q
-        musicLooper = looper
+        guard let bgm = resolvedBgm, let url = url(for: bgm) else { return }
+        if musicQueue == nil || musicLooper == nil {
+            let item = AVPlayerItem(url: url)
+            let q = AVQueuePlayer(items: [])
+            let looper = AVPlayerLooper(player: q, templateItem: item)
+            musicQueue = q
+            musicLooper = looper
+        }
         musicQueue?.volume = isMusicMuted ? 0.0 : musicBaseVolume
     }
 
@@ -330,6 +337,8 @@ struct AnchorBreathView: View {
         fadeMusicVolume(to: 0.0, over: 0.35)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             teardown()
+            AppReviewManager.shared.registerMeaningfulEvent()
+            AppReviewManager.shared.attemptPromptIfEligible()
             if let onCompleted = onCompleted {
                 onCompleted()        // <-- advance onboarding if provided
             } else {

@@ -16,8 +16,7 @@ struct VerseOfDayStrip: View {
                                  totalDuration: 90,
                                  inhaleSecs: 4,
                                  holdSecs: 4,
-                                 exhaleSecs: 6,
-                                 bgm: .local(name: "wanderingMeditation", ext: "mp3"))
+                                 exhaleSecs: 6)
             } label: {
                 VerseCard(verse: verse) // VerseCard keeps its own surface style
             }
