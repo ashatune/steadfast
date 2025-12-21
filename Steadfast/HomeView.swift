@@ -152,7 +152,7 @@ struct HomeView: View {
         .task {
             devotionalVM.loadDevotionalIfNeeded()
         }
-        .onChange(of: devotionalVM.devotional) { _ in
+        .onChange(of: devotionalVM.devotional?.id) { _ in
             guard devotionalDeepLinkPending else { return }
             if devotionalVM.devotional != nil {
                 showDevotionalDetail = true
