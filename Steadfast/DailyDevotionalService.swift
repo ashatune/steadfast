@@ -8,6 +8,7 @@ import FirebaseFirestore
 /// (`yyyy-MM-dd` string or `Timestamp`). Other fields:
 /// - `title`, `verseReference`, `verseText`, `body`
 /// - `cta` (optional)
+/// - `imageURL` (optional string; https or Firebase Storage download URL for the card background)
 ///
 /// TODO: Ensure FirebaseApp.configure() is called at app launch.
 /// TODO: Make sure Firestore is added to the project via SPM or CocoaPods.
@@ -57,6 +58,11 @@ final class DailyDevotionalService {
             return fallbackDate
         }()
 
+        let imageURL: URL? = {
+            guard let urlString = data["imageURL"] as? String else { return nil }
+            return URL(string: urlString)
+        }()
+
         let devotional = DailyDevotional(
             id: document.documentID,
             date: date,
@@ -64,7 +70,8 @@ final class DailyDevotionalService {
             verseReference: data["verseReference"] as? String ?? placeholder.verseReference,
             verseText: data["verseText"] as? String ?? placeholder.verseText,
             body: data["body"] as? String ?? placeholder.body,
-            cta: data["cta"] as? String ?? placeholder.cta
+            cta: data["cta"] as? String ?? placeholder.cta,
+            imageURL: imageURL
         )
 
         return devotional

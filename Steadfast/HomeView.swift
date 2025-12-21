@@ -198,12 +198,12 @@ struct HomeView: View {
                 DailyDevotionalDetailView(devotional: devotional)
             } label: {
                 DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
-                    .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
         } else {
             DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
         }
     }
 }

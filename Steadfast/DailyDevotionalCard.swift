@@ -3,58 +3,31 @@ import SwiftUI
 struct DailyDevotionalCard: View {
     let devotional: DailyDevotional?
     let isLoading: Bool
+    var height: CGFloat = 260
 
     private let cornerRadius: CGFloat = 16
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header
+        ZStack {
+            backgroundView
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay(
+                    LinearGradient(
+                        colors: [.black.opacity(0.05), .black.opacity(0.35)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                )
 
-            if isLoading {
-                VStack(alignment: .leading, spacing: 6) {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .tint(Theme.accent)
-                    Text("Loading today’s devotional…")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.inkSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            } else if let devotional {
-                Text(devotional.title)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-
-                Text(devotional.verseReference)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.accent)
-
-                Text(devotional.previewSnippet)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.inkSecondary)
-                    .lineLimit(3)
-
-                if let cta = devotional.cta?.trimmingCharacters(in: .whitespacesAndNewlines), !cta.isEmpty {
-                    Text(cta)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
-                        .padding(.top, 2)
-                } else {
-                    Text("Tap to read today’s devotional")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
-                        .padding(.top, 2)
-                }
-            } else {
-                Text("No devotional available for today.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.inkSecondary)
-            }
+            content
+                .padding(16)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(Theme.line))
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .background(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(Theme.line)
+        )
         .shadow(color: Theme.line.opacity(0.15), radius: 6, x: 0, y: 3)
     }
 
@@ -64,9 +37,95 @@ struct DailyDevotionalCard: View {
                 .foregroundStyle(Theme.accent)
             Text("Daily Devotional")
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(.white)
             Spacer()
         }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+
+            if isLoading {
+                VStack(alignment: .leading, spacing: 6) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(.white)
+                    Text("Loading today’s devotional…")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else if let devotional {
+                Text(devotional.title)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                Text(devotional.verseReference)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text(devotional.previewSnippet)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .lineLimit(3)
+
+                Text(ctaText(for: devotional))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 2)
+            } else {
+                Text("No devotional available for today.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func ctaText(for devotional: DailyDevotional) -> String {
+        if let cta = devotional.cta?.trimmingCharacters(in: .whitespacesAndNewlines), !cta.isEmpty {
+            return cta
+        }
+        return "Tap to read today’s devotional"
+    }
+
+    @ViewBuilder
+    private var backgroundView: some View {
+        if let imageURL = devotional?.imageURL {
+            AsyncImage(url: imageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                case .failure(_):
+                    fallbackBackground
+                case .empty:
+                    fallbackBackground
+                        .overlay(
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(Theme.accent)
+                        )
+                @unknown default:
+                    fallbackBackground
+                }
+            }
+        } else {
+            fallbackBackground
+        }
+    }
+
+    private var fallbackBackground: some View {
+        LinearGradient(
+            colors: [Theme.surface, Theme.support.opacity(0.35)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }
 

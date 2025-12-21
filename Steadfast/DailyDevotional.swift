@@ -8,6 +8,7 @@ struct DailyDevotional: Identifiable, Codable {
     var verseText: String
     var body: String
     var cta: String?
+    var imageURL: URL?
 }
 
 extension DailyDevotional {
