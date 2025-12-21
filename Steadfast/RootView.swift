@@ -73,6 +73,8 @@ struct RootView: View {
                         vm.pendingDeepLink = .evening
                     case "anchor":
                         vm.pendingDeepLink = .anchor
+                    case "devotional/today":
+                        vm.pendingDeepLink = .devotional
                     default:
                         break
                     }
