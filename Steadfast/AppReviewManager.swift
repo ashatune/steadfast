@@ -41,8 +41,10 @@ final class AppReviewManager {
 
     func attemptPromptIfEligible() {
         let hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
-        guard shouldPrompt(hasCompletedOnboarding: hasCompletedOnboarding) else { return }
-        requestInAppReviewIfAvailable()
+        Task { @MainActor in
+            guard shouldPrompt(hasCompletedOnboarding: hasCompletedOnboarding) else { return }
+            requestInAppReviewIfAvailable()
+        }
     }
 
     // MARK: - Decision logic
@@ -126,6 +128,6 @@ final class AppReviewManager {
         }
 
         SKStoreReviewController.requestReview(in: scene)
-        markDidReview()
+        markPromptShown()
     }
 }
