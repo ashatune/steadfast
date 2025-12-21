@@ -9,22 +9,16 @@ struct DailyDevotionalCard: View {
 
     var body: some View {
         ZStack {
-            backgroundView
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(
-                    LinearGradient(
-                        colors: [.black.opacity(0.05), .black.opacity(0.35)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                )
-
+            baseFallbackImage
+            remoteImageOverlay
+            gradientOverlay
             content
                 .padding(16)
         }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .frame(maxWidth: .infinity)
         .frame(height: height)
-        .background(
+        .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(Theme.line)
         )
@@ -101,40 +95,37 @@ struct DailyDevotionalCard: View {
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
                 case .failure(_):
-                    fallbackBackground
+                    EmptyView() // fallback still visible underneath
                 case .empty:
-                    fallbackBackground
-                        .overlay(
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .tint(Theme.accent)
-                        )
+                    EmptyView() // fallback still visible underneath
                 @unknown default:
-                    fallbackBackground
+                    EmptyView()
                 }
             }
         } else {
-            fallbackBackground
+            EmptyView()
         }
     }
 
-    private var fallbackBackground: some View {
-        ZStack {
-            // TODO: Add "DefaultDevotionalImage" to Assets.xcassets for the devotional fallback artwork.
-            Image("DefaultDevotionalImage")
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+    private var baseFallbackImage: some View {
+        // TODO: Add "DefaultDevotionalImage" to Assets.xcassets for the devotional fallback artwork.
+        Image("DefaultDevotionalImage")
+            .resizable()
+            .scaledToFill()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
-            LinearGradient(
-                colors: [.black.opacity(0.05), .black.opacity(0.35)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+    private var gradientOverlay: some View {
+        LinearGradient(
+            colors: [
+                .black.opacity(0.05),
+                .black.opacity(0.35),
+                .black.opacity(0.5)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 }
 
