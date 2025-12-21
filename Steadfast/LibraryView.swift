@@ -20,6 +20,20 @@ struct LibraryView: View {
                             imageName: "BibleCard",
                             height: 160   // ← tweak this to make it taller/shorter
                         )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    // Saved devotionals entry
+                    NavigationLink {
+                        SavedDevotionalsView()
+                    } label: {
+                        LargeActionCard(
+                            title: "Saved Devotionals",
+                            subtitle: "Revisit your bookmarked devotionals",
+                            systemImage: "bookmark.fill"
+                        )
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 
@@ -49,6 +63,7 @@ struct LibraryView: View {
                     ForEach(vm.library.packs) { pack in
                         NavigationLink(value: pack) {
                             LibraryPackCard(pack: pack)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
@@ -96,6 +111,7 @@ struct LibraryPackCard: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         .shadow(color: Theme.line.opacity(0.15), radius: 6, x: 0, y: 3)
+        .contentShape(Rectangle())
     }
 }
 
@@ -124,5 +140,6 @@ struct LargeActionCard: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         .shadow(color: Theme.line.opacity(0.15), radius: 6, x: 0, y: 3)
+        .contentShape(Rectangle())
     }
 }
