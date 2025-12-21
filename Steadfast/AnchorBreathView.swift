@@ -337,6 +337,8 @@ struct AnchorBreathView: View {
         fadeMusicVolume(to: 0.0, over: 0.35)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             teardown()
+            AppReviewManager.shared.registerMeaningfulEvent()
+            AppReviewManager.shared.attemptPromptIfEligible()
             if let onCompleted = onCompleted {
                 onCompleted()        // <-- advance onboarding if provided
             } else {

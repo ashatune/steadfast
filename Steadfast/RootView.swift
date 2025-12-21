@@ -3,9 +3,6 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject var vm: AppViewModel
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    
-    // Review prompt state
-    @State private var showReviewPrompt = false
 
     var body: some View {
         Group {
@@ -54,12 +51,7 @@ struct RootView: View {
         }
         .onAppear {
             AppReviewManager.shared.registerLaunch()
-
-            if AppReviewManager.shared
-                .shouldShowPrompt(hasCompletedOnboarding: hasCompletedOnboarding) {
-                AppReviewManager.shared.markPromptShown()
-                showReviewPrompt = true
-            }
+            AppReviewManager.shared.attemptPromptIfEligible()
             // 👇 NEW: consume pending notification route
                 if let route = UserDefaults.standard.string(forKey: "steadfast.pendingRoute") {
                     UserDefaults.standard.removeObject(forKey: "steadfast.pendingRoute")
@@ -79,26 +71,6 @@ struct RootView: View {
                         break
                     }
                 }
-        }
-        .sheet(isPresented: $showReviewPrompt) {
-            ReviewPromptView(
-                onRateNow: {
-                    Task { @MainActor in
-                        // Or openAppStoreReviewPage() if you prefer jumping straight there
-                        AppReviewManager.shared.openAppStoreReviewPage()
-                    }
-                    showReviewPrompt = false
-                },
-                onLater: {
-                    // Don't markDidReview; we may ask again after 30+ days
-                    showReviewPrompt = false
-                },
-                onNoThanks: {
-                    // Permanently stop future prompts
-                    AppReviewManager.shared.markDidReview()
-                    showReviewPrompt = false
-                }
-            )
         }
         .tint(Theme.accent)
         .background(Theme.bg.ignoresSafeArea())
