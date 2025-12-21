@@ -65,6 +65,8 @@ struct DailyRhythmView: View {
             case .anchor:
                 // ignore here; handled in HomeView
                 break
+            case .devotional:
+                break
             }
 
             vm.pendingDeepLink = nil
