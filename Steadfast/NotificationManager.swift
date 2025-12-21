@@ -10,6 +10,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     
     // Add a new id
     private let anchorId = "steadfast.anchor.verse.11am"
+    private let morningDevotionalId = "steadfast.devotional.8am"
 
 
     private let ids = [
@@ -111,6 +112,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                        evening: (enabled: Bool, date: Date)) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ids)
+        center.removePendingNotificationRequests(withIdentifiers: [morningDevotionalId])
 
         guard masterEnabled else { return }
 
@@ -160,6 +162,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 evening.date,
                 route: "evening")
         }
+
+        // Morning devotional (fixed 8:00 AM local)
+        scheduleMorningDevotional()
 
         // Optional: log what's scheduled
         dumpPending()
@@ -229,6 +234,28 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // Optional: cancel just the anchor-verse notification
     func cancelAnchorVerse() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [anchorId])
+    }
+
+    // 8:00 AM Daily Devotional notification (fixed time, repeats daily)
+    func scheduleMorningDevotional() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [morningDevotionalId])
+
+        let masterEnabled = UserDefaults.standard.object(forKey: "notif_enabled") as? Bool ?? true
+        guard masterEnabled else { return }
+
+        let comps = DateComponents(hour: 8, minute: 0, second: 0)
+        let content = UNMutableNotificationContent()
+        content.title = "Your Daily Devotional is Ready"
+        content.body = "Tap to read today’s devotional."
+        content.sound = .default
+        content.userInfo = ["route": "devotional/today"]
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+        let req = UNNotificationRequest(identifier: morningDevotionalId, content: content, trigger: trigger)
+        center.add(req) { err in
+            if let err = err { print("🔔 devotional add err:", err) }
+        }
     }
 
     // Helper: next HH:mm (today if still ahead, otherwise tomorrow)
