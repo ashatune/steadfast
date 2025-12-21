@@ -22,6 +22,18 @@ struct LibraryView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    // Saved devotionals entry
+                    NavigationLink {
+                        SavedDevotionalsView()
+                    } label: {
+                        LargeActionCard(
+                            title: "Saved Devotionals",
+                            subtitle: "Revisit your bookmarked devotionals",
+                            systemImage: "bookmark.fill"
+                        )
+                    }
+                    .buttonStyle(.plain)
                     
                     // ⬇️ Add this header right above the packs
                     HStack(spacing: 8) {
