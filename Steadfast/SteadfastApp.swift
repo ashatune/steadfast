@@ -5,6 +5,7 @@ import WidgetKit   // optional, for reloads/logs
 struct SteadfastApp: App {
     // Existing app VM + scene phase
     @StateObject private var appVM = AppViewModel()
+    @StateObject private var savedDevotionals = SavedDevotionalsStore()
     @Environment(\.scenePhase) private var scenePhase
 
     // Splash
@@ -36,6 +37,7 @@ struct SteadfastApp: App {
             ZStack {
                 RootView()
                     .environmentObject(appVM)
+                    .environmentObject(savedDevotionals)
                     .environmentObject(flags) // 👈 expose flags to the tree
                     .overlay { if showSplash { SplashView().transition(.opacity) } }
 
