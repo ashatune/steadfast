@@ -40,7 +40,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         if let route = userInfo["route"] as? String {
             // save for RootView / AppViewModel to consume on next appear
-            UserDefaults.standard.set(route, forKey: "steadfast.pendingRoute")
+            UserDefaults.standard.set(route, forKey: DeepLinkRoute.pendingRouteDefaultsKey)
+            NotificationCenter.default.post(name: .steadfastPendingRoute, object: route)
+        } else if let routeURL = userInfo["route"] as? URL {
+            let routeString = routeURL.absoluteString
+            UserDefaults.standard.set(routeString, forKey: DeepLinkRoute.pendingRouteDefaultsKey)
+            NotificationCenter.default.post(name: .steadfastPendingRoute, object: routeURL)
         }
 
         completionHandler()
@@ -189,6 +194,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // Public API: schedule today's anchor verse for the next 11:00 AM if notifications are enabled
     func scheduleAnchorVerseAt11IfEnabled(title: String = "Anchor Verse",
                                           body: String,
+                                          deepLink: URL? = nil,
                                           sound: UNNotificationSound = .default)
     {
         // Honor master toggle
@@ -216,7 +222,10 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             content.title = title
             content.body = body
             content.sound = sound
-            content.userInfo = ["route": "anchor"]
+            let routeString = deepLink?.absoluteString
+            ?? DeepLinkRoute.anchorExerciseURL()?.absoluteString
+            ?? "anchor"
+            content.userInfo = ["route": routeString]
 
             // Single-shot (not repeating) so we can refresh content daily
             let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)

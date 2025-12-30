@@ -62,6 +62,7 @@ struct SteadfastApp: App {
                 TTSManager.shared.preparePreferredVoice(languages: ["en-US","en-GB"])
 
                 appVM.refreshToday()
+                appVM.consumePendingRouteFromDefaults()
             }
             // Fetch remote config on launch + evaluate
             .task { await remote.fetch(); evaluateGate() }
@@ -72,6 +73,7 @@ struct SteadfastApp: App {
                         await remote.fetch()
                         evaluateGate()
                         appVM.refreshToday()
+                        appVM.consumePendingRouteFromDefaults()
                     }
                 }
             }

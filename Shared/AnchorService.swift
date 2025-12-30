@@ -332,6 +332,10 @@ final class AnchorService {
         }
     }
 
+    func anchor(matching ref: String) -> Verse? {
+        anchors.first(where: { $0.ref.lowercased() == ref.lowercased() })
+    }
+
     func audioFileName(for ref: String) -> String? {
         anchors.first(where: { $0.ref == ref })?.audioFile
     }
