@@ -3,6 +3,30 @@ import SwiftUI
 struct VerseCard: View {
     let verse: Verse
     @ObservedObject private var audio = VerseAudioManager.shared
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var primaryText: Color {
+        colorScheme == .dark ? .white : Theme.ink
+    }
+
+    private var secondaryText: Color {
+        colorScheme == .dark ? .white.opacity(0.82) : Theme.inkSecondary
+    }
+
+    private var iconColor: Color {
+        colorScheme == .dark ? .white : Theme.ink
+    }
+
+    private var readabilityOverlay: some View {
+        LinearGradient(
+            colors: [
+                Color.black.opacity(colorScheme == .dark ? 0.35 : 0.08),
+                Color.black.opacity(0)
+            ],
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
 
     // If you didn’t add Verse.previewLine earlier, this local helper mirrors it.
     private var previewLine: String {
@@ -35,7 +59,7 @@ struct VerseCard: View {
                 } label: {
                     Image(systemName: audio.isPlaying(verse.id) ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(iconColor)
                         .shadow(radius: 3)
                         .accessibilityLabel(audio.isPlaying(verse.id) ? "Pause audio" : "Play audio")
                 }
@@ -44,26 +68,26 @@ struct VerseCard: View {
             } else {
                 Image(systemName: "book")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(iconColor.opacity(0.9))
                     .padding(.top, 2)
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(verse.ref)
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(primaryText)
 
                 // ✅ Subtitle now shows a single, meaningful preview (not a duplicate ref)
                 Text(previewLine)
                     .font(.subheadline)
-                    .foregroundStyle(Theme.ink) // or .white if dark card
+                    .foregroundStyle(secondaryText)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Inhale: \(verse.inhalePreview)")
                     Text("Exhale: \(verse.exhalePreview)")
                 }
                 .font(.subheadline)
-                .foregroundStyle(Theme.inkSecondary)   // or .white.opacity(0.85) on dark
+                .foregroundStyle(secondaryText)
                 .lineLimit(2)
 
             }
@@ -71,7 +95,14 @@ struct VerseCard: View {
             Spacer()
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Theme.surface)
+                .overlay(
+                    readabilityOverlay
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                )
+        )
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line))
         .onDisappear { VerseAudioManager.shared.stop(verseID: verse.id) }
     }
