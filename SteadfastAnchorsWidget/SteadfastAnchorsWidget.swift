@@ -178,13 +178,7 @@ struct HomeScreenAnchorView: View {
     final class AnchorWidgetBundleSentinel {}
 
     private var anchorDeepLink: URL? {
-        var comps = URLComponents()
-        comps.scheme = "steadfast"
-        comps.host = "anchor-of-day"
-        comps.queryItems = [
-            URLQueryItem(name: "id", value: entry.ref)
-        ]
-        return comps.url
+        DeepLinkRoute.anchorExerciseURL(anchorID: entry.ref)
     }
 
     var body: some View {

@@ -52,25 +52,7 @@ struct RootView: View {
         .onAppear {
             AppReviewManager.shared.registerLaunch()
             AppReviewManager.shared.attemptPromptIfEligible()
-            // 👇 NEW: consume pending notification route
-                if let route = UserDefaults.standard.string(forKey: "steadfast.pendingRoute") {
-                    UserDefaults.standard.removeObject(forKey: "steadfast.pendingRoute")
-
-                    switch route {
-                    case "morning":
-                        vm.pendingDeepLink = .morning
-                    case "midday":
-                        vm.pendingDeepLink = .midday
-                    case "evening":
-                        vm.pendingDeepLink = .evening
-                    case "anchor":
-                        vm.pendingDeepLink = .anchor
-                    case "devotional/today":
-                        vm.pendingDeepLink = .devotional
-                    default:
-                        break
-                    }
-                }
+            vm.consumePendingRouteFromDefaults()
         }
         .tint(Theme.accent)
         .background(Theme.bg.ignoresSafeArea())

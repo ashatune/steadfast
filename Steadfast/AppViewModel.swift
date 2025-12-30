@@ -42,7 +42,10 @@ final class AppViewModel: ObservableObject {
     @Published var showPaywall: Bool = false
     
     // 👇 Single source of truth for the app's anchor of the day
-    @Published var anchorOfDay: Verse? = nil
+    @Published var anchorOfDay: Verse? = nil {
+        didSet { deliverQueuedAnchorDeepLinkIfNeeded() }
+    }
+    private var anchorDeepLinkQueued = false
 
 
     // Profile
@@ -105,6 +108,14 @@ final class AppViewModel: ObservableObject {
         }
         TTSManager.shared.enabled = voiceGuidanceEnabled
 
+        NotificationCenter.default.addObserver(forName: .steadfastPendingRoute, object: nil, queue: .main) { [weak self] note in
+            if let route = note.object as? String {
+                self?.handleRouteToken(route)
+            } else if let url = note.object as? URL {
+                self?.handleDeepLink(url)
+            }
+        }
+
         // Finalize
         refreshToday()
     }
@@ -129,9 +140,11 @@ final class AppViewModel: ObservableObject {
 
         // ✅ Schedule 11:00am anchor-verse notification with the SAME verse
         let (title, body) = anchorBannerLine()
+        let anchorDeepLink = DeepLinkRoute.anchorExerciseURL(anchorID: anchor?.ref)
         NotificationManager.shared.scheduleAnchorVerseAt11IfEnabled(
             title: title,
-            body: body
+            body: body,
+            deepLink: anchorDeepLink
         )
 
         // ✅ Persist SAME verse for the widget + reload its timeline
@@ -139,21 +152,27 @@ final class AppViewModel: ObservableObject {
     }
 
     // MARK: - Deep link handling
+    func consumePendingRouteFromDefaults() {
+        let ud = UserDefaults.standard
+        guard let route = ud.string(forKey: DeepLinkRoute.pendingRouteDefaultsKey) else { return }
+        ud.removeObject(forKey: DeepLinkRoute.pendingRouteDefaultsKey)
+        handleRouteToken(route)
+    }
+
     func handleDeepLink(_ url: URL) {
-        guard url.scheme?.lowercased() == "steadfast" else { return }
+        guard DeepLinkRoute.isSteadfastURL(url) else { return }
 
         let path = url.path.lowercased()
         let host = url.host?.lowercased()
 
-        // Recognize anchor routes like steadfast://anchor-of-day or steadfast://open/anchor
-        if host == "anchor-of-day" || path.contains("/anchor-of-day") || path.contains("/anchor") {
-            let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            pendingAnchorID = comps?.queryItems?.first(where: { $0.name == "id" })?.value
-            pendingDeepLink = .anchor
+        // Recognize anchor routes like steadfast://anchor/exercise or legacy steadfast://anchor-of-day
+        if DeepLinkRoute.isAnchorExercise(url) {
+            let anchorID = DeepLinkRoute.anchorIdentifier(from: url)
+            triggerAnchorNavigation(anchorID: anchorID)
             return
         }
 
-        if host == "devotional" || path.contains("/devotional") {
+        if host == "devotional" || path.contains("/devotional") || path.contains("devotional/today") {
             pendingDeepLink = .devotional
             return
         }
@@ -170,6 +189,55 @@ final class AppViewModel: ObservableObject {
             pendingDeepLink = .evening
             return
         }
+    }
+
+    private func handleRouteToken(_ route: String) {
+        if let url = URL(string: route) {
+            handleDeepLink(url)
+            return
+        }
+
+        switch route {
+        case "morning":
+            pendingDeepLink = .morning
+        case "midday":
+            pendingDeepLink = .midday
+        case "evening":
+            pendingDeepLink = .evening
+        case "anchor":
+            triggerAnchorNavigation(anchorID: nil)
+        case "devotional", "devotional/today":
+            pendingDeepLink = .devotional
+        default:
+            break
+        }
+    }
+
+    private func triggerAnchorNavigation(anchorID: String?) {
+        pendingAnchorID = anchorID
+
+        if let anchorID, let resolved = AnchorService.shared.anchor(matching: anchorID) {
+            anchorOfDay = resolved
+        }
+
+        if anchorOfDay != nil {
+            anchorDeepLinkQueued = false
+            pendingDeepLink = .anchor
+            return
+        }
+
+        anchorDeepLinkQueued = true
+        refreshToday()
+    }
+
+    private func deliverQueuedAnchorDeepLinkIfNeeded() {
+        guard anchorDeepLinkQueued else { return }
+        if anchorOfDay != nil {
+            pendingDeepLink = .anchor
+        } else {
+            pendingDeepLink = nil
+        }
+        anchorDeepLinkQueued = false
     }
 
     /// Deterministically choose the anchor for a given date from prioritized packs.
