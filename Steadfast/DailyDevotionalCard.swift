@@ -40,9 +40,8 @@ struct DailyDevotionalCard: View {
     @ViewBuilder
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
-            header
-
             if isLoading {
+                header
                 VStack(alignment: .leading, spacing: 6) {
                     ProgressView()
                         .progressViewStyle(.circular)
@@ -56,6 +55,12 @@ struct DailyDevotionalCard: View {
                 Text(devotional.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
+
+                header
+
+                Text(devotional.title)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
 
                 Text(devotional.verseReference)
                     .font(.subheadline.weight(.semibold))
@@ -71,6 +76,7 @@ struct DailyDevotionalCard: View {
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 2)
             } else {
+                header
                 Text("No devotional available for today.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.9))
