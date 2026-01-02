@@ -338,7 +338,7 @@ struct AnchorBreathView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             teardown()
             AppReviewManager.shared.registerMeaningfulEvent()
-            AppReviewManager.shared.attemptPromptIfEligible()
+            AppReviewManager.shared.attemptPromptIfEligible(reason: "completed meditation")
             if let onCompleted = onCompleted {
                 onCompleted()        // <-- advance onboarding if provided
             } else {
