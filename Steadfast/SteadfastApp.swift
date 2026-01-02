@@ -34,7 +34,7 @@ struct SteadfastApp: App {
         ])
         _showSplash = State(initialValue: !UserDefaults.standard.bool(forKey: "hasShownSplash"))
 
-        print("🚀 SteadfastApp init (review/devotional logging build)")
+        print("🚀 SteadfastApp init reached")
         configureFirebaseIfNeeded()
     }
 

@@ -24,7 +24,7 @@ final class DailyDevotionalViewModel: ObservableObject {
 
     private func loadDevotional() {
         isLoading = true
-        print("DailyDevotionalViewModel: loadDevotional triggered")
+        print("📖 DevotionalVM load called")
         service.fetchDevotionalForToday { [weak self] devotional in
             guard let self else { return }
             Task { @MainActor in

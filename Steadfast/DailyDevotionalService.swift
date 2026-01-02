@@ -29,7 +29,7 @@ final class DailyDevotionalService {
         let todayString = dateKey
         let placeholder = DailyDevotional.placeholder(for: today)
 
-        print("📖 DailyDevotionalService start")
+        print("🔥 DevotionalService fetch start")
         print("DailyDevotionalService: fetchDevotionalForToday start (todayString=\(todayString), tz=\(calendar.timeZone.identifier), calendar=\(calendar.identifier), collection=\(collectionName))")
 
         #if canImport(FirebaseFirestore)
@@ -64,6 +64,7 @@ final class DailyDevotionalService {
 
         // Prefer server to avoid stale cache during debugging
         stringQuery.getDocuments(source: .server) { snapshot, error in
+            print("DailyDevotionalService: Firestore query completed (todayString=\(todayString))")
             if let error = error {
                 handleError(error)
                 return
