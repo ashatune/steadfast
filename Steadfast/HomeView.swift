@@ -138,6 +138,17 @@ struct HomeView: View {
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
 
+                // Daily Devotional header
+                HStack(spacing: 8) {
+                    Image(systemName: "sunrise.fill")
+                        .foregroundStyle(Theme.accent)
+                    Text("Daily Devotional")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                }
+                .padding(.horizontal, sidePadding)
+
                 devotionalSection
                     .padding(.horizontal, sidePadding)
 
@@ -150,6 +161,10 @@ struct HomeView: View {
         .background(Theme.bg.ignoresSafeArea())
         .task {
             devotionalVM.loadDevotionalIfNeeded()
+        }
+        .onAppear {
+            print("🏠 Home screen reached; triggering devotional fetch")
+            devotionalVM.refresh()
         }
         .onChange(of: devotionalVM.devotional?.id) { _ in
             guard devotionalDeepLinkPending else { return }
