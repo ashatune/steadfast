@@ -24,11 +24,14 @@ final class DailyDevotionalViewModel: ObservableObject {
 
     private func loadDevotional() {
         isLoading = true
+        print("📖 DevotionalVM load called")
         service.fetchDevotionalForToday { [weak self] devotional in
             guard let self else { return }
             Task { @MainActor in
                 self.devotional = devotional
                 self.isLoading = false
+                let source = devotional.id.hasPrefix("placeholder-") ? "placeholder" : "firestore devotional"
+                print("DailyDevotionalViewModel: loadDevotional complete -> \(source) (id=\(devotional.id))")
             }
         }
     }

@@ -8,12 +8,13 @@ struct DailyDevotionalCard: View {
     private let cornerRadius: CGFloat = 16
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             baseFallbackImage
             remoteImageOverlay
             gradientOverlay
             content
                 .padding(16)
+            debugLabel
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
@@ -110,7 +111,6 @@ struct DailyDevotionalCard: View {
     }
 
     private var baseFallbackImage: some View {
-        // TODO: Add "DefaultDevotionalImage" to Assets.xcassets for the devotional fallback artwork.
         Image("DefaultDevotionalImage")
             .resizable()
             .scaledToFill()
@@ -128,6 +128,27 @@ struct DailyDevotionalCard: View {
             startPoint: .top,
             endPoint: .bottom
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var debugLabel: some View {
+        #if DEBUG
+        if let devotional {
+            VStack(alignment: .leading, spacing: 2) {
+                let source = devotional.id.hasPrefix("placeholder-") ? "placeholder" : "firestore"
+                Text("source: \(source)")
+                Text("id: \(devotional.id)")
+                Text("date: \(devotional.date.formatted(date: .abbreviated, time: .omitted))")
+            }
+            .font(.caption2)
+            .foregroundStyle(.white.opacity(0.8))
+            .padding(6)
+            .background(.black.opacity(0.35))
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .padding(8)
+        }
+        #endif
     }
 }
 
