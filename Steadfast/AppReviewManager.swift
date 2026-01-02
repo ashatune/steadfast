@@ -39,20 +39,23 @@ final class AppReviewManager {
         defaults.set(newCount, forKey: eventsKey)
     }
 
-    func attemptPromptIfEligible() {
+    func attemptPromptIfEligible(reason: String, force: Bool = false) {
         let hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
         Task { @MainActor in
-            guard shouldPrompt(hasCompletedOnboarding: hasCompletedOnboarding) else { return }
-            requestInAppReviewIfAvailable()
+            guard shouldPrompt(hasCompletedOnboarding: hasCompletedOnboarding, force: force) else {
+                log("skipping requestReview due to gating (reason: \(reason))")
+                return
+            }
+            requestInAppReviewIfAvailable(reason: reason)
         }
     }
 
     // MARK: - Decision logic
 
     /// Returns true if we *should* show our custom review prompt right now.
-    private func shouldPrompt(hasCompletedOnboarding: Bool) -> Bool {
+    private func shouldPrompt(hasCompletedOnboarding: Bool, force: Bool) -> Bool {
         #if DEBUG
-        if debugAlwaysPrompt { return true }
+        if force || debugAlwaysPrompt { return true }
         #endif
         // Don’t ask people who haven't finished onboarding
         guard hasCompletedOnboarding else { return false }
@@ -121,13 +124,19 @@ final class AppReviewManager {
 
     /// If you ever want the native in-app popup instead.
     @MainActor
-    func requestInAppReviewIfAvailable() {
+    func requestInAppReviewIfAvailable(reason: String) {
         guard let scene = UIApplication.shared.connectedScenes
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene else {
+            log("could not find foreground UIWindowScene for requestReview (reason: \(reason))")
             return
         }
 
+        log("attempted requestReview (reason: \(reason))")
         SKStoreReviewController.requestReview(in: scene)
         markPromptShown()
+    }
+
+    private func log(_ message: String) {
+        print("ReviewPromptManager: \(message)")
     }
 }

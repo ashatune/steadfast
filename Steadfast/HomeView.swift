@@ -151,6 +151,10 @@ struct HomeView: View {
         .task {
             devotionalVM.loadDevotionalIfNeeded()
         }
+        .onAppear {
+            print("🏠 Home screen reached; triggering devotional fetch")
+            devotionalVM.refresh()
+        }
         .onChange(of: devotionalVM.devotional?.id) { _ in
             guard devotionalDeepLinkPending else { return }
             if devotionalVM.devotional != nil {

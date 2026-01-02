@@ -143,24 +143,41 @@ struct SettingsView: View {
                                 .foregroundStyle(Theme.inkSecondary)
                         }
 
-                        Text("Built with care by Mustard Seed Labs.")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.inkSecondary)
+                    Text("Built with care by Mustard Seed Labs.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.inkSecondary)
 
-                        // Opens your contact page
-                        Link(destination: URL(string: "https://www.mustardseedlabs.io/contact")!) {
-                            Label("Contact Mustard Seed Labs", systemImage: "paperplane.fill")
-                        }
+                    // Opens your contact page
+                    Link(destination: URL(string: "https://www.mustardseedlabs.io/contact")!) {
+                        Label("Contact Mustard Seed Labs", systemImage: "paperplane.fill")
                     }
-                } header: {
-                    Text("About & Contact")
                 }
-
+            } header: {
+                Text("About & Contact")
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .tint(Theme.accent)
-            .foregroundStyle(Theme.ink)
+
+#if DEBUG
+                Section {
+                    Button {
+                        AppReviewManager.shared.attemptPromptIfEligible(
+                            reason: "debug settings force prompt",
+                            force: true
+                        )
+                    } label: {
+                        Label("Force review prompt (DEBUG)", systemImage: "star.square.on.square.fill")
+                    }
+
+                    Text("DEBUG: Immediately attempts the in-app review prompt to verify TestFlight behavior.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.inkSecondary)
+                }
+#endif
+
+        }
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(Theme.accent)
+        .foregroundStyle(Theme.ink)
             .background(Theme.bg.ignoresSafeArea())
             .onAppear { refreshAuth() }
 
