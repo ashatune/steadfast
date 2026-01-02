@@ -1,5 +1,8 @@
 import SwiftUI
 import WidgetKit   // optional, for reloads/logs
+#if canImport(FirebaseCore)
+import FirebaseCore
+#endif
 
 @main
 struct SteadfastApp: App {
@@ -30,6 +33,8 @@ struct SteadfastApp: App {
             "ttsGuidanceEnabled": false
         ])
         _showSplash = State(initialValue: !UserDefaults.standard.bool(forKey: "hasShownSplash"))
+
+        configureFirebaseIfNeeded()
     }
 
     var body: some Scene {
@@ -95,5 +100,16 @@ struct SteadfastApp: App {
         let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
         storeUrl = c.storeUrl
         showBlock = isOutdated(current, comparedTo: c.minVersion)
+    }
+
+    private func configureFirebaseIfNeeded() {
+        #if canImport(FirebaseCore)
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            print("Firebase configured at app launch")
+        } else {
+            print("Firebase already configured")
+        }
+        #endif
     }
 }

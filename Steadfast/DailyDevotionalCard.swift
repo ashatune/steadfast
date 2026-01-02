@@ -8,7 +8,7 @@ struct DailyDevotionalCard: View {
     private let cornerRadius: CGFloat = 16
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             baseFallbackImage
             remoteImageOverlay
             gradientOverlay
@@ -110,7 +110,6 @@ struct DailyDevotionalCard: View {
     }
 
     private var baseFallbackImage: some View {
-        // TODO: Add "DefaultDevotionalImage" to Assets.xcassets for the devotional fallback artwork.
         Image("DefaultDevotionalImage")
             .resizable()
             .scaledToFill()
@@ -128,6 +127,7 @@ struct DailyDevotionalCard: View {
             startPoint: .top,
             endPoint: .bottom
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
