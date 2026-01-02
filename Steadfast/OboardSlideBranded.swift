@@ -14,24 +14,24 @@ struct OnboardSlideBranded: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(maxWidth: 120, maxHeight: 120)
                     .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.4), radius: 12, x: 0, y: 6)
+                    .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 8)
                     .padding(.bottom, 4)
 
                 // Title
                 Text(title)
                     .font(.title2)
                     .bold()
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.ink)
                     .multilineTextAlignment(.center)
 
                 // Subtitle
                 Text(subtitle)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
+                    .foregroundColor(Theme.inkSecondary)
+                    .padding(.horizontal, 14)
             }
             .frame(maxWidth: 320)
-            .padding()
+            .padding(.vertical, 6)
         }
         .transition(.opacity.combined(with: .scale))
     }
