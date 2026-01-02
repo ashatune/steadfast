@@ -29,6 +29,8 @@ final class DailyDevotionalService {
         let todayString = dateKey
         let placeholder = DailyDevotional.placeholder(for: today)
 
+        print("DailyDevotionalService: fetchDevotionalForToday called for \(today) (todayString=\(todayString)) in collection \(collectionName)")
+
         #if canImport(FirebaseFirestore)
         let db = Firestore.firestore()
         let collection = db.collection(collectionName)
@@ -44,11 +46,13 @@ final class DailyDevotionalService {
             .order(by: "date", descending: true)
             .limit(to: 1)
 
-        func handleSnapshot(_ snapshot: QuerySnapshot?, fallback: () -> Void) {
+        func handleSnapshot(_ snapshot: QuerySnapshot?, source: String, fallback: () -> Void) {
+            print("DailyDevotionalService: \(source) query returned \(snapshot?.documents.count ?? 0) docs")
             guard
                 let document = snapshot?.documents.first,
                 let mapped = self.map(document: document, fallbackDate: today)
             else {
+                print("DailyDevotionalService: no devotional found on or before today; returning placeholder")
                 fallback()
                 return
             }
@@ -57,15 +61,16 @@ final class DailyDevotionalService {
 
         stringQuery.getDocuments { snapshot, error in
             if let error = error {
-                print("DailyDevotionalService string query error: \(error)")
+                print("DailyDevotionalService string query error: \(error.localizedDescription)")
                 // Fallback for Timestamp-backed `date`
                 timestampQuery.getDocuments { tsSnapshot, tsError in
                     if let tsError = tsError {
-                        print("DailyDevotionalService timestamp query error: \(tsError)")
+                        print("DailyDevotionalService timestamp query error: \(tsError.localizedDescription)")
                         completion(placeholder)
                         return
                     }
-                    handleSnapshot(tsSnapshot) {
+                    print("DailyDevotionalService: timestamp query returned \(tsSnapshot?.documents.count ?? 0) docs (error path)")
+                    handleSnapshot(tsSnapshot, source: "timestamp (error path)") {
                         completion(placeholder)
                     }
                 }
@@ -76,22 +81,24 @@ final class DailyDevotionalService {
             if snapshot?.documents.isEmpty ?? true {
                 timestampQuery.getDocuments { tsSnapshot, tsError in
                     if let tsError = tsError {
-                        print("DailyDevotionalService timestamp query error: \(tsError)")
+                        print("DailyDevotionalService timestamp query error: \(tsError.localizedDescription)")
                         completion(placeholder)
                         return
                     }
-                    handleSnapshot(tsSnapshot) {
+                    print("DailyDevotionalService: timestamp query returned \(tsSnapshot?.documents.count ?? 0) docs (string empty path)")
+                    handleSnapshot(tsSnapshot, source: "timestamp (string empty path)") {
                         completion(placeholder)
                     }
                 }
                 return
             }
 
-            handleSnapshot(snapshot) {
+            handleSnapshot(snapshot, source: "string") {
                 completion(placeholder)
             }
         }
         #else
+        print("DailyDevotionalService: FirebaseFirestore not available; returning placeholder")
         completion(placeholder)
         #endif
     }
