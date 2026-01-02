@@ -143,7 +143,7 @@ struct HomeView: View {
                     Image(systemName: "sunrise.fill")
                         .foregroundStyle(Theme.accent)
                     Text("Daily Devotional")
-                        .font(.headline.weight(.semibold))
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(Theme.ink)
                     Spacer()
                 }
