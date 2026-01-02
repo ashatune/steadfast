@@ -29,7 +29,7 @@ final class DailyDevotionalService {
         let todayString = dateKey
         let placeholder = DailyDevotional.placeholder(for: today)
 
-        print("DailyDevotionalService: fetchDevotionalForToday called for \(today) (todayString=\(todayString)) in collection \(collectionName)")
+        print("DailyDevotionalService: fetchDevotionalForToday start (todayString=\(todayString), tz=\(calendar.timeZone.identifier), calendar=\(calendar.identifier), collection=\(collectionName))")
 
         #if canImport(FirebaseFirestore)
         let db = Firestore.firestore()
@@ -41,61 +41,33 @@ final class DailyDevotionalService {
             .order(by: "date", descending: true)
             .limit(to: 1)
 
-        let timestampQuery = collection
-            .whereField("date", isLessThanOrEqualTo: Timestamp(date: today))
-            .order(by: "date", descending: true)
-            .limit(to: 1)
-
-        func handleSnapshot(_ snapshot: QuerySnapshot?, source: String, fallback: () -> Void) {
-            print("DailyDevotionalService: \(source) query returned \(snapshot?.documents.count ?? 0) docs")
+        func handleSnapshot(_ snapshot: QuerySnapshot?, source: String) {
+            let count = snapshot?.documents.count ?? 0
+            print("DailyDevotionalService: \(source) query returned \(count) docs")
             guard
                 let document = snapshot?.documents.first,
                 let mapped = self.map(document: document, fallbackDate: today)
             else {
-                print("DailyDevotionalService: no devotional found on or before today; returning placeholder")
-                fallback()
+                print("DailyDevotionalService: no devotional found on or before today; using placeholder")
+                completion(placeholder)
                 return
             }
+            print("DailyDevotionalService: using Firestore devotional id=\(mapped.id) date=\(mapped.date)")
             completion(mapped)
         }
 
-        stringQuery.getDocuments { snapshot, error in
+        let handleError: (Error) -> Void = { error in
+            print("DailyDevotionalService: Firestore query error: \(error) | \(error.localizedDescription)")
+            completion(placeholder)
+        }
+
+        // Prefer server to avoid stale cache during debugging
+        stringQuery.getDocuments(source: .server) { snapshot, error in
             if let error = error {
-                print("DailyDevotionalService string query error: \(error.localizedDescription)")
-                // Fallback for Timestamp-backed `date`
-                timestampQuery.getDocuments { tsSnapshot, tsError in
-                    if let tsError = tsError {
-                        print("DailyDevotionalService timestamp query error: \(tsError.localizedDescription)")
-                        completion(placeholder)
-                        return
-                    }
-                    print("DailyDevotionalService: timestamp query returned \(tsSnapshot?.documents.count ?? 0) docs (error path)")
-                    handleSnapshot(tsSnapshot, source: "timestamp (error path)") {
-                        completion(placeholder)
-                    }
-                }
+                handleError(error)
                 return
             }
-
-            // If no doc matched string query, try timestamp query
-            if snapshot?.documents.isEmpty ?? true {
-                timestampQuery.getDocuments { tsSnapshot, tsError in
-                    if let tsError = tsError {
-                        print("DailyDevotionalService timestamp query error: \(tsError.localizedDescription)")
-                        completion(placeholder)
-                        return
-                    }
-                    print("DailyDevotionalService: timestamp query returned \(tsSnapshot?.documents.count ?? 0) docs (string empty path)")
-                    handleSnapshot(tsSnapshot, source: "timestamp (string empty path)") {
-                        completion(placeholder)
-                    }
-                }
-                return
-            }
-
-            handleSnapshot(snapshot, source: "string") {
-                completion(placeholder)
-            }
+            handleSnapshot(snapshot, source: "string (server)")
         }
         #else
         print("DailyDevotionalService: FirebaseFirestore not available; returning placeholder")
