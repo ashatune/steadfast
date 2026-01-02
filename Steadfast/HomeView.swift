@@ -152,6 +152,7 @@ struct HomeView: View {
             devotionalVM.loadDevotionalIfNeeded()
         }
         .onAppear {
+            print("🏠 HomeView appeared -> triggering devotional fetch")
             devotionalVM.refresh()
         }
         .onChange(of: devotionalVM.devotional?.id) { _ in

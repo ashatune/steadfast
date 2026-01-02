@@ -29,6 +29,7 @@ final class DailyDevotionalService {
         let todayString = dateKey
         let placeholder = DailyDevotional.placeholder(for: today)
 
+        print("📖 DailyDevotionalService start")
         print("DailyDevotionalService: fetchDevotionalForToday start (todayString=\(todayString), tz=\(calendar.timeZone.identifier), calendar=\(calendar.identifier), collection=\(collectionName))")
 
         #if canImport(FirebaseFirestore)
