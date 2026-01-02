@@ -18,20 +18,20 @@ struct WelcomeUserSlide: View {
                     .scaledToFit()
                     .frame(width: 120, height: 120)
                     .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 5)
+                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 7)
 
                 // Greeting
                 Text("Welcome to Steadfast, \(firstName)!")
                     .font(.title2).bold()
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.ink)
                     .padding(.horizontal, 16)
 
                 Text("We’re so glad you’re here. This is the beginning of your mindfulness journey, with God at the center.")
                     .multilineTextAlignment(.center)
                     .font(.body)
-                    .foregroundColor(.white.opacity(0.9))
-                    .padding(.horizontal, 20)
+                    .foregroundColor(Theme.inkSecondary)
+                    .padding(.horizontal, 22)
             }
             .padding(.vertical, 8)
         }
