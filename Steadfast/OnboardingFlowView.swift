@@ -87,6 +87,7 @@ struct OnboardingFlowView: View {
     @AppStorage("displayName") private var displayName: String = ""
     @AppStorage("hasAcceptedTerms") private var hasAcceptedTerms = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("didCompleteOnboardingMeditation") private var didCompleteOnboardingMeditation = false
 
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
@@ -191,6 +192,10 @@ struct OnboardingFlowView: View {
                     holdSecs: 4,
                     exhaleSecs: 6,
                     showBibleLink: false,
+                    onCompleted: {
+                        didCompleteOnboardingMeditation = true
+                        viewModel.showBeginMeditation = false
+                    },
                     showInlineMuteButton: true,
                     startMuted: false
                 )
@@ -226,6 +231,16 @@ struct OnboardingFlowView: View {
 
     private func goForward() {
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
+        if viewModel.page == .beginMeditation {
+            if didCompleteOnboardingMeditation {
+                if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
+                    viewModel.page = next
+                }
+            } else {
+                viewModel.showBeginMeditation = true
+            }
+            return
+        }
         if let next = Page(rawValue: viewModel.page.rawValue + 1), viewModel.page != .done { viewModel.page = next }
     }
 }
