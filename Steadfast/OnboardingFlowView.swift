@@ -9,7 +9,7 @@ import UserNotifications
 
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
-        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, quickPractice, done
+        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, beginMeditation, quickPractice, done
     }
 
     @StateObject private var viewModel = OnboardingViewModel()
@@ -116,6 +116,7 @@ struct OnboardingFlowView: View {
         case .welcomeUser:     return "Continue"
         case .morningReminder: return viewModel.enableMorningReminder ? "Enable & Continue" : "Skip"
         case .widgetReminder:  return "Continue"
+        case .beginMeditation: return "Continue"
         case .quickPractice:   return "Skip"
         case .done:            return "Enter Steadfast"
         }
@@ -138,10 +139,9 @@ struct OnboardingFlowView: View {
     }
 }
 
-// MARK: - Widget Reminder Slide
-private struct WidgetReminderSlide: View {
-    let imageName: String
-    var onSkip: () -> Void
+// MARK: - Begin Meditation Slide
+private struct BeginMeditationSlide: View {
+    var onBegin: () -> Void
 
     var body: some View {
         GlassCard {

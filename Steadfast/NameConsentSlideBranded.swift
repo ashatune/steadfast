@@ -42,6 +42,7 @@ struct NameConsentSlideBranded: View {
                         Text("View Terms & Conditions")
                             .underline().font(.footnote).foregroundColor(Theme.accent)
                     }
+                    .tint(Theme.accent)
                     .sheet(isPresented: $showTerms) { TermsSheetBranded() }
 
                     Toggle(isOn: $hasAcceptedTerms) {
