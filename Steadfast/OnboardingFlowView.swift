@@ -398,8 +398,3 @@ final class OnboardingViewModel: ObservableObject {
         }
     }
 }
-
-
-private extension String {
-    func trimmed() -> String { trimmingCharacters(in: .whitespacesAndNewlines) }
-}
