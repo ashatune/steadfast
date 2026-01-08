@@ -26,6 +26,9 @@ struct NameConsentSlideBranded: View {
                     TextField("Your first name", text: $displayName)
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
+                        .onSubmit {
+                            displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
                         .padding(.vertical, 10).padding(.horizontal, 12)
                         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line.opacity(0.4)))

@@ -200,6 +200,10 @@ struct OnboardingFlowView: View {
         return false
     }
 
+    private var trimmedDisplayName: String {
+        displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func goBack() {
         if let prev = Page(rawValue: viewModel.page.rawValue - 1) { viewModel.page = prev }
     }
