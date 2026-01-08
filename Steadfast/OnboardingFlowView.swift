@@ -208,6 +208,7 @@ struct OnboardingFlowView: View {
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if let next = Page(rawValue: viewModel.page.rawValue + 1), viewModel.page != .done { viewModel.page = next }
     }
+}
 
 // MARK: - Begin Meditation Slide
 private struct BeginMeditationSlide: View {
