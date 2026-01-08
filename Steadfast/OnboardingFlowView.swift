@@ -7,21 +7,86 @@
 import SwiftUI
 import UserNotifications
 
+// MARK: - Widget Reminder Slide
+fileprivate struct WidgetReminderSlide: View {
+    let imageName: String
+    var onSkip: () -> Void
+
+    var body: some View {
+        GlassCard {
+            VStack(spacing: 16) {
+                Text("Add Steadfast to your Home Screen")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 10)
+
+                Text("Keep your daily anchor within sight.\nLong-press your Home Screen, tap the ➕ button, and search for “Steadfast”.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                Image(self.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 280)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 8)
+                    .padding(.vertical, 8)
+
+                Button {
+                    self.onSkip()
+                } label: {
+                    Label("Skip for now", systemImage: "arrow.right")
+                        .font(.callout.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .padding(.top, 8)
+            }
+            .padding(.vertical, 6)
+        }
+    }
+}
+
+// MARK: - Begin Meditation Slide
+fileprivate struct BeginMeditationSlide: View {
+    var onBegin: () -> Void
+
+    var body: some View {
+        GlassCard {
+            VStack(spacing: 16) {
+                Text("Begin Your First Meditation")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 10)
+
+                Text("Take a quiet moment to settle in. We’ll guide you with Scripture and breath.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                Button("Begin") {
+                    onBegin()
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.top, 6)
+            }
+            .padding(.vertical, 6)
+        }
+    }
+}
+
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
-        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, quickPractice, done
+        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, beginMeditation, quickPractice, done
     }
 
-    @State private var page: Page = .intro1
+    @StateObject private var viewModel = OnboardingViewModel()
     @AppStorage("displayName") private var displayName: String = ""
     @AppStorage("hasAcceptedTerms") private var hasAcceptedTerms = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-
-    // Morning reminder state
-    @State private var enableMorningReminder: Bool = false
-    @State private var morningReminderTime: Date = Calendar.current.date(
-        bySettingHour: 8, minute: 0, second: 0, of: Date()
-    ) ?? Date()
 
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
@@ -32,203 +97,139 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         OnboardingBackground(imageName: "OnboardingBG", darken: 0.28) {
-            VStack(spacing: 14) {
-                Spacer(minLength: 0)
+            GeometryReader { proxy in
+                VStack(spacing: 18) {
+                    Spacer(minLength: 0)
 
-                TabView(selection: $page) {
-                    OnboardSlideBranded(
-                        title: "Welcome to Steadfast",
-                        subtitle: "A calm, Bible-centered companion.\nFind peace in God’s Word, anytime.",
-                        icon: "icon"
-                    ).tag(Page.intro1)
+                    TabView(selection: $viewModel.page) {
+                        OnboardSlideBranded(
+                            title: "Welcome to Steadfast",
+                            subtitle: "A calm, Bible-centered companion.\nFind peace in God’s Word, anytime.",
+                            icon: "icon"
+                        ).tag(Page.intro1)
 
-                    OnboardSlideBranded(
-                        title: "Meditations & Scripture",
-                        subtitle: "Explore short, guided practices with verses to steady heart and mind.",
-                        icon: "icon"
-                    ).tag(Page.intro2)
+                        OnboardSlideBranded(
+                            title: "Meditations & Scripture",
+                            subtitle: "Explore short, guided practices with verses to steady heart and mind.",
+                            icon: "icon"
+                        ).tag(Page.intro2)
 
-                    OnboardSlideBranded(
-                        title: "Breathing Exercises",
-                        subtitle: "Gentle breathing patterns with scripture to settle your nervous system and calm anxiety.",
-                        icon: "icon"
-                    ).tag(Page.intro3)
+                        OnboardSlideBranded(
+                            title: "Breathing Exercises",
+                            subtitle: "Gentle breathing patterns with scripture to settle your nervous system and calm anxiety.",
+                            icon: "icon"
+                        ).tag(Page.intro3)
 
-                    NameConsentSlideBranded(
-                        displayName: $displayName,
-                        hasAcceptedTerms: $hasAcceptedTerms
-                    ).tag(Page.nameConsent)
+                        NameConsentSlideBranded(
+                            displayName: $displayName,
+                            hasAcceptedTerms: $hasAcceptedTerms
+                        ).tag(Page.nameConsent)
 
-                    WelcomeUserSlide()
-                        .tag(Page.welcomeUser)
+                        WelcomeUserSlide()
+                            .tag(Page.welcomeUser)
 
-                    MorningReminderSlide(
-                        enable: $enableMorningReminder,
-                        time: $morningReminderTime
-                    )
-                    .tag(Page.morningReminder)
+                        MorningReminderSlide(
+                            enable: $viewModel.enableMorningReminder,
+                            time: $viewModel.morningReminderTime
+                        )
+                        .tag(Page.morningReminder)
 
-                    // 🆕 Widget reminder slide
-                    WidgetReminderSlide(
-                        imageName: "widget-preview", // 👈 put your image asset name here
-                        onSkip: { goForward() }
-                    )
-                    .tag(Page.widgetReminder)
+                        // 🆕 Widget reminder slide
+                        WidgetReminderSlide(
+                            imageName: "widget-preview", // 👈 put your image asset name here
+                            onSkip: { goForward() }
+                        )
+                        .tag(Page.widgetReminder)
 
-                    QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
-                        if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
-                            page = next
+                        BeginMeditationSlide {
+                            viewModel.showBeginMeditation = true
                         }
-                    })
-                    .tag(Page.quickPractice)
+                        .tag(Page.beginMeditation)
 
-                    DoneSlideBranded {
-                        hasCompletedOnboarding = true
-                    }
-                    .tag(Page.done)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .always))
-                .indexViewStyle(.page(backgroundDisplayMode: .interactive))
+                        QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
+                            if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
+                                viewModel.page = next
+                            }
+                        })
+                        .tag(Page.quickPractice)
 
-                if page != .done {
-                    HStack {
-                        if page != .intro1 {
-                            Button("Back") { goBack() }
-                                .buttonStyle(SubtleButtonStyle())
+                        DoneSlideBranded {
+                            hasCompletedOnboarding = true
                         }
-                        Spacer()
-                        Button(nextLabel) { goForward() }
-                            .buttonStyle(PrimaryButtonStyle())
-                            .disabled(nextDisabled)
-                            .opacity(nextDisabled ? 0.6 : 1)
+                        .tag(Page.done)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
+                    .tabViewStyle(.page(indexDisplayMode: .always))
+                    .indexViewStyle(.page(backgroundDisplayMode: .interactive))
+                    .frame(maxWidth: .infinity, maxHeight: proxy.size.height * 0.82)
+
+                    if viewModel.page != .done {
+                        HStack(spacing: 12) {
+                            if viewModel.page != .intro1 {
+                                Button("Back") { goBack() }
+                                    .buttonStyle(SubtleButtonStyle())
+                            }
+                            Spacer()
+                            Button(nextLabel) { goForward() }
+                                .buttonStyle(PrimaryButtonStyle())
+                                .disabled(nextDisabled)
+                                .opacity(nextDisabled ? 0.6 : 1)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 24)
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .foregroundStyle(.white)
-            .navigationBarHidden(true)
-            .onChange(of: page) { newPage in
-                if newPage == .morningReminder {
-                    let ud = UserDefaults.standard
-                    if let ts = ud.object(forKey: "notif_morning_time") as? TimeInterval {
-                        morningReminderTime = Date(timeIntervalSince1970: ts)
-                    }
-                    if let en = ud.object(forKey: "notif_morning_enabled") as? Bool {
-                        enableMorningReminder = en
-                    }
-                }
+        }
+        .navigationBarBackButtonHidden(true)
+        .fullScreenCover(isPresented: $viewModel.showBeginMeditation) {
+            NavigationStack {
+                AnchorBreathView(
+                    verse: defaultVerse,
+                    totalDuration: 60,
+                    inhaleSecs: 4,
+                    holdSecs: 4,
+                    exhaleSecs: 6,
+                    showBibleLink: false,
+                    showInlineMuteButton: true,
+                    startMuted: false
+                )
             }
         }
     }
 
     private var nextLabel: String {
-        switch page {
+        switch viewModel.page {
         case .intro1, .intro2: return "Next"
         case .intro3:          return "Continue"
         case .nameConsent:     return "Next"
         case .welcomeUser:     return "Continue"
-        case .morningReminder: return enableMorningReminder ? "Enable & Continue" : "Skip"
+        case .morningReminder: return viewModel.enableMorningReminder ? "Enable & Continue" : "Skip"
         case .widgetReminder:  return "Continue"
+        case .beginMeditation: return "Continue"
         case .quickPractice:   return "Skip"
         case .done:            return "Enter Steadfast"
         }
     }
 
     private var nextDisabled: Bool {
-        if page == .nameConsent {
-            return displayName.trimmed().isEmpty || !hasAcceptedTerms
+        if viewModel.page == .nameConsent {
+            return trimmedDisplayName.isEmpty || !hasAcceptedTerms
         }
         return false
     }
 
+    private var trimmedDisplayName: String {
+        displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func goBack() {
-        if let prev = Page(rawValue: page.rawValue - 1) { page = prev }
+        if let prev = Page(rawValue: viewModel.page.rawValue - 1) { viewModel.page = prev }
     }
 
     private func goForward() {
-        if page == .morningReminder { commitMorningReminder() }
-        if let next = Page(rawValue: page.rawValue + 1), page != .done { page = next }
-    }
-
-    private func commitMorningReminder() {
-        let ud = UserDefaults.standard
-        // In OnboardingFlowView.swift, inside commitMorningReminder()
-
-        if enableMorningReminder {
-            let ud = UserDefaults.standard
-            ud.set(true, forKey: "notif_enabled")
-            ud.set(true, forKey: "notif_morning_enabled")
-            ud.set(morningReminderTime.timeIntervalSince1970, forKey: "notif_morning_time")
-
-            // ✅ Seed midday/evening if not set yet
-            if ud.object(forKey: "notif_midday_time") == nil {
-                ud.set(AppViewModel.makeTime(13, 0).timeIntervalSince1970, forKey: "notif_midday_time")
-            }
-            if ud.object(forKey: "notif_evening_time") == nil {
-                ud.set(AppViewModel.makeTime(21, 0).timeIntervalSince1970, forKey: "notif_evening_time")
-            }
-            if ud.object(forKey: "notif_midday_enabled") == nil { ud.set(true, forKey: "notif_midday_enabled") }
-            if ud.object(forKey: "notif_evening_enabled") == nil { ud.set(true, forKey: "notif_evening_enabled") }
-
-            ud.synchronize()
-
-            UNUserNotificationCenter.current().getNotificationSettings { settings in
-                DispatchQueue.main.async {
-                    if settings.authorizationStatus == .notDetermined {
-                        NotificationManager.shared.requestAndScheduleDailyCheckins()
-                        NotificationManager.shared.scheduleDailyFromSettings()
-                    } else if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
-                        NotificationManager.shared.scheduleDailyFromSettings()
-                    } // else .denied → no-op or open settings
-                }
-            }
-        }
-
-    }
-}
-
-// MARK: - Widget Reminder Slide
-private struct WidgetReminderSlide: View {
-    let imageName: String
-    var onSkip: () -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
-
-            Text("Add Steadfast to your Home Screen")
-                .font(.title)
-                .bold()
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-
-            Text("Keep your daily anchor within sight.\nLong-press your Home Screen, tap the ➕ button, and search for “Steadfast”.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .padding(.horizontal)
-
-            Image(imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(radius: 8)
-                .padding(.vertical, 8)
-
-            Button {
-                onSkip()
-            } label: {
-                Label("Skip for now", systemImage: "arrow.right")
-                    .font(.callout.weight(.semibold))
-            }
-            .buttonStyle(.bordered)
-            .tint(.white.opacity(0.8))
-            .padding(.top, 12)
-
-            Spacer()
-        }
-        .padding(.horizontal)
+        if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
+        if let next = Page(rawValue: viewModel.page.rawValue + 1), viewModel.page != .done { viewModel.page = next }
     }
 }
 
@@ -236,62 +237,148 @@ private struct WidgetReminderSlide: View {
 struct MorningReminderSlide: View {
     @Binding var enable: Bool
     @Binding var time: Date
+    @State private var showTimePicker = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        GlassCard {
+            VStack(spacing: 18) {
+                Text("Set a Morning Reminder?")
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal)
 
-            Text("Set a Morning Reminder?")
-                .font(.title)
-                .bold()
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                Text("We can nudge you once each morning to pause for a verse and a calming breath.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
 
-            Text("We can nudge you once each morning to pause for a verse and a calming breath.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .padding(.horizontal)
+                VStack(spacing: 12) {
+                    Toggle(isOn: $enable) {
+                        Text("Enable Morning Reminder")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                    }
+                    .tint(Theme.accent)
+                    .padding(.top, 6)
 
-            VStack(spacing: 12) {
-                Toggle(isOn: $enable) {
-                    Text("Enable Morning Reminder")
-                        .font(.headline)
+                    Button {
+                        showTimePicker = true
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Morning time")
+                                    .font(.subheadline.weight(.semibold))
+                                Text(time.formatted(date: .omitted, time: .shortened))
+                                    .font(.body)
+                                    .foregroundStyle(enable ? .primary : .secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "clock")
+                                .foregroundColor(enable ? Theme.accent : Theme.line)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line.opacity(0.45)))
+                    }
+                    .disabled(!enable)
+                    .opacity(enable ? 1 : 0.55)
                 }
-                .toggleStyle(SwitchToggleStyle(tint: .white))
-                .padding(.top, 6)
 
-                HStack {
-                    Text("Time")
-                    Spacer()
-                    DatePicker("",
-                               selection: $time,
-                               displayedComponents: .hourAndMinute)
-                        .labelsHidden()
-                        .disabled(!enable)
-                        .opacity(enable ? 1 : 0.6)
-                }
-                .padding(.vertical, 6)
-                .padding(.horizontal, 12)
-                .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.12)))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.15), lineWidth: 1))
+                Text(enable ? "We’ll send one reminder at the time you choose."
+                            : "You can always turn this on later in Settings.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 6)
+                    .padding(.horizontal, 8)
             }
-            .padding(.horizontal)
-
-            Text(enable ? "We’ll send one reminder at the time you choose."
-                        : "You can always turn this on later in Settings.")
-                .font(.footnote)
-                .foregroundStyle(.white)
-                .padding(.top, 4)
-                .padding(.horizontal)
-
-            Spacer()
+            .padding(.vertical, 6)
         }
-        .padding(.horizontal)
+        .sheet(isPresented: $showTimePicker) {
+            reminderPickerSheet
+        }
         .accessibilityElement(children: .contain)
+    }
+
+    private var reminderPickerSheet: some View {
+        NavigationStack {
+            VStack(spacing: 12) {
+                DatePicker(
+                    "Morning Time",
+                    selection: $time,
+                    displayedComponents: .hourAndMinute
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .padding(.horizontal, 8)
+
+                Text("Pick a time that best fits your routine.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 12)
+            .presentationDetents([.fraction(0.35), .medium])
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { showTimePicker = false }
+                        .fontWeight(.semibold)
+                }
+            }
+        }
     }
 }
 
+// MARK: - Onboarding View Model
+final class OnboardingViewModel: ObservableObject {
+    @Published var page: OnboardingFlowView.Page = .intro1
+    @Published var enableMorningReminder: Bool
+    @Published var morningReminderTime: Date
+    @Published var showBeginMeditation = false
 
-private extension String {
-    func trimmed() -> String { trimmingCharacters(in: .whitespacesAndNewlines) }
+    init() {
+        let defaultTime = Calendar.current.date(
+            bySettingHour: 8, minute: 0, second: 0, of: Date()
+        ) ?? Date()
+
+        let ud = UserDefaults.standard
+        if let ts = ud.object(forKey: "notif_morning_time") as? TimeInterval {
+            morningReminderTime = Date(timeIntervalSince1970: ts)
+        } else {
+            morningReminderTime = defaultTime
+        }
+        enableMorningReminder = ud.object(forKey: "notif_morning_enabled") as? Bool ?? false
+    }
+
+    func commitMorningReminder() {
+        guard enableMorningReminder else { return }
+        let ud = UserDefaults.standard
+        ud.set(true, forKey: "notif_enabled")
+        ud.set(true, forKey: "notif_morning_enabled")
+        ud.set(morningReminderTime.timeIntervalSince1970, forKey: "notif_morning_time")
+
+        // ✅ Seed midday/evening if not set yet
+        if ud.object(forKey: "notif_midday_time") == nil {
+            ud.set(AppViewModel.makeTime(13, 0).timeIntervalSince1970, forKey: "notif_midday_time")
+        }
+        if ud.object(forKey: "notif_evening_time") == nil {
+            ud.set(AppViewModel.makeTime(21, 0).timeIntervalSince1970, forKey: "notif_evening_time")
+        }
+        if ud.object(forKey: "notif_midday_enabled") == nil { ud.set(true, forKey: "notif_midday_enabled") }
+        if ud.object(forKey: "notif_evening_enabled") == nil { ud.set(true, forKey: "notif_evening_enabled") }
+
+        ud.synchronize()
+
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                if settings.authorizationStatus == .notDetermined {
+                    NotificationManager.shared.requestAndScheduleDailyCheckins()
+                    NotificationManager.shared.scheduleDailyFromSettings()
+                } else if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
+                    NotificationManager.shared.scheduleDailyFromSettings()
+                } // else .denied → no-op or open settings
+            }
+        }
+    }
 }
