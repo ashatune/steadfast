@@ -7,6 +7,77 @@
 import SwiftUI
 import UserNotifications
 
+// MARK: - Widget Reminder Slide
+fileprivate struct WidgetReminderSlide: View {
+    let imageName: String
+    var onSkip: () -> Void
+
+    var body: some View {
+        GlassCard {
+            VStack(spacing: 16) {
+                Text("Add Steadfast to your Home Screen")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 10)
+
+                Text("Keep your daily anchor within sight.\nLong-press your Home Screen, tap the ➕ button, and search for “Steadfast”.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 280)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 8)
+                    .padding(.vertical, 8)
+
+                Button {
+                    onSkip()
+                } label: {
+                    Label("Skip for now", systemImage: "arrow.right")
+                        .font(.callout.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .padding(.top, 8)
+            }
+            .padding(.vertical, 6)
+        }
+    }
+}
+
+// MARK: - Begin Meditation Slide
+fileprivate struct BeginMeditationSlide: View {
+    var onBegin: () -> Void
+
+    var body: some View {
+        GlassCard {
+            VStack(spacing: 16) {
+                Text("Begin Your First Meditation")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 10)
+
+                Text("Take a quiet moment to settle in. We’ll guide you with Scripture and breath.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                Button("Begin") {
+                    onBegin()
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.top, 6)
+            }
+            .padding(.vertical, 6)
+        }
+    }
+}
+
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
         case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, beginMeditation, quickPractice, done
@@ -137,7 +208,6 @@ struct OnboardingFlowView: View {
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if let next = Page(rawValue: viewModel.page.rawValue + 1), viewModel.page != .done { viewModel.page = next }
     }
-}
 
 // MARK: - Begin Meditation Slide
 private struct BeginMeditationSlide: View {
