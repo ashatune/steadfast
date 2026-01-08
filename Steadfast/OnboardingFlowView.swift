@@ -196,6 +196,7 @@ struct OnboardingFlowView: View {
                 )
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 
     private var nextLabel: String {

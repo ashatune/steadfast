@@ -43,7 +43,7 @@ struct NameConsentSlideBranded: View {
                         showTerms = true
                     } label: {
                         Text("View Terms & Conditions")
-                            .underline().font(.footnote)
+                            .underline().font(.footnote).foregroundColor(Theme.accent)
                     }
                     .tint(Theme.accent)
                     .sheet(isPresented: $showTerms) { TermsSheetBranded() }
