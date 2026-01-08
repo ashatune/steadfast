@@ -19,10 +19,10 @@ struct DoneSlideBranded: View {
                     .padding(14)
                     .background(Theme.accent.opacity(0.08), in: Circle())
 
-                Text("You’re all set!").font(.title3).bold().foregroundColor(Theme.ink)
+                Text("You’re all set!").font(.title3).bold().foregroundStyle(.primary)
                 Text("Thanks for doing your first exercise.\nWelcome to Steadfast.")
                     .multilineTextAlignment(.center)
-                    .foregroundColor(Theme.inkSecondary)
+                    .foregroundStyle(.secondary)
 
                 Button {
                     onEnter()
