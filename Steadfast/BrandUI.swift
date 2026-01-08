@@ -42,13 +42,13 @@ struct GlassCard<Content: View>: View {
             .frame(maxWidth: maxWidth)
             .background(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(Color(.systemBackground))
+                    .fill(.white)
                     .overlay(
                         LinearGradient(
                             colors: [
-                                Theme.accent.opacity(0.14),
-                                Theme.accent2.opacity(0.08),
-                                Color(.secondarySystemBackground).opacity(0.4)
+                                Theme.accent.opacity(0.18),
+                                Theme.accent2.opacity(0.1),
+                                Color.white.opacity(0.25)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -58,7 +58,7 @@ struct GlassCard<Content: View>: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .stroke(Color(.separator).opacity(0.4), lineWidth: 1)
+                    .stroke(Theme.line.opacity(0.25), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: 12)
             .padding(.horizontal, 20)
