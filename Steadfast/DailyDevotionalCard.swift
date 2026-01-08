@@ -26,22 +26,10 @@ struct DailyDevotionalCard: View {
         .shadow(color: Theme.line.opacity(0.15), radius: 6, x: 0, y: 3)
     }
 
-    private var header: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "sunrise.fill")
-                .foregroundStyle(Theme.accent)
-            Text("Daily Devotional")
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(.white)
-            Spacer()
-        }
-    }
-
     @ViewBuilder
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
             if isLoading {
-                header
                 VStack(alignment: .leading, spacing: 6) {
                     ProgressView()
                         .progressViewStyle(.circular)
@@ -55,8 +43,6 @@ struct DailyDevotionalCard: View {
                 Text(devotional.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-
-                header
 
                 Text(devotional.title)
                     .font(.callout.weight(.semibold))
@@ -76,7 +62,6 @@ struct DailyDevotionalCard: View {
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 2)
             } else {
-                header
                 Text("No devotional available for today.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.9))
