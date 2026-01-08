@@ -64,22 +64,17 @@ struct OnboardingFlowView: View {
                         .tag(Page.morningReminder)
 
                         // 🆕 Widget reminder slide
-                    WidgetReminderSlide(
-                        imageName: "widget-preview", // 👈 put your image asset name here
-                        onSkip: { goForward() }
-                    )
-                    .tag(Page.widgetReminder)
+                        WidgetReminderSlide(
+                            imageName: "widget-preview", // 👈 put your image asset name here
+                            onSkip: { goForward() }
+                        )
+                        .tag(Page.widgetReminder)
 
-                    BeginMeditationSlide {
-                        viewModel.showBeginMeditation = true
-                    }
-                    .tag(Page.beginMeditation)
-
-                    QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
-                        if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
-                            viewModel.page = next
-                        }
-                    })
+                        QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
+                            if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
+                                viewModel.page = next
+                            }
+                        })
                         .tag(Page.quickPractice)
 
                         DoneSlideBranded {
@@ -111,20 +106,6 @@ struct OnboardingFlowView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .fullScreenCover(isPresented: $viewModel.showBeginMeditation) {
-            NavigationStack {
-                AnchorBreathView(
-                    verse: defaultVerse,
-                    totalDuration: 60,
-                    inhaleSecs: 4,
-                    holdSecs: 4,
-                    exhaleSecs: 6,
-                    showBibleLink: false,
-                    showInlineMuteButton: true,
-                    startMuted: false
-                )
-            }
-        }
     }
 
     private var nextLabel: String {
@@ -158,10 +139,9 @@ struct OnboardingFlowView: View {
     }
 }
 
-// MARK: - Widget Reminder Slide
-private struct WidgetReminderSlide: View {
-    let imageName: String
-    var onSkip: () -> Void
+// MARK: - Begin Meditation Slide
+private struct BeginMeditationSlide: View {
+    var onBegin: () -> Void
 
     var body: some View {
         GlassCard {
@@ -169,12 +149,12 @@ private struct WidgetReminderSlide: View {
                 Text("Add Steadfast to your Home Screen")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundColor(Theme.ink)
                     .padding(.horizontal, 10)
 
                 Text("Keep your daily anchor within sight.\nLong-press your Home Screen, tap the ➕ button, and search for “Steadfast”.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(Theme.inkSecondary)
                     .padding(.horizontal)
 
                 Image(imageName)
@@ -200,35 +180,6 @@ private struct WidgetReminderSlide: View {
     }
 }
 
-// MARK: - Begin Meditation Slide
-private struct BeginMeditationSlide: View {
-    var onBegin: () -> Void
-
-    var body: some View {
-        GlassCard {
-            VStack(spacing: 16) {
-                Text("Begin Your First Meditation")
-                    .font(.title3.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 10)
-
-                Text("Take a quiet moment to settle in. We’ll guide you with Scripture and breath.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-
-                Button("Begin") {
-                    onBegin()
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.top, 6)
-            }
-            .padding(.vertical, 6)
-        }
-    }
-}
-
 // MARK: - Morning Reminder Slide
 struct MorningReminderSlide: View {
     @Binding var enable: Bool
@@ -241,19 +192,19 @@ struct MorningReminderSlide: View {
                 Text("Set a Morning Reminder?")
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundColor(Theme.ink)
                     .padding(.horizontal)
 
                 Text("We can nudge you once each morning to pause for a verse and a calming breath.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(Theme.inkSecondary)
                     .padding(.horizontal, 12)
 
                 VStack(spacing: 12) {
                     Toggle(isOn: $enable) {
                         Text("Enable Morning Reminder")
                             .font(.headline)
-                            .foregroundStyle(.primary)
+                            .foregroundColor(Theme.ink)
                     }
                     .tint(Theme.accent)
                     .padding(.top, 6)
@@ -267,7 +218,7 @@ struct MorningReminderSlide: View {
                                     .font(.subheadline.weight(.semibold))
                                 Text(time.formatted(date: .omitted, time: .shortened))
                                     .font(.body)
-                                    .foregroundStyle(enable ? .primary : .secondary)
+                                    .foregroundColor(enable ? Theme.ink : Theme.inkSecondary)
                             }
                             Spacer()
                             Image(systemName: "clock")
@@ -286,7 +237,7 @@ struct MorningReminderSlide: View {
                 Text(enable ? "We’ll send one reminder at the time you choose."
                             : "You can always turn this on later in Settings.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(Theme.inkSecondary)
                     .padding(.top, 6)
                     .padding(.horizontal, 8)
             }
@@ -312,7 +263,7 @@ struct MorningReminderSlide: View {
 
                 Text("Pick a time that best fits your routine.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(Theme.inkSecondary)
             }
             .padding(.top, 12)
             .presentationDetents([.fraction(0.35), .medium])
@@ -331,7 +282,6 @@ final class OnboardingViewModel: ObservableObject {
     @Published var page: OnboardingFlowView.Page = .intro1
     @Published var enableMorningReminder: Bool
     @Published var morningReminderTime: Date
-    @Published var showBeginMeditation = false
 
     init() {
         let defaultTime = Calendar.current.date(

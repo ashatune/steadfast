@@ -33,7 +33,7 @@ struct QuickPracticeSlideBranded: View {
                         Text(prompts[promptIndex])
                             .font(.title3)
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(.primary)
+                            .foregroundColor(Theme.ink)
                             .padding(.horizontal, 20)
                             .transition(.opacity)
                             .animation(.easeInOut(duration: fade), value: showPrompt)
