@@ -33,7 +33,7 @@ struct QuickPracticeSlideBranded: View {
                         Text(prompts[promptIndex])
                             .font(.title3)
                             .multilineTextAlignment(.center)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.primary)
                             .padding(.horizontal, 20)
                             .transition(.opacity)
                             .animation(.easeInOut(duration: fade), value: showPrompt)
@@ -54,7 +54,7 @@ struct QuickPracticeSlideBranded: View {
                     )
                     .frame(height: 360)
                     .padding(12)
-                    .shadow(color: .black.opacity(0.25), radius: 16, x: 0, y: 8)
+                    .shadow(color: .black.opacity(0.16), radius: 16, x: 0, y: 8)
                 }
             }
             .onAppear { playPrompts() }
