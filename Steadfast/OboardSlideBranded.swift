@@ -21,13 +21,13 @@ struct OnboardSlideBranded: View {
                 Text(title)
                     .font(.title2)
                     .bold()
-                    .foregroundStyle(.primary)
+                    .foregroundColor(Theme.ink)
                     .multilineTextAlignment(.center)
 
                 // Subtitle
                 Text(subtitle)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(Theme.inkSecondary)
                     .padding(.horizontal, 14)
             }
             .frame(maxWidth: 320)
