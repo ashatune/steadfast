@@ -24,13 +24,13 @@ struct WelcomeUserSlide: View {
                 Text("Welcome to Steadfast, \(firstName)!")
                     .font(.title2).bold()
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundColor(Theme.ink)
                     .padding(.horizontal, 16)
 
                 Text("We’re so glad you’re here. This is the beginning of your mindfulness journey, with God at the center.")
                     .multilineTextAlignment(.center)
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(Theme.inkSecondary)
                     .padding(.horizontal, 22)
             }
             .padding(.vertical, 8)
