@@ -34,29 +34,34 @@ struct BrandBackground<Content: View>: View {
 // 2) Glass card
 struct GlassCard<Content: View>: View {
     @ViewBuilder var content: () -> Content
-    var maxWidth: CGFloat = 340   // smaller cards look better on iPhone
+    var maxWidth: CGFloat = 360   // smaller cards look better on iPhone
 
     var body: some View {
         VStack { content() }
-            .padding(20)
+            .padding(24)
             .frame(maxWidth: maxWidth)
             .background(
-                // 👇 Use a ZStack to keep blur AND dark tint together
-                ZStack {
-                    // Keep your frosted blur
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                    // Add a gentle dark overlay tint
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.black.opacity(0.25)) // tweak between 0.2–0.35
-                }
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Color(.systemBackground))
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Theme.accent.opacity(0.14),
+                                Theme.accent2.opacity(0.08),
+                                Color(.secondarySystemBackground).opacity(0.4)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.white.opacity(0.25))
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .stroke(Color(.separator).opacity(0.4), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 8)
-            .padding(.horizontal, 16)
+            .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: 12)
+            .padding(.horizontal, 20)
     }
 }
 
