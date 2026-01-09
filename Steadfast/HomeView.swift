@@ -25,7 +25,7 @@ struct HomeView: View {
 
     // Single, canonical anchor of the day used across the home screen
     private var anchorOfDay: Verse {
-        vm.anchorOfDay ?? AnchorService.shared.anchorsForToday(count: 1).first ?? Verse(ref: "Psalm 56:3")
+        vm.anchorOfDay ?? DailyVerseProvider.shared.verse(for: Date(), calendar: Calendar.current)
     }
 
     var body: some View {
