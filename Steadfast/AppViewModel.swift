@@ -127,7 +127,7 @@ final class AppViewModel: ObservableObject {
     }
 
     // MARK: Refresh & Selection
-    func refreshToday(date: Date = .now) {
+    func refreshToday(date: Date = Date()) {
         // Build today's candidate list (kept if you use elsewhere)
         var picks: [Verse] = []
         let packs = prioritizedPacks()
@@ -135,7 +135,7 @@ final class AppViewModel: ObservableObject {
         todayVerses = picks
 
         // ✅ Compute one anchor for the day (single source of truth)
-        let anchor = DailyVerseProvider.shared.verse(for: date, calendar: .current)
+        let anchor = DailyVerseProvider.shared.verse(for: date, calendar: Calendar.current)
         anchorOfDay = anchor
 
         // ✅ Schedule 11:00am anchor-verse notification with the SAME verse
@@ -240,7 +240,7 @@ final class AppViewModel: ObservableObject {
             let payload = AnchorOfDayStore.save(
                 verse: v,
                 anchorDate: Calendar.current.startOfDay(for: anchorDate),
-                lastUpdated: .now
+                lastUpdated: Date()
             )
             print("🟢 Saved anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         } else {
@@ -263,8 +263,8 @@ final class AppViewModel: ObservableObject {
         anchorOfDay = verse
         let payload = AnchorOfDayStore.save(
             verse: verse,
-            anchorDate: Calendar.current.startOfDay(for: .now),
-            lastUpdated: .now
+            anchorDate: Calendar.current.startOfDay(for: Date()),
+            lastUpdated: Date()
         )
         print("🟢 Manually set anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         WidgetCenter.shared.reloadTimelines(ofKind: "AnchorWidget")

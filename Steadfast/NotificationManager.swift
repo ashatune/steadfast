@@ -212,7 +212,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
             // Compute next 11:00 AM from "now" in the current calendar/timezone
             let next = self.nextOccurrence(hour: 11, minute: 0)
-            let anchorVerse = DailyVerseProvider.shared.verse(for: next, calendar: .current)
+            let anchorVerse = DailyVerseProvider.shared.verse(for: next, calendar: Calendar.current)
             let (title, body) = DailyVerseProvider.shared.anchorBannerLine(for: anchorVerse)
             var dc = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: next)
             dc.second = 0
