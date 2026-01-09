@@ -12,6 +12,12 @@ struct VersePackDetail: View {
                     .font(.headline)
                     .foregroundStyle(Theme.inkSecondary)
 
+                Text("Select a verse to begin a meditation exercise.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 ReflectionPulseView(
                     reflections: pack.reflections,
                     interval: 8.0,
