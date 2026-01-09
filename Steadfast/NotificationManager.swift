@@ -192,10 +192,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
     
     // Public API: schedule today's anchor verse for the next 11:00 AM if notifications are enabled
-    func scheduleAnchorVerseAt11IfEnabled(title: String = "Anchor Verse",
-                                          body: String,
-                                          deepLink: URL? = nil,
-                                          sound: UNNotificationSound = .default)
+    func scheduleAnchorVerseAt11IfEnabled(sound: UNNotificationSound = .default)
     {
         // Honor master toggle
         let masterEnabled = UserDefaults.standard.object(forKey: "notif_enabled") as? Bool ?? true
@@ -215,6 +212,8 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
             // Compute next 11:00 AM from "now" in the current calendar/timezone
             let next = self.nextOccurrence(hour: 11, minute: 0)
+            let anchorVerse = DailyVerseProvider.shared.verse(for: next, calendar: .current)
+            let (title, body) = DailyVerseProvider.shared.anchorBannerLine(for: anchorVerse)
             var dc = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: next)
             dc.second = 0
 
@@ -222,7 +221,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             content.title = title
             content.body = body
             content.sound = sound
-            let routeString = deepLink?.absoluteString
+            let routeString = DeepLinkRoute.anchorExerciseURL(anchorID: anchorVerse.ref)?.absoluteString
             ?? DeepLinkRoute.anchorExerciseURL()?.absoluteString
             ?? "anchor"
             content.userInfo = ["route": routeString]

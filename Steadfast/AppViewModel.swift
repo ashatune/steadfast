@@ -135,17 +135,11 @@ final class AppViewModel: ObservableObject {
         todayVerses = picks
 
         // ✅ Compute one anchor for the day (single source of truth)
-        let anchor = computeAnchorFor(date: date) ?? AnchorService.shared.anchorsForToday(count: 1).first
+        let anchor = DailyVerseProvider.shared.verse(for: date, calendar: .current)
         anchorOfDay = anchor
 
         // ✅ Schedule 11:00am anchor-verse notification with the SAME verse
-        let (title, body) = anchorBannerLine()
-        let anchorDeepLink = DeepLinkRoute.anchorExerciseURL(anchorID: anchor?.ref)
-        NotificationManager.shared.scheduleAnchorVerseAt11IfEnabled(
-            title: title,
-            body: body,
-            deepLink: anchorDeepLink
-        )
+        NotificationManager.shared.scheduleAnchorVerseAt11IfEnabled()
 
         // ✅ Persist SAME verse for the widget + reload its timeline
         syncAnchorWithWidget(anchor: anchor, anchorDate: date)
@@ -239,61 +233,6 @@ final class AppViewModel: ObservableObject {
         }
         anchorDeepLinkQueued = false
     }
-
-    /// Deterministically choose the anchor for a given date from prioritized packs.
-    /// Strategy: flatten all verses in prioritized packs, then pick by (daysSinceReference % count)
-    private func computeAnchorFor(date: Date) -> Verse? {
-        let packs = prioritizedPacks()
-        let all = packs.flatMap { $0.verses }
-        guard !all.isEmpty else { return nil }
-
-        let cal = Calendar.current
-        // Reference epoch: 2024-01-01 (any fixed date works)
-        let ref = DateComponents(calendar: cal, year: 2024, month: 1, day: 1).date ?? Date(timeIntervalSince1970: 0)
-        let days = cal.dateComponents([.day], from: cal.startOfDay(for: ref), to: cal.startOfDay(for: date)).day ?? 0
-        let idx = abs(days) % all.count
-        return all[idx]
-    }
-
-    /// Build the notification banner line from anchorOfDay (nil-safe)
-    private func anchorBannerLine() -> (String, String) {
-        let title = "Anchor Verse of the Day"
-        guard let v = anchorOfDay else {
-            return (title, "“Be still, and know that I am God.” — Psalm 46:10")
-        }
-
-        let text = v.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let ref  = v.ref.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Build nice inhale/exhale strings from cues or seconds
-        let biStr: String = {
-            if let cue = v.inhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
-            if let secs = v.breathIn { return "Inhale \(secs)s" }
-            return ""
-        }()
-
-        let boStr: String = {
-            if let cue = v.exhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
-            if let secs = v.breathOut { return "Exhale \(secs)s" }
-            return ""
-        }()
-
-        if !text.isEmpty {
-            return (title, "“\(text)”" + (ref.isEmpty ? "" : " — \(ref)"))
-        }
-
-        let parts = [biStr, boStr].filter { !$0.isEmpty }
-        if !parts.isEmpty {
-            let line = parts.joined(separator: " / ")
-            return (title, "“\(line)”" + (ref.isEmpty ? "" : " — \(ref)"))
-        }
-
-        if !ref.isEmpty {
-            return (title, ref)
-        }
-        return (title, "“Be still, and know that I am God.” — Psalm 46:10")
-    }
-
 
     /// Write shared values for the WIDGET using the SAME anchorOfDay and reload
     private func syncAnchorWithWidget(anchor: Verse?, anchorDate: Date) {
