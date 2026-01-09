@@ -3,7 +3,7 @@ import Combine
 
 final class AnchorViewModel: ObservableObject {
     @Published private(set) var todaysAnchor: Verse =
-        AnchorService.shared.anchorsForToday(count: 1).first ?? Verse(ref: "Psalm 56:3")
+        DailyVerseProvider.shared.verse(for: .now, calendar: .current)
 
     private var timer: AnyCancellable?
 
@@ -28,7 +28,6 @@ final class AnchorViewModel: ObservableObject {
     }
 
     func refreshNow() {
-        todaysAnchor = AnchorService.shared.anchorsForToday(count: 1).first
-            ?? Verse(ref: "Psalm 56:3")
+        todaysAnchor = DailyVerseProvider.shared.verse(for: .now, calendar: .current)
     }
 }
