@@ -1,3 +1,4 @@
+import OSLog
 import SwiftUI
 import WatchKit
 
@@ -26,6 +27,7 @@ struct BreathingSessionView: View {
     @State private var isFinished = false
     @State private var scale: CGFloat = 1.0
     @State private var verseIndex = 0
+    private let logger = Logger(subsystem: "ashatune.Steadfast.watchkitapp", category: "BreathingSession")
 
     var body: some View {
         GeometryReader { proxy in
@@ -135,8 +137,12 @@ struct BreathingSessionView: View {
                     }
                 }
             )
-            .onAppear { remaining = totalSeconds }
-            .onAppear { remaining = totalSeconds }
+            .task {
+                if remaining != totalSeconds {
+                    remaining = totalSeconds
+                }
+                logger.info("Breathing session view ready. Remaining: \(self.remaining)")
+            }
         }
     }
 
@@ -179,6 +185,7 @@ struct BreathingSessionView: View {
         isFinished = false
         isPaused = false
         isRunning = true
+        logger.info("Session started.")
         animateForCurrentPhase()
         advancePhaseLoop()
         startCountdown()
@@ -188,6 +195,7 @@ struct BreathingSessionView: View {
     private func resume() {
         isPaused = false
         isRunning = true
+        logger.info("Session resumed at \(self.remaining)s remaining.")
         animateForCurrentPhase()
         advancePhaseLoop()
         startCountdown()
@@ -199,12 +207,14 @@ struct BreathingSessionView: View {
         isFinished = false
         isRunning = false
         scale = 1.0
+        logger.info("Session restarted.")
         start()
     }
 
     private func finish() {
         isRunning = false
         isFinished = true
+        logger.info("Session finished.")
         //WKInterfaceDevice.current().play(.success)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation(.easeInOut) {
@@ -237,6 +247,7 @@ struct BreathingSessionView: View {
     private func pause() {
         guard isRunning, !isPaused else { return }
         isPaused = true
+        logger.info("Session paused at \(self.remaining)s remaining.")
         //WKInterfaceDevice.current().play(.stop)
     }
 
