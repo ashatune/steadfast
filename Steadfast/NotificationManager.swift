@@ -46,6 +46,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let routeString = routeURL.absoluteString
             UserDefaults.standard.set(routeString, forKey: DeepLinkRoute.pendingRouteDefaultsKey)
             NotificationCenter.default.post(name: .steadfastPendingRoute, object: routeURL)
+        } else if let deepLink = userInfo["deepLink"] as? String {
+            UserDefaults.standard.set(deepLink, forKey: DeepLinkRoute.pendingRouteDefaultsKey)
+            NotificationCenter.default.post(name: .steadfastPendingRoute, object: deepLink)
+        } else if let deepLinkRoute = userInfo["deepLinkRoute"] as? String {
+            UserDefaults.standard.set(deepLinkRoute, forKey: DeepLinkRoute.pendingRouteDefaultsKey)
+            NotificationCenter.default.post(name: .steadfastPendingRoute, object: deepLinkRoute)
         }
 
         completionHandler()
@@ -253,11 +259,20 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         guard masterEnabled else { return }
 
         let comps = DateComponents(hour: 8, minute: 0, second: 0)
+        let cached = DailyDevotionalNotificationProvider.shared.cachedContent(for: Date())
+        let routeString = DeepLinkRoute.dailyDevotionalURL()?.absoluteString
+        ?? DeepLinkRoute.dailyDevotionalRouteToken
+
         let content = UNMutableNotificationContent()
-        content.title = "Your Daily Devotional is Ready"
-        content.body = "Tap to read today’s devotional."
+        content.title = "Daily Devotional"
+        content.subtitle = cached.title
+        content.body = cached.preview
         content.sound = .default
-        content.userInfo = ["route": "devotional/today"]
+        content.userInfo = [
+            "route": routeString,
+            "deepLink": routeString,
+            "deepLinkRoute": "dailyDevotional"
+        ]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
         let req = UNNotificationRequest(identifier: morningDevotionalId, content: content, trigger: trigger)
