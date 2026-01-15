@@ -11,6 +11,8 @@
 		246995582EA853CB0098BB6A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246995572EA853CB0098BB6A /* WidgetKit.framework */; };
 		2469955A2EA853CB0098BB6A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246995592EA853CB0098BB6A /* SwiftUI.framework */; };
 		246995692EA853CC0098BB6A /* SteadfastAnchorsWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 246995552EA853CB0098BB6A /* SteadfastAnchorsWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		246BB0A62FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
+		246BB0A72FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
 		246995722EA854FD0098BB6A /* VerseShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246995712EA854FA0098BB6A /* VerseShared.swift */; };
 		246995732EA855110098BB6A /* VerseShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246995712EA854FA0098BB6A /* VerseShared.swift */; };
 		246995742EA855170098BB6A /* AnchorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246995402EA839D10098BB6A /* AnchorService.swift */; };
@@ -91,6 +93,7 @@
 
 /* Begin PBXFileReference section */
 		246995402EA839D10098BB6A /* AnchorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorService.swift; sourceTree = "<group>"; };
+		246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRoute.swift; sourceTree = "<group>"; };
 		246995552EA853CB0098BB6A /* SteadfastAnchorsWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SteadfastAnchorsWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		246995572EA853CB0098BB6A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		246995592EA853CB0098BB6A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -253,6 +256,7 @@
 			isa = PBXGroup;
 			children = (
 				246995712EA854FA0098BB6A /* VerseShared.swift */,
+				246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */,
 				246995402EA839D10098BB6A /* AnchorService.swift */,
 			);
 			path = Shared;
@@ -582,6 +586,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				246995742EA855170098BB6A /* AnchorService.swift in Sources */,
+				246BB0A72FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */,
 				246995732EA855110098BB6A /* VerseShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -612,6 +617,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				246995422EA839D50098BB6A /* AnchorService.swift in Sources */,
+				246BB0A62FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */,
 				246995722EA854FD0098BB6A /* VerseShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
