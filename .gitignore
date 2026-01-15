@@ -1,0 +1,7 @@
+# Xcode user-specific files (do not commit)
+xcuserdata/
+*.xcuserdatad/
+
+# Xcode workspace user state
+*.xccheckout
+*.xcscmblueprint
