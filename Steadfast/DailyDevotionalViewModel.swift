@@ -30,6 +30,8 @@ final class DailyDevotionalViewModel: ObservableObject {
             Task { @MainActor in
                 self.devotional = devotional
                 self.isLoading = false
+                DailyDevotionalNotificationProvider.shared.cache(devotional: devotional)
+                NotificationManager.shared.scheduleMorningDevotional()
                 let source = devotional.id.hasPrefix("placeholder-") ? "placeholder" : "firestore devotional"
                 print("DailyDevotionalViewModel: loadDevotional complete -> \(source) (id=\(devotional.id))")
             }
