@@ -3,6 +3,15 @@ import Foundation
 enum DeepLinkRoute {
     static let scheme = "steadfast"
     static let pendingRouteDefaultsKey = "steadfast.pendingRoute"
+    static let dailyDevotionalRouteToken = "devotional/today"
+
+    static func dailyDevotionalURL() -> URL? {
+        var comps = URLComponents()
+        comps.scheme = scheme
+        comps.host = "devotional"
+        comps.path = "/today"
+        return comps.url
+    }
 
     static func anchorExerciseURL(anchorID: String? = nil) -> URL? {
         var comps = URLComponents()

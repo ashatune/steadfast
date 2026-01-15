@@ -200,7 +200,7 @@ final class AppViewModel: ObservableObject {
             pendingDeepLink = .evening
         case "anchor":
             triggerAnchorNavigation(anchorID: nil)
-        case "devotional", "devotional/today":
+        case "devotional", "devotional/today", "dailyDevotional":
             pendingDeepLink = .devotional
         default:
             break

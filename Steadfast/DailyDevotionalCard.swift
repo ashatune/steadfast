@@ -3,7 +3,6 @@ import SwiftUI
 struct DailyDevotionalCard: View {
     let devotional: DailyDevotional?
     let isLoading: Bool
-    var height: CGFloat = 200
 
     private let cornerRadius: CGFloat = 16
 
@@ -13,11 +12,12 @@ struct DailyDevotionalCard: View {
             remoteImageOverlay
             gradientOverlay
             content
-                .padding(16)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 18)
             debugLabel
         }
         .frame(maxWidth: .infinity)
-        .frame(height: height)
+        .frame(minHeight: 200, alignment: .topLeading)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -43,10 +43,14 @@ struct DailyDevotionalCard: View {
                 Text(devotional.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(devotional.title)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.9))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(devotional.verseReference)
                     .font(.subheadline.weight(.semibold))
