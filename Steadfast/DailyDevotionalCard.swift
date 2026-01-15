@@ -14,7 +14,6 @@ struct DailyDevotionalCard: View {
             content
                 .padding(.horizontal, 16)
                 .padding(.vertical, 18)
-            debugLabel
         }
         .frame(maxWidth: .infinity)
         .frame(minHeight: 200, alignment: .topLeading)
@@ -43,12 +42,6 @@ struct DailyDevotionalCard: View {
                 Text(devotional.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(devotional.title)
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.9))
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -124,26 +117,6 @@ struct DailyDevotionalCard: View {
             endPoint: .bottom
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    @ViewBuilder
-    private var debugLabel: some View {
-        #if DEBUG
-        if let devotional {
-            VStack(alignment: .leading, spacing: 2) {
-                let source = devotional.id.hasPrefix("placeholder-") ? "placeholder" : "firestore"
-                Text("source: \(source)")
-                Text("id: \(devotional.id)")
-                Text("date: \(devotional.date.formatted(date: .abbreviated, time: .omitted))")
-            }
-            .font(.caption2)
-            .foregroundStyle(.white.opacity(0.8))
-            .padding(6)
-            .background(.black.opacity(0.35))
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .padding(8)
-        }
-        #endif
     }
 }
 
