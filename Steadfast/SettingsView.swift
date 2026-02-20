@@ -143,13 +143,13 @@ struct SettingsView: View {
                                 .foregroundStyle(Theme.inkSecondary)
                         }
 
-                    Text("Built with care by Mustard Seed Labs.")
+                    Text("Built with care by the Steadfast Team.")
                         .font(.footnote)
                         .foregroundStyle(Theme.inkSecondary)
 
                     // Opens your contact page
-                    Link(destination: URL(string: "https://www.mustardseedlabs.io/contact")!) {
-                        Label("Contact Mustard Seed Labs", systemImage: "paperplane.fill")
+                    Link(destination: URL(string: "mailto:support@steadfast.app")!) {
+                        Label("Contact Steadfast", systemImage: "paperplane.fill")
                     }
                 }
             } header: {

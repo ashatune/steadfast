@@ -42,11 +42,6 @@ struct RootView: View {
                 }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                 
-                // SUPPORT (external link to MustardSeedLabs.io)
-                NavigationStack {
-                    SupportView()
-                }
-                .tabItem { Label("Support Us", systemImage: "heart.fill") }
             }
         }
         .onAppear {
