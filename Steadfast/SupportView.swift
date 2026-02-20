@@ -4,7 +4,7 @@ struct SupportView: View {
     @Environment(\.openURL) private var openURL
 
     // Update this when your page is live
-    private let supportURL = URL(string: "https://www.mustardseedlabs.io/support")!
+    private let supportURL = URL(string: "https://steadfast.app/support")!
 
     var body: some View {
         ScrollView{
@@ -22,7 +22,7 @@ struct SupportView: View {
                         .foregroundStyle(Theme.ink)
 
                     Text("""
-                    Steadfast is independently created and cared for by a single developer at Mustard Seed Labs.
+                    Steadfast is independently created and cared for by the Steadfast Team.
                     If Steadfast has been helpful, you can support its growth here.
                     Every bit of encouragement helps, and your contribution is completely optional and doesn’t affect features.
                     We’re deeply grateful for your support — and for sharing Steadfast with a friend.
@@ -39,7 +39,7 @@ struct SupportView: View {
                         .font(.headline)
                         .foregroundStyle(Theme.ink)
 
-                    Text("Contributions are processed on our website by Mustard Seed Labs, LLC.")
+                    Text("Contributions are processed on our website by Steadfast.")
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
                         .multilineTextAlignment(.center)
