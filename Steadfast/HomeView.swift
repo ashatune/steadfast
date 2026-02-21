@@ -163,8 +163,12 @@ struct HomeView: View {
             devotionalVM.loadDevotionalIfNeeded()
         }
         .onAppear {
+            vm.syncProfileNameFromDefaults()
             print("🏠 Home screen reached; triggering devotional fetch")
             devotionalVM.refresh()
+        }
+        .onChange(of: storedDisplayName) { _ in
+            vm.syncProfileNameFromDefaults()
         }
         .onChange(of: devotionalVM.devotional?.id) { _ in
             guard devotionalDeepLinkPending else { return }

@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct ProfileMonogram: View {
-    var initial: String = "U"
+    var initial: String = "S"
     var body: some View {
         Text(initial)
             .font(.subheadline.weight(.bold))

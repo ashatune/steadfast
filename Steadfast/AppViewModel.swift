@@ -53,7 +53,21 @@ final class AppViewModel: ObservableObject {
     @Published var profileBirthdate: Date?                = nil
     var profileInitial: String {
         let trimmed = profileFirstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.first.map { String($0).uppercased() } ?? "U"
+        return trimmed.first.map { String($0).uppercased() } ?? "S"
+    }
+
+    func syncProfileNameFromDefaults() {
+        let trimmedDisplayName = UserDefaults.standard.string(forKey: "displayName")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if !trimmedDisplayName.isEmpty {
+            profileFirstName = trimmedDisplayName
+            return
+        }
+
+        let trimmedProfileName = UserDefaults.standard.string(forKey: "profileFirstName")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        profileFirstName = trimmedProfileName
     }
 
     // Notifications
@@ -78,12 +92,8 @@ final class AppViewModel: ObservableObject {
     init() {
         let ud = UserDefaults.standard
 
-            // Load profile name from onboarding
-            if let stored = ud.string(forKey: "displayName"), !stored.isEmpty {
-                profileFirstName = stored
-            } else if let name = ud.string(forKey: "profileFirstName") {
-                profileFirstName = name
-            }
+        // Load profile name from onboarding
+        syncProfileNameFromDefaults()
 
 
         // Notifications
