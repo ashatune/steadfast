@@ -68,6 +68,7 @@ struct ProfileSheetView: View {
         // Keep both sources of truth in sync:
         vm.profileFirstName = trimmed                 // used across the app
         storedDisplayName = trimmed                   // used by HomeView greeting (@AppStorage)
+        UserDefaults.standard.set(trimmed, forKey: "displayName")
 
         vm.profileBirthdate = hasBirthdate ? birthdate : nil
         dismiss()

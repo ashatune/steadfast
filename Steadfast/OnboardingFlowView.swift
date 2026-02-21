@@ -106,7 +106,8 @@ struct OnboardingFlowView: View {
                         OnboardSlideBranded(
                             title: "Welcome to Steadfast",
                             subtitle: "A calm, Bible-centered companion.\nFind peace in God’s Word, anytime.",
-                            icon: "icon"
+                            icon: "icon",
+                            iconShape: .roundedSquare
                         ).tag(Page.intro1)
 
                         OnboardSlideBranded(
@@ -230,6 +231,10 @@ struct OnboardingFlowView: View {
     }
 
     private func goForward() {
+        if viewModel.page == .nameConsent {
+            let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+            displayName = trimmedName.isEmpty ? "Friend" : trimmedName
+        }
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if viewModel.page == .beginMeditation {
             if didCompleteOnboardingMeditation {
