@@ -104,6 +104,8 @@ struct DailyRhythmView: View {
         let subtitle: String
         let systemImage: String
         let imageName: String
+        var titleLineLimit: Int = 1
+        var titleMinimumScaleFactor: CGFloat = 1.0
     }
     
     
@@ -116,7 +118,9 @@ struct DailyRhythmView: View {
                 title: "Explore more meditations",
                 subtitle: "Prayerful meditations",
                 systemImage: "hands.sparkles.fill",
-                imageName: "explorecard"
+                imageName: "explorecard",
+                titleLineLimit: 2,
+                titleMinimumScaleFactor: 0.85
             )
         }
 
@@ -159,6 +163,9 @@ struct DailyRhythmView: View {
                             .font(.headline)
                             .foregroundStyle(.white)
                             .shadow(radius: 2)
+                            .lineLimit(slot.titleLineLimit)
+                            .minimumScaleFactor(slot.titleMinimumScaleFactor)
+                            .multilineTextAlignment(.leading)
                         Text(slot.subtitle)
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.9))
