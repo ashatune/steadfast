@@ -14,7 +14,7 @@ struct NameConsentSlideBranded: View {
     @State private var showTerms = false
 
     var body: some View {
-        GlassCard {
+        GlassCard(maxWidth: .infinity) {
             VStack(spacing: 16) {
                 Text("Let’s personalize your experience")
                     .font(.title3).bold().foregroundStyle(.primary)
@@ -58,6 +58,7 @@ struct NameConsentSlideBranded: View {
                     .frame(maxWidth: 360)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 }
@@ -68,7 +69,7 @@ struct TermsSheetBranded: View {
     var body: some View {
         BrandBackground {
             ScrollView {
-                GlassCard {
+                GlassCard(maxWidth: .infinity) {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Steadfast — Terms & Conditions").font(.title3).bold().foregroundStyle(.primary)
 

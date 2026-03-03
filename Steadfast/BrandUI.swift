@@ -34,12 +34,12 @@ struct BrandBackground<Content: View>: View {
 // 2) Glass card
 struct GlassCard<Content: View>: View {
     @ViewBuilder var content: () -> Content
-    var maxWidth: CGFloat = 360   // smaller cards look better on iPhone
+    var maxWidth: CGFloat? = 360
 
     var body: some View {
         VStack { content() }
             .padding(24)
-            .frame(maxWidth: maxWidth)
+             .frame(maxWidth: maxWidth ?? .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.systemBackground))

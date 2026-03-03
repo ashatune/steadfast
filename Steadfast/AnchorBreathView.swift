@@ -2,6 +2,11 @@ import SwiftUI
 import AVKit
 
 struct AnchorBreathView: View {
+    enum LaunchSource {
+        case standard
+        case onboarding
+    }
+
     let verse: Verse
     var totalDuration: Int = 90
     var inhaleSecs: Int = 4
@@ -10,6 +15,7 @@ struct AnchorBreathView: View {
     var bgm: MediaSource? = nil
     
     var showBibleLink: Bool = true                 // hide in onboarding
+    var launchSource: LaunchSource = .standard
     var onCompleted: (() -> Void)? = nil           // advance onboarding when finished
     
     var showInlineMuteButton: Bool = false    // NEW
@@ -339,10 +345,15 @@ struct AnchorBreathView: View {
             teardown()
             AppReviewManager.shared.registerMeaningfulEvent()
             AppReviewManager.shared.attemptPromptIfEligible(reason: "completed meditation")
-            if let onCompleted = onCompleted {
-                onCompleted()        // <-- advance onboarding if provided
-            } else {
-                dismiss()            // fallback to dismiss when used outside onboarding
+            switch launchSource {
+            case .onboarding:
+                onCompleted?()
+            case .standard:
+                if let onCompleted = onCompleted {
+                    onCompleted()
+                } else {
+                    dismiss()
+                }
             }
         }
     }

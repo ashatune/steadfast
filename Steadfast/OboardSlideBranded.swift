@@ -12,7 +12,7 @@ struct OnboardSlideBranded: View {
     var iconShape: IconShape = .circle
 
     var body: some View {
-        GlassCard {
+        GlassCard(maxWidth: .infinity) {
             VStack(spacing: 20) {
                 // ✅ Image sizing + styling
                 Group {
@@ -46,7 +46,7 @@ struct OnboardSlideBranded: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 14)
             }
-            .frame(maxWidth: 320)
+             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding(.vertical, 6)
         }
         .transition(.opacity.combined(with: .scale))
