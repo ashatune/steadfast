@@ -11,9 +11,9 @@ struct DailyRhythmView: View {
     private let cardHeight: CGFloat = 110
     
     private let slots: [DailySlot] = [
-        .init(title: "Morning", subtitle: "Verse + Reflect", systemImage: "sun.max.fill",   imageName: "MorningCard"),
-        .init(title: "Midday",  subtitle: "Breath reset",        systemImage: "wind",          imageName: "MiddayCard"),
-        .init(title: "Evening", subtitle: "Reflect & Release",   systemImage: "moon.stars.fill", imageName: "EveningCard")
+        .init(title: "Morning", subtitle: "Verse + Reflect", systemImage: "sun.max.fill", imageName: "MorningCard"),
+        .init(title: "Midday", subtitle: "Breath reset", systemImage: "wind", imageName: "MiddayCard"),
+        .init(title: "Evening", subtitle: "Reflect & Release", systemImage: "moon.stars.fill", imageName: "EveningCard")
     ]
     
     var body: some View {
@@ -29,6 +29,11 @@ struct DailyRhythmView: View {
                             onTap: action(for: slot)
                         )
                     }
+
+                    ExploreMoreMeditationsCardView(
+                        baseSize: CGSize(width: cardWidth, height: cardHeight),
+                        onTap: { vm.selectedTab = .meditate }
+                    )
                 }
                 .padding(.vertical, 0)
             }
@@ -102,6 +107,24 @@ struct DailyRhythmView: View {
     }
     
     
+    struct ExploreMoreMeditationsCardView: View {
+        let baseSize: CGSize
+        var onTap: (() -> Void)? = nil
+
+        private var exploreSlot: DailySlot {
+            .init(
+                title: "Explore more meditations",
+                subtitle: "Prayerful meditations",
+                systemImage: "hands.sparkles.fill",
+                imageName: "explorecard"
+            )
+        }
+
+        var body: some View {
+            ScalingDailyCard(slot: exploreSlot, baseSize: baseSize, onTap: onTap)
+        }
+    }
+
     struct ScalingDailyCard: View {
         let slot: DailySlot
         let baseSize: CGSize
