@@ -7,14 +7,15 @@
 import SwiftUI
 import UserNotifications
 
-// MARK: - Widget Reminder Slide
 fileprivate struct WidgetReminderSlide: View {
     let imageName: String
     var onSkip: () -> Void
 
     var body: some View {
-        GlassCard {
+        ScrollView {
             VStack(spacing: 16) {
+                Spacer(minLength: 20)
+
                 Text("Add Steadfast to your Home Screen")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
@@ -43,19 +44,24 @@ fileprivate struct WidgetReminderSlide: View {
                 .buttonStyle(.bordered)
                 .tint(Theme.accent)
                 .padding(.top, 8)
+
+                Spacer(minLength: 20)
             }
-            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// MARK: - Begin Meditation Slide
 fileprivate struct BeginMeditationSlide: View {
-    var onBegin: () -> Void
-
     var body: some View {
-        GlassCard {
+        ScrollView {
             VStack(spacing: 16) {
+                Spacer(minLength: 24)
+
                 Text("Begin Your First Meditation")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
@@ -67,14 +73,14 @@ fileprivate struct BeginMeditationSlide: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
 
-                Button("Begin") {
-                    onBegin()
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.top, 6)
+                Spacer(minLength: 24)
             }
-            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -84,6 +90,7 @@ struct OnboardingFlowView: View {
     }
 
     @StateObject private var viewModel = OnboardingViewModel()
+    @EnvironmentObject private var appViewModel: AppViewModel
     @AppStorage("displayName") private var displayName: String = ""
     @AppStorage("hasAcceptedTerms") private var hasAcceptedTerms = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -93,95 +100,80 @@ struct OnboardingFlowView: View {
         ref: "Philippians 4:13",
         breathIn: "I can do all things through Christ",
         breathOut: "who strengthens me."
-    ) // uses default 4/6s
-
+    )
 
     var body: some View {
-        OnboardingBackground(imageName: "OnboardingBG", darken: 0.28) {
-            GeometryReader { proxy in
-                VStack(spacing: 18) {
-                    Spacer(minLength: 0)
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                TabView(selection: $viewModel.page) {
+                    OnboardSlideBranded(
+                        title: "Welcome to Steadfast",
+                        subtitle: "A calm, Bible-centered companion.\nFind peace in God’s Word, anytime.",
+                        icon: "icon",
+                        iconShape: .roundedSquare
+                    ).tag(Page.intro1)
 
-                    TabView(selection: $viewModel.page) {
-                        OnboardSlideBranded(
-                            title: "Welcome to Steadfast",
-                            subtitle: "A calm, Bible-centered companion.\nFind peace in God’s Word, anytime.",
-                            icon: "icon",
-                            iconShape: .roundedSquare
-                        ).tag(Page.intro1)
+                    OnboardSlideBranded(
+                        title: "Meditations & Scripture",
+                        subtitle: "Explore short, guided practices with verses to steady heart and mind.",
+                        icon: "icon"
+                    ).tag(Page.intro2)
 
-                        OnboardSlideBranded(
-                            title: "Meditations & Scripture",
-                            subtitle: "Explore short, guided practices with verses to steady heart and mind.",
-                            icon: "icon"
-                        ).tag(Page.intro2)
+                    OnboardSlideBranded(
+                        title: "Breathing Exercises",
+                        subtitle: "Gentle breathing patterns with scripture to settle your nervous system and calm anxiety.",
+                        icon: "icon"
+                    ).tag(Page.intro3)
 
-                        OnboardSlideBranded(
-                            title: "Breathing Exercises",
-                            subtitle: "Gentle breathing patterns with scripture to settle your nervous system and calm anxiety.",
-                            icon: "icon"
-                        ).tag(Page.intro3)
+                    NameConsentSlideBranded(
+                        displayName: $displayName,
+                        hasAcceptedTerms: $hasAcceptedTerms
+                    ).tag(Page.nameConsent)
 
-                        NameConsentSlideBranded(
-                            displayName: $displayName,
-                            hasAcceptedTerms: $hasAcceptedTerms
-                        ).tag(Page.nameConsent)
+                    WelcomeUserSlide()
+                        .tag(Page.welcomeUser)
 
-                        WelcomeUserSlide()
-                            .tag(Page.welcomeUser)
+                    MorningReminderSlide(
+                        enable: $viewModel.enableMorningReminder,
+                        time: $viewModel.morningReminderTime
+                    )
+                    .tag(Page.morningReminder)
 
-                        MorningReminderSlide(
-                            enable: $viewModel.enableMorningReminder,
-                            time: $viewModel.morningReminderTime
-                        )
-                        .tag(Page.morningReminder)
+                    WidgetReminderSlide(
+                        imageName: "widget-preview",
+                        onSkip: { goForward() }
+                    )
+                    .tag(Page.widgetReminder)
 
-                        // 🆕 Widget reminder slide
-                        WidgetReminderSlide(
-                            imageName: "widget-preview", // 👈 put your image asset name here
-                            onSkip: { goForward() }
-                        )
-                        .tag(Page.widgetReminder)
-
-                        BeginMeditationSlide {
-                            viewModel.showBeginMeditation = true
-                        }
+                    BeginMeditationSlide()
                         .tag(Page.beginMeditation)
 
-                        QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
-                            if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
-                                viewModel.page = next
-                            }
-                        })
-                        .tag(Page.quickPractice)
-
-                        DoneSlideBranded {
-                            hasCompletedOnboarding = true
+                    QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
+                        if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
+                            viewModel.page = next
                         }
-                        .tag(Page.done)
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .always))
-                    .indexViewStyle(.page(backgroundDisplayMode: .interactive))
-                    .frame(maxWidth: .infinity, maxHeight: proxy.size.height * 0.82)
+                    })
+                    .tag(Page.quickPractice)
 
-                    if viewModel.page != .done {
-                        HStack(spacing: 12) {
-                            if viewModel.page != .intro1 {
-                                Button("Back") { goBack() }
-                                    .buttonStyle(SubtleButtonStyle())
-                            }
-                            Spacer()
-                            Button(nextLabel) { goForward() }
-                                .buttonStyle(PrimaryButtonStyle())
-                                .disabled(nextDisabled)
-                                .opacity(nextDisabled ? 0.6 : 1)
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 24)
+                    DoneSlideBranded {
+                        hasCompletedOnboarding = true
                     }
+                    .tag(Page.done)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .interactive))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if viewModel.page != .done {
+                    onboardingControls
+                        .padding(.horizontal, 24)
+                        .padding(.top, 12)
+                        .padding(.bottom, max(proxy.safeAreaInsets.bottom, 18))
+                }
             }
+            .padding(.top, max(proxy.safeAreaInsets.top, 8))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color(.systemBackground).ignoresSafeArea())
         }
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(isPresented: $viewModel.showBeginMeditation) {
@@ -193,16 +185,38 @@ struct OnboardingFlowView: View {
                     holdSecs: 4,
                     exhaleSecs: 6,
                     showBibleLink: false,
+                    launchSource: .onboarding,
                     onCompleted: {
-                        didCompleteOnboardingMeditation = true
-                        viewModel.showBeginMeditation = false
+                        finishIntroMeditationStep()
                     },
                     showInlineMuteButton: true,
                     startMuted: false
                 )
             }
         }
-        .navigationBarBackButtonHidden(true)
+    }
+
+    private var onboardingControls: some View {
+        VStack(spacing: 10) {
+            Button(nextLabel) { goForward() }
+                .buttonStyle(OnboardingPrimaryButtonStyle())
+                .disabled(nextDisabled)
+                .opacity(nextDisabled ? 0.6 : 1)
+
+            if viewModel.page != .intro1 {
+                Button("Back") { goBack() }
+                    .buttonStyle(OnboardingSecondaryButtonStyle())
+            }
+
+            if viewModel.page == .beginMeditation && !didCompleteOnboardingMeditation {
+                Button("Skip") { finishIntroMeditationStep() }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 10)
+            }
+        }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity)
     }
 
     private var nextLabel: String {
@@ -213,7 +227,7 @@ struct OnboardingFlowView: View {
         case .welcomeUser:     return "Continue"
         case .morningReminder: return viewModel.enableMorningReminder ? "Enable & Continue" : "Skip"
         case .widgetReminder:  return "Continue"
-        case .beginMeditation: return "Continue"
+        case .beginMeditation: return didCompleteOnboardingMeditation ? "Continue" : "Begin"
         case .quickPractice:   return "Skip"
         case .done:            return "Enter Steadfast"
         }
@@ -233,32 +247,51 @@ struct OnboardingFlowView: View {
     private func goForward() {
         if viewModel.page == .nameConsent {
             let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-            displayName = trimmedName.isEmpty ? "Friend" : trimmedName
+            let persistedName = trimmedName.isEmpty ? "Friend" : trimmedName
+            displayName = persistedName
+            appViewModel.profileFirstName = persistedName
         }
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if viewModel.page == .beginMeditation {
             if didCompleteOnboardingMeditation {
-                if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
-                    viewModel.page = next
-                }
+                advance(from: .beginMeditation)
             } else {
                 viewModel.showBeginMeditation = true
             }
             return
         }
-        if let next = Page(rawValue: viewModel.page.rawValue + 1), viewModel.page != .done { viewModel.page = next }
+        if viewModel.page == .quickPractice {
+            advance(from: .quickPractice)
+            return
+        }
+        advance(from: viewModel.page)
+    }
+
+    private func finishIntroMeditationStep() {
+        didCompleteOnboardingMeditation = true
+        viewModel.showBeginMeditation = false
+        if viewModel.page == .beginMeditation {
+            advance(from: .beginMeditation)
+        }
+    }
+
+    private func advance(from page: Page) {
+        if let next = Page(rawValue: page.rawValue + 1), page != .done {
+            viewModel.page = next
+        }
     }
 }
 
-// MARK: - Morning Reminder Slide
 struct MorningReminderSlide: View {
     @Binding var enable: Bool
     @Binding var time: Date
     @State private var showTimePicker = false
 
     var body: some View {
-        GlassCard {
+        ScrollView {
             VStack(spacing: 18) {
+                Spacer(minLength: 20)
+
                 Text("Set a Morning Reminder?")
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
@@ -310,9 +343,14 @@ struct MorningReminderSlide: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 6)
                     .padding(.horizontal, 8)
+
+                Spacer(minLength: 20)
             }
-            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
+        .scrollIndicators(.hidden)
         .sheet(isPresented: $showTimePicker) {
             reminderPickerSheet
         }
@@ -347,7 +385,6 @@ struct MorningReminderSlide: View {
     }
 }
 
-// MARK: - Onboarding View Model
 final class OnboardingViewModel: ObservableObject {
     @Published var page: OnboardingFlowView.Page = .intro1
     @Published var enableMorningReminder: Bool
@@ -375,7 +412,6 @@ final class OnboardingViewModel: ObservableObject {
         ud.set(true, forKey: "notif_morning_enabled")
         ud.set(morningReminderTime.timeIntervalSince1970, forKey: "notif_morning_time")
 
-        // ✅ Seed midday/evening if not set yet
         if ud.object(forKey: "notif_midday_time") == nil {
             ud.set(AppViewModel.makeTime(13, 0).timeIntervalSince1970, forKey: "notif_midday_time")
         }
@@ -394,8 +430,44 @@ final class OnboardingViewModel: ObservableObject {
                     NotificationManager.shared.scheduleDailyFromSettings()
                 } else if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
                     NotificationManager.shared.scheduleDailyFromSettings()
-                } // else .denied → no-op or open settings
+                }
             }
         }
+    }
+}
+
+struct OnboardingPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Theme.accent)
+            )
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .scaleEffect(configuration.isPressed ? 0.99 : 1)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+struct OnboardingSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+            )
+            .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }

@@ -1,28 +1,22 @@
-//
-//  WelcomeNewSlide.swift
-//  Steadfast
-//
-//  Created by Asha Redmon on 10/31/25.
-//
 import SwiftUI
 
 struct WelcomeUserSlide: View {
     @AppStorage("displayName") private var displayName = ""
 
     var body: some View {
-        GlassCard {
+        ScrollView {
             VStack(spacing: 18) {
-                // Optional image or icon
-                Image("OnboardWelcome") // 👈 optional; replace with your asset
+                Spacer(minLength: 24)
+
+                Image("icon")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 120, height: 120)
-                    .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 7)
+                    .frame(width: 88, height: 88)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
 
-                // Greeting
                 Text("Welcome to Steadfast, \(firstName)!")
-                    .font(.title2).bold()
+                    .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 16)
@@ -32,10 +26,16 @@ struct WelcomeUserSlide: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 22)
+
+                Spacer(minLength: 24)
             }
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
-        .transition(.opacity.combined(with: .scale))
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .transition(.opacity)
     }
 
     private var firstName: String {

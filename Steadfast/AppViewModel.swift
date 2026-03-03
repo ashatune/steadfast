@@ -49,7 +49,17 @@ final class AppViewModel: ObservableObject {
 
 
     // Profile
-    @Published var profileFirstName: String               = ""
+    @Published var profileFirstName: String               = "" {
+        didSet {
+            let trimmed = profileFirstName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if UserDefaults.standard.string(forKey: "displayName") != trimmed {
+                UserDefaults.standard.set(trimmed, forKey: "displayName")
+            }
+            if UserDefaults.standard.string(forKey: "profileFirstName") != trimmed {
+                UserDefaults.standard.set(trimmed, forKey: "profileFirstName")
+            }
+        }
+    }
     @Published var profileBirthdate: Date?                = nil
     var profileInitial: String {
         let trimmed = profileFirstName.trimmingCharacters(in: .whitespacesAndNewlines)

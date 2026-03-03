@@ -5,7 +5,6 @@
 //  Created by Asha Redmon on 10/28/25.
 //
 
-// NameConsentSlideBranded.swift
 import SwiftUI
 
 struct NameConsentSlideBranded: View {
@@ -14,14 +13,19 @@ struct NameConsentSlideBranded: View {
     @State private var showTerms = false
 
     var body: some View {
-        GlassCard {
-            VStack(spacing: 16) {
+        ScrollView {
+            VStack(spacing: 18) {
+                Spacer(minLength: 16)
+
                 Text("Let’s personalize your experience")
-                    .font(.title3).bold().foregroundStyle(.primary)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
 
                 VStack(spacing: 10) {
                     Text("What’s your name?")
-                        .font(.callout).foregroundStyle(.secondary)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
 
                     TextField("Your first name", text: $displayName)
                         .textInputAutocapitalization(.words)
@@ -29,21 +33,29 @@ struct NameConsentSlideBranded: View {
                         .onSubmit {
                             displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                         }
-                        .padding(.vertical, 10).padding(.horizontal, 12)
-                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line.opacity(0.4)))
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color(.secondarySystemBackground))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Theme.line.opacity(0.35))
+                        )
                         .foregroundStyle(.primary)
                         .tint(Theme.accent)
-                        .frame(maxWidth: 320)
+                        .frame(maxWidth: 420)
                 }
 
-                // Terms link + toggle
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     Button {
                         showTerms = true
                     } label: {
                         Text("View Terms & Conditions")
-                            .underline().font(.footnote).foregroundColor(Theme.accent)
+                            .underline()
+                            .font(.footnote)
+                            .foregroundColor(Theme.accent)
                     }
                     .tint(Theme.accent)
                     .sheet(isPresented: $showTerms) { TermsSheetBranded() }
@@ -55,10 +67,17 @@ struct NameConsentSlideBranded: View {
                     }
                     .toggleStyle(.switch)
                     .tint(Theme.accent)
-                    .frame(maxWidth: 360)
+                    .frame(maxWidth: 420)
                 }
+
+                Spacer(minLength: 16)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -68,7 +87,7 @@ struct TermsSheetBranded: View {
     var body: some View {
         BrandBackground {
             ScrollView {
-                GlassCard {
+                GlassCard(maxWidth: .infinity) {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Steadfast — Terms & Conditions").font(.title3).bold().foregroundStyle(.primary)
 
