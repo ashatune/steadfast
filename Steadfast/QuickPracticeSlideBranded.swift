@@ -25,7 +25,7 @@ struct QuickPracticeSlideBranded: View {
     enum Stage { case intro, breathing }
 
     var body: some View {
-        GlassCard {
+        GlassCard(maxWidth: .infinity) {
             VStack(spacing: 14) {
                 if stage == .intro {
                     Spacer()
@@ -57,6 +57,7 @@ struct QuickPracticeSlideBranded: View {
                     .shadow(color: .black.opacity(0.16), radius: 16, x: 0, y: 8)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .onAppear { playPrompts() }
             .padding(.vertical, 10)
         }

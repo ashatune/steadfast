@@ -11,7 +11,7 @@ import SwiftUI
 struct DoneSlideBranded: View {
     let onEnter: () -> Void
     var body: some View {
-        GlassCard {
+        GlassCard(maxWidth: .infinity) {
             VStack(spacing: 16) {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 44, weight: .semibold))
@@ -32,6 +32,7 @@ struct DoneSlideBranded: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.top, 8)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 }

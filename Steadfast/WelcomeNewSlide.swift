@@ -10,7 +10,7 @@ struct WelcomeUserSlide: View {
     @AppStorage("displayName") private var displayName = ""
 
     var body: some View {
-        GlassCard {
+        GlassCard(maxWidth: .infinity) {
             VStack(spacing: 18) {
                 // Optional image or icon
                 Image("OnboardWelcome") // 👈 optional; replace with your asset
@@ -33,6 +33,7 @@ struct WelcomeUserSlide: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 22)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding(.vertical, 8)
         }
         .transition(.opacity.combined(with: .scale))
