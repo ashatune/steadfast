@@ -11,9 +11,9 @@ struct DailyRhythmView: View {
     private let cardHeight: CGFloat = 110
     
     private let slots: [DailySlot] = [
-        .init(title: "Morning", subtitle: "Verse + Reflect", systemImage: "sun.max.fill",   imageName: "MorningCard"),
-        .init(title: "Midday",  subtitle: "Breath reset",        systemImage: "wind",          imageName: "MiddayCard"),
-        .init(title: "Evening", subtitle: "Reflect & Release",   systemImage: "moon.stars.fill", imageName: "EveningCard")
+        .init(title: "Morning", subtitle: "Verse + Reflect", systemImage: "sun.max.fill", imageName: "MorningCard"),
+        .init(title: "Midday", subtitle: "Breath reset", systemImage: "wind", imageName: "MiddayCard"),
+        .init(title: "Evening", subtitle: "Reflect & Release", systemImage: "moon.stars.fill", imageName: "EveningCard")
     ]
     
     var body: some View {
@@ -29,6 +29,11 @@ struct DailyRhythmView: View {
                             onTap: action(for: slot)
                         )
                     }
+
+                    ExploreMoreMeditationsCardView(
+                        baseSize: CGSize(width: cardWidth, height: cardHeight),
+                        onTap: { vm.selectedTab = .meditate }
+                    )
                 }
                 .padding(.vertical, 0)
             }
@@ -99,9 +104,31 @@ struct DailyRhythmView: View {
         let subtitle: String
         let systemImage: String
         let imageName: String
+        var titleLineLimit: Int = 1
+        var titleMinimumScaleFactor: CGFloat = 1.0
     }
     
     
+    struct ExploreMoreMeditationsCardView: View {
+        let baseSize: CGSize
+        var onTap: (() -> Void)? = nil
+
+        private var exploreSlot: DailySlot {
+            .init(
+                title: "Explore more meditations",
+                subtitle: "Prayerful meditations",
+                systemImage: "hands.sparkles.fill",
+                imageName: "explorecard",
+                titleLineLimit: 2,
+                titleMinimumScaleFactor: 0.85
+            )
+        }
+
+        var body: some View {
+            ScalingDailyCard(slot: exploreSlot, baseSize: baseSize, onTap: onTap)
+        }
+    }
+
     struct ScalingDailyCard: View {
         let slot: DailySlot
         let baseSize: CGSize
@@ -136,6 +163,9 @@ struct DailyRhythmView: View {
                             .font(.headline)
                             .foregroundStyle(.white)
                             .shadow(radius: 2)
+                            .lineLimit(slot.titleLineLimit)
+                            .minimumScaleFactor(slot.titleMinimumScaleFactor)
+                            .multilineTextAlignment(.leading)
                         Text(slot.subtitle)
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.9))
