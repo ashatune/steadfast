@@ -8,20 +8,21 @@ struct OnboardSlideBranded: View {
 
     let title: String
     let subtitle: String
-    let icon: String    // refers to an image in Assets (not SF Symbol)
+    let icon: String
     var iconShape: IconShape = .circle
 
     var body: some View {
-        GlassCard(maxWidth: .infinity) {
-            VStack(spacing: 20) {
-                // ✅ Image sizing + styling
+        ScrollView {
+            VStack(spacing: 22) {
+                Spacer(minLength: 24)
+
                 Group {
                     if iconShape == .roundedSquare {
                         Image(icon)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .frame(width: 86, height: 86)
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     } else {
                         Image(icon)
                             .resizable()
@@ -30,25 +31,27 @@ struct OnboardSlideBranded: View {
                             .clipShape(Circle())
                     }
                 }
-                .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 8)
-                .padding(.bottom, 4)
+                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
 
-                // Title
                 Text(title)
-                    .font(.title2)
-                    .bold()
-                    .foregroundStyle(.primary)
+                    .font(.title.weight(.semibold))
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
 
-                // Subtitle
                 Text(subtitle)
+                    .font(.body)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 8)
+
+                Spacer(minLength: 24)
             }
-             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
-        .transition(.opacity.combined(with: .scale))
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .transition(.opacity)
     }
 }
