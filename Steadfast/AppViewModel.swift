@@ -14,10 +14,17 @@ extension AppViewModel {
 }
 
 final class AppViewModel: ObservableObject {
+    enum AppTab: Hashable {
+        case home
+        case library
+        case meditate
+        case settings
+    }
     
     private let appGroupID = AnchorOfDayStore.appGroupID
     @Published var pendingDeepLink: DeepLinkDestination?
     @Published var pendingAnchorID: String?
+    @Published var selectedTab: AppTab = .home
 
     // MARK: Personalization / UI
     enum FocusArea: String, CaseIterable, Identifiable { case health, worry, panic, sleep, grief, general
