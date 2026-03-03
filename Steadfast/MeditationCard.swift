@@ -23,13 +23,15 @@ struct MeditationCard: View {
                 )
                 .frame(width: baseSize.width, height: baseSize.height)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
 
             LinearGradient(
                 colors: [.clear, .black.opacity(0.45)],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(width: baseSize.width, height: baseSize.height)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(meditation.title)
