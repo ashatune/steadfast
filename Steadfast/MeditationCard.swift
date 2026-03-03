@@ -9,32 +9,30 @@ struct MeditationCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            GeometryReader { proxy in
-                let cardSize = proxy.size
+            Color.clear
 
-                Group {
-                    if let name = meditation.coverName {
-                        Image(name)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        LinearGradient(
-                            colors: [.purple.opacity(0.35), .blue.opacity(0.35)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    }
+            Group {
+                if let name = meditation.coverName {
+                    Image(name)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    LinearGradient(
+                        colors: [.purple.opacity(0.35), .blue.opacity(0.35)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 }
-                .frame(width: cardSize.width, height: cardSize.height)
-                .clipped()
-
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.45)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(width: cardSize.width, height: cardSize.height)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.45)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(meditation.title)

@@ -60,8 +60,8 @@ struct PrayersView: View {
                 ScrollView {
                     LazyVGrid(
                         columns: [
-                            GridItem(.fixed(columnWidth), spacing: hSpacing),
-                            GridItem(.fixed(columnWidth), spacing: hSpacing)
+                            GridItem(.flexible(), spacing: hSpacing),
+                            GridItem(.flexible(), spacing: hSpacing)
                         ],
                         spacing: vSpacing
                     ) {
