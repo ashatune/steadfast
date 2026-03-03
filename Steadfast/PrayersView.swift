@@ -5,7 +5,7 @@ struct PrayersView: View {
     private let hSpacing: CGFloat = 16
     private let vSpacing: CGFloat = 16
     private let horizontalPadding: CGFloat = 16
-    private let targetHeight: CGFloat = 110   // match DailyRhythm
+    private let cardAspectRatio: CGFloat = 1.62
 
     // ✅ Add your three new meditations here (exact filenames)
     let meditations: [PrayerMeditation] = [
@@ -49,7 +49,8 @@ struct PrayersView: View {
             GeometryReader { geo in
                 let available = geo.size.width - (horizontalPadding * 2)
                 let columnWidth = floor((available - hSpacing) / 2)
-                let cardSize = CGSize(width: columnWidth, height: targetHeight)
+                let cardHeight = columnWidth / cardAspectRatio
+                let cardSize = CGSize(width: columnWidth, height: cardHeight)
 
                 // 🔢 Dynamic placeholder count to keep a neat grid
                 let columns = 2
