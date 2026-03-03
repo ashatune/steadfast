@@ -89,9 +89,9 @@ final class AppViewModel: ObservableObject {
 
     // Notifications
     @Published var notifEnabled: Bool                     = true
-    @Published var morningEnabled: Bool                   = true
-    @Published var middayEnabled: Bool                    = true
-    @Published var eveningEnabled: Bool                   = true
+    @Published var morningEnabled: Bool                   = false
+    @Published var middayEnabled: Bool                    = false
+    @Published var eveningEnabled: Bool                   = false
 
     @Published var morningTime: Date                      = AppViewModel.makeTime(8, 0)
     @Published var middayTime: Date                       = AppViewModel.makeTime(13, 0)

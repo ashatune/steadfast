@@ -418,8 +418,6 @@ final class OnboardingViewModel: ObservableObject {
         if ud.object(forKey: "notif_evening_time") == nil {
             ud.set(AppViewModel.makeTime(21, 0).timeIntervalSince1970, forKey: "notif_evening_time")
         }
-        if ud.object(forKey: "notif_midday_enabled") == nil { ud.set(true, forKey: "notif_midday_enabled") }
-        if ud.object(forKey: "notif_evening_enabled") == nil { ud.set(true, forKey: "notif_evening_enabled") }
 
         ud.synchronize()
 

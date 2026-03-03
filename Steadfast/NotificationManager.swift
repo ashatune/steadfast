@@ -85,9 +85,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func scheduleDailyFromSettings() {
         let ud = UserDefaults.standard
         let master   = ud.object(forKey: "notif_enabled")           as? Bool ?? true
-        let mEnabled = ud.object(forKey: "notif_morning_enabled")   as? Bool ?? true
-        let mdEnabled = ud.object(forKey: "notif_midday_enabled")    as? Bool ?? true
-        let eEnabled = ud.object(forKey: "notif_evening_enabled")   as? Bool ?? true
+        let mEnabled = ud.object(forKey: "notif_morning_enabled")   as? Bool ?? false
+        let mdEnabled = ud.object(forKey: "notif_midday_enabled")    as? Bool ?? false
+        let eEnabled = ud.object(forKey: "notif_evening_enabled")   as? Bool ?? false
 
         // explicit fallback times (match your AppViewModel defaults)
         let defaultMorning = AppViewModel.makeTime(8, 0)
