@@ -30,7 +30,7 @@ struct MeditationCard: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(width: baseSize.width, height: baseSize.height)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(meditation.title)
