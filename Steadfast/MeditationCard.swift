@@ -9,21 +9,20 @@ struct MeditationCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            if let name = meditation.coverName {
-                Image(name)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: baseSize.width, height: baseSize.height)
-                    .clipped()
-            } else {
-                LinearGradient(
-                    colors: [.purple.opacity(0.35), .blue.opacity(0.35)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .frame(width: baseSize.width, height: baseSize.height)
+            Group {
+                if let name = meditation.coverName {
+                    Image(name)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    LinearGradient(
+                        colors: [.purple.opacity(0.35), .blue.opacity(0.35)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: baseSize.width, height: baseSize.height)
             .clipped()
 
             LinearGradient(
