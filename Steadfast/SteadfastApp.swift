@@ -30,7 +30,10 @@ struct SteadfastApp: App {
             "hasCompletedOnboarding": false,
             "hasAcceptedTerms": false,
             "displayName": "",
-            "ttsGuidanceEnabled": false
+            "ttsGuidanceEnabled": false,
+            "notif_morning_enabled": false,
+            "notif_midday_enabled": false,
+            "notif_evening_enabled": false
         ])
         _showSplash = State(initialValue: !UserDefaults.standard.bool(forKey: "hasShownSplash"))
 
