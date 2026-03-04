@@ -18,7 +18,7 @@ struct VerseOfDayStrip: View {
                                  holdSecs: 4,
                                  exhaleSecs: 6)
             } label: {
-                VerseCard(verse: verse) // VerseCard keeps its own surface style
+                VerseCard(verse: verse, isFlatStyle: true)
             }
         }
         // ❌ No extra background/padding wrapper — keeps the page uniform

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct VerseCard: View {
     let verse: Verse
+    var isFlatStyle: Bool = false
     @ObservedObject private var audio = VerseAudioManager.shared
     @Environment(\.colorScheme) private var colorScheme
 
@@ -26,6 +27,14 @@ struct VerseCard: View {
             startPoint: .bottom,
             endPoint: .top
         )
+    }
+
+    private var cardFill: Color {
+        isFlatStyle ? Color(.systemBackground) : Theme.surface
+    }
+
+    private var cornerRadius: CGFloat {
+        isFlatStyle ? 14 : 16
     }
 
     // If you didn’t add Verse.previewLine earlier, this local helper mirrors it.
@@ -96,14 +105,21 @@ struct VerseCard: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Theme.surface)
-                .overlay(
-                    readabilityOverlay
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                )
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(cardFill)
+                .overlay {
+                    if !isFlatStyle {
+                        readabilityOverlay
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                    }
+                }
         )
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(isFlatStyle ? Color.black.opacity(0.08) : Theme.line, lineWidth: 1)
+        )
+        .shadow(color: isFlatStyle ? .black.opacity(0.08) : .clear, radius: isFlatStyle ? 6 : 0, x: 0, y: isFlatStyle ? 2 : 0)
         .onDisappear { VerseAudioManager.shared.stop(verseID: verse.id) }
     }
 }
