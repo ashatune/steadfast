@@ -137,14 +137,17 @@ struct HomeView: View {
                 devotionalSection
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
+                    .padding(.bottom, 10)
+
+                // Today’s Anchor
+                VerseOfDayStrip(verse: anchorOfDay)
+                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 14)
 
                 // Daily Rhythm
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
-
-                // Daily Rhythm
-                DailyRhythmView()
-                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 14)
 
                 libraryFooterSection
             }
@@ -241,7 +244,7 @@ struct HomeView: View {
             vm.selectedTab = .library
         }
         .padding(.horizontal, sidePadding)
-        .padding(.top, 6)
+        .padding(.top, 2)
         .padding(.bottom, 16)
     }
 
