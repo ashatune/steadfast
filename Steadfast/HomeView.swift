@@ -138,18 +138,9 @@ struct HomeView: View {
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
 
-                // Daily Devotional header
-                HStack(spacing: 8) {
-                    Image(systemName: "sunrise.fill")
-                        .foregroundStyle(Theme.accent)
-                    Text("Daily Devotional")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
+                LibraryShortcutCard {
+                    vm.selectedTab = .library
                 }
-                .padding(.horizontal, sidePadding)
-
-                devotionalSection
                     .padding(.horizontal, sidePadding)
 
                 // Daily Rhythm

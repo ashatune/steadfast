@@ -2,11 +2,13 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject var vm: AppViewModel
+    @StateObject private var devotionalVM = DailyDevotionalViewModel()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    dailyDevotionalSection
 
                     NavigationLink {
                         BibleTOCView()
@@ -59,6 +61,12 @@ struct LibraryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: VersePack.self) { pack in
                 VersePackDetail(pack: pack)
+            }
+            .task {
+                devotionalVM.loadDevotionalIfNeeded()
+            }
+            .onAppear {
+                devotionalVM.refresh()
             }
         }
         .tint(Theme.accent)
