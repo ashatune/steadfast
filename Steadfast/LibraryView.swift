@@ -8,8 +8,6 @@ struct LibraryView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    dailyDevotionalSection
-
                     NavigationLink {
                         BibleTOCView()
                     } label: {
