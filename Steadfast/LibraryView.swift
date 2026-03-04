@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject var vm: AppViewModel
+    @StateObject private var devotionalVM = DailyDevotionalViewModel()
 
     var body: some View {
         NavigationStack {
@@ -59,10 +60,18 @@ struct LibraryView: View {
             .navigationDestination(for: VersePack.self) { pack in
                 VersePackDetail(pack: pack)
             }
+            .task {
+                devotionalVM.loadDevotionalIfNeeded()
+            }
+            .onAppear {
+                devotionalVM.refresh()
+            }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
     }
+
+
 }
 
 // MARK: - Cards
