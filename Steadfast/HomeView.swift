@@ -138,18 +138,9 @@ struct HomeView: View {
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
 
-                // Daily Devotional header
-                HStack(spacing: 8) {
-                    Image(systemName: "sunrise.fill")
-                        .foregroundStyle(Theme.accent)
-                    Text("Daily Devotional")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
+                LibraryShortcutCard {
+                    vm.selectedTab = .library
                 }
-                .padding(.horizontal, sidePadding)
-
-                devotionalSection
                     .padding(.horizontal, sidePadding)
 
                 // Today’s Anchor
@@ -228,19 +219,35 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private var devotionalSection: some View {
-        if let devotional = devotionalVM.devotional {
-            NavigationLink {
-                DailyDevotionalDetailView(devotional: devotional)
-            } label: {
-                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
-                    .frame(maxWidth: .infinity)
+}
+
+private struct LibraryShortcutCard: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "books.vertical.fill")
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Verse Packs")
+                        .font(.headline)
+                        .foregroundStyle(Theme.ink)
+                    Text("Browse your full library and start a guided pack.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.inkSecondary)
+                }
+
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(Theme.line)
             }
-            .buttonStyle(.plain)
-        } else {
-            DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                .frame(maxWidth: .infinity)
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         }
+        .buttonStyle(.plain)
     }
 }
