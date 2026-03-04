@@ -137,16 +137,17 @@ struct HomeView: View {
                 devotionalSection
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
+                    .padding(.bottom, 10)
 
                 // Today’s Anchor
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
-                    .padding(.top, 12)
+                    .padding(.top, 14)
 
                 // Daily Rhythm
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
-                    .padding(.top, 12)
+                    .padding(.top, 14)
 
                 libraryFooterSection
             }
