@@ -138,13 +138,15 @@ struct HomeView: View {
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
-                // Daily Rhythm
-                DailyRhythmView()
+                // Today’s Anchor
+                VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
+                    .padding(.top, 12)
 
                 // Daily Rhythm
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
+                    .padding(.top, 12)
 
                 libraryFooterSection
             }
@@ -241,7 +243,7 @@ struct HomeView: View {
             vm.selectedTab = .library
         }
         .padding(.horizontal, sidePadding)
-        .padding(.top, 6)
+        .padding(.top, 2)
         .padding(.bottom, 16)
     }
 
