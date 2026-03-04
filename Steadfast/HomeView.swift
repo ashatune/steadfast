@@ -147,12 +147,7 @@ struct HomeView: View {
                 DailyRhythmView()
                     .padding(.horizontal, sidePadding)
 
-                LibraryShortcutCard {
-                    vm.selectedTab = .library
-                }
-                .padding(.horizontal, sidePadding)
-                .padding(.top, 6)
-                .padding(.bottom, 16)
+                libraryFooterSection
             }
         }
         .background(Theme.bg.ignoresSafeArea())
@@ -229,6 +224,15 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    private var libraryFooterSection: some View {
+        LibraryShortcutCard {
+            vm.selectedTab = .library
+        }
+        .padding(.horizontal, sidePadding)
+        .padding(.top, 6)
+        .padding(.bottom, 16)
     }
 
     private var greetingPrefix: String {
