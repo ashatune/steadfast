@@ -2,14 +2,14 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject var vm: AppViewModel
+    @StateObject private var devotionalVM = DailyDevotionalViewModel()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    dailyDevotionalSection
 
-                    // Bible card at the top
-                    // LibraryView.swift (inside the ScrollView’s LazyVStack, replace the old Bible card)
                     NavigationLink {
                         BibleTOCView()
                     } label: {
@@ -18,13 +18,12 @@ struct LibraryView: View {
                             subtitle: "Read & search the Word",
                             systemImage: "book.closed.fill",
                             imageName: "BibleCard",
-                            height: 160   // ← tweak this to make it taller/shorter
+                            height: 160
                         )
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 
-                    // Saved devotionals entry (hero style)
                     NavigationLink {
                         SavedDevotionalsView()
                     } label: {
@@ -32,23 +31,20 @@ struct LibraryView: View {
                             title: "Saved Devotionals",
                             subtitle: "Revisit your bookmarked devotionals",
                             imageName: "SavedDevotionalsCardImage",
-                            height: 160 // match Bible card height
+                            height: 160
                         )
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    
-                    // ⬇️ Add this header right above the packs
+
                     HStack(spacing: 8) {
-                        //Image(systemName: "leaf.fill").foregroundStyle(Theme.accent)
                         Text("Verse Packs")
                             .font(.headline)
                             .foregroundStyle(Theme.ink)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 12)
-                    
-                    // Verse packs as spaced cards
+
                     ForEach(vm.library.packs) { pack in
                         NavigationLink(value: pack) {
                             LibraryPackCard(pack: pack)
@@ -66,9 +62,31 @@ struct LibraryView: View {
             .navigationDestination(for: VersePack.self) { pack in
                 VersePackDetail(pack: pack)
             }
+            .task {
+                devotionalVM.loadDevotionalIfNeeded()
+            }
+            .onAppear {
+                devotionalVM.refresh()
+            }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
+    }
+
+    @ViewBuilder
+    private var dailyDevotionalSection: some View {
+        if let devotional = devotionalVM.devotional {
+            NavigationLink {
+                DailyDevotionalDetailView(devotional: devotional)
+            } label: {
+                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+        } else {
+            DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
+                .frame(maxWidth: .infinity)
+        }
     }
 }
 
@@ -148,7 +166,6 @@ struct SavedDevotionalsHeroCard: View {
                     .frame(height: height)
                     .clipped()
             } else {
-                // TODO: Add asset named "SavedDevotionalsCardImage" for full effect
                 Color(UIColor.systemGray5)
                     .frame(height: height)
             }
