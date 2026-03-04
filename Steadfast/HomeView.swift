@@ -138,18 +138,9 @@ struct HomeView: View {
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
 
-                // Daily Devotional header
-                HStack(spacing: 8) {
-                    Image(systemName: "sunrise.fill")
-                        .foregroundStyle(Theme.accent)
-                    Text("Daily Devotional")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
+                LibraryShortcutCard {
+                    vm.selectedTab = .library
                 }
-                .padding(.horizontal, sidePadding)
-
-                devotionalSection
                     .padding(.horizontal, sidePadding)
 
                 // Daily Rhythm
@@ -234,11 +225,11 @@ struct HomeView: View {
                 DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
-        } else {
-            DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                .frame(maxWidth: .infinity)
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         }
+        .buttonStyle(.plain)
     }
 
     private var greetingPrefix: String {
