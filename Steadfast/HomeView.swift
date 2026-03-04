@@ -134,8 +134,8 @@ struct HomeView: View {
                     .padding(.top, 4)
 
 
-                // Daily Rhythm
-                DailyRhythmView()
+                // Today’s Anchor
+                VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
 
                 // Daily Devotional header
@@ -152,10 +152,16 @@ struct HomeView: View {
                 devotionalSection
                     .padding(.horizontal, sidePadding)
 
-                // Today’s Anchor
-                VerseOfDayStrip(verse: anchorOfDay)
+                // Daily Rhythm
+                DailyRhythmView()
                     .padding(.horizontal, sidePadding)
-                    .padding(.bottom, 16)
+
+                LibraryShortcutCard {
+                    vm.selectedTab = .library
+                }
+                .padding(.horizontal, sidePadding)
+                .padding(.top, 6)
+                .padding(.bottom, 16)
             }
         }
         .background(Theme.bg.ignoresSafeArea())
@@ -219,15 +225,6 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
-    private var greetingPrefix: String {
-        let hour = Calendar.current.component(.hour, from: now)
-        switch hour {
-        case 5..<12:  return "Good morning"
-        case 12..<18: return "Good afternoon"
-        default:      return "Good evening"
-        }
-    }
-
     @ViewBuilder
     private var devotionalSection: some View {
         if let devotional = devotionalVM.devotional {
@@ -241,6 +238,41 @@ struct HomeView: View {
         } else {
             DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
                 .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var greetingPrefix: String {
+        let hour = Calendar.current.component(.hour, from: now)
+        switch hour {
+        case 5..<12:  return "Good morning"
+        case 12..<18: return "Good afternoon"
+        default:      return "Good evening"
+        }
+    }
+
+}
+
+private struct LibraryShortcutCard: View {
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Looking for something specific?")
+                .font(.footnote)
+                .foregroundStyle(Theme.inkSecondary)
+
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    Text("Explore Verse Library")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                    Image(systemName: "arrow.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
         }
     }
 }
