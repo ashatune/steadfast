@@ -216,20 +216,19 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
-    @ViewBuilder
     private var devotionalSection: some View {
-        if let devotional = devotionalVM.devotional {
-            NavigationLink {
-                DailyDevotionalDetailView(devotional: devotional)
-            } label: {
-                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+        Group {
+            if let devotional = devotionalVM.devotional {
+                NavigationLink(destination: DailyDevotionalDetailView(devotional: devotional)) {
+                    DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PlainButtonStyle())
+            } else {
+                DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
                     .frame(maxWidth: .infinity)
             }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
         }
-        .buttonStyle(.plain)
     }
 
     private var greetingPrefix: String {
