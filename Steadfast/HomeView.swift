@@ -134,8 +134,8 @@ struct HomeView: View {
                     .padding(.top, 4)
 
 
-                // Daily Rhythm
-                DailyRhythmView()
+                // Today’s Anchor
+                VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
 
                 LibraryShortcutCard {
@@ -143,10 +143,16 @@ struct HomeView: View {
                 }
                     .padding(.horizontal, sidePadding)
 
-                // Today’s Anchor
-                VerseOfDayStrip(verse: anchorOfDay)
+                // Daily Rhythm
+                DailyRhythmView()
                     .padding(.horizontal, sidePadding)
-                    .padding(.bottom, 16)
+
+                LibraryShortcutCard {
+                    vm.selectedTab = .library
+                }
+                .padding(.horizontal, sidePadding)
+                .padding(.top, 6)
+                .padding(.bottom, 16)
             }
         }
         .background(Theme.bg.ignoresSafeArea())
@@ -210,6 +216,22 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
+    @ViewBuilder
+    private var devotionalSection: some View {
+        if let devotional = devotionalVM.devotional {
+            NavigationLink {
+                DailyDevotionalDetailView(devotional: devotional)
+            } label: {
+                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var greetingPrefix: String {
         let hour = Calendar.current.component(.hour, from: now)
         switch hour {
@@ -225,29 +247,23 @@ private struct LibraryShortcutCard: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: "books.vertical.fill")
-                    .font(.title3)
-                    .foregroundStyle(Theme.accent)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Looking for something specific?")
+                .font(.footnote)
+                .foregroundStyle(Theme.inkSecondary)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Verse Packs")
-                        .font(.headline)
-                        .foregroundStyle(Theme.ink)
-                    Text("Browse your full library and start a guided pack.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.inkSecondary)
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    Text("Explore Verse Library")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                    Image(systemName: "arrow.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
                 }
-
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(Theme.line)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 }

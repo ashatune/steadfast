@@ -73,21 +73,7 @@ struct LibraryView: View {
         .foregroundStyle(Theme.ink)
     }
 
-    @ViewBuilder
-    private var dailyDevotionalSection: some View {
-        if let devotional = devotionalVM.devotional {
-            NavigationLink {
-                DailyDevotionalDetailView(devotional: devotional)
-            } label: {
-                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.plain)
-        } else {
-            DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                .frame(maxWidth: .infinity)
-        }
-    }
+
 }
 
 // MARK: - Cards
