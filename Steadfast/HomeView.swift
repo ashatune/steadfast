@@ -138,10 +138,9 @@ struct HomeView: View {
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
 
-                LibraryShortcutCard {
-                    vm.selectedTab = .library
-                }
+                devotionalSection
                     .padding(.horizontal, sidePadding)
+                    .padding(.top, 2)
 
                 // Daily Rhythm
                 DailyRhythmView()
@@ -212,16 +211,27 @@ struct HomeView: View {
     }
 
     private var devotionalSection: some View {
-        Group {
-            if let devotional = devotionalVM.devotional {
-                NavigationLink(destination: DailyDevotionalDetailView(devotional: devotional)) {
-                    DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "sunrise.fill")
+                    .foregroundStyle(Theme.accent)
+                Text("Daily Devotional")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                Spacer()
+            }
+
+            Group {
+                if let devotional = devotionalVM.devotional {
+                    NavigationLink(destination: DailyDevotionalDetailView(devotional: devotional)) {
+                        DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(PlainButtonStyle())
-            } else {
-                DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                    .frame(maxWidth: .infinity)
             }
         }
     }
