@@ -134,28 +134,22 @@ struct HomeView: View {
                     .padding(.top, 4)
 
 
-                // Daily Rhythm
-                DailyRhythmView()
-                    .padding(.horizontal, sidePadding)
-
-                // Daily Devotional header
-                HStack(spacing: 8) {
-                    Image(systemName: "sunrise.fill")
-                        .foregroundStyle(Theme.accent)
-                    Text("Daily Devotional")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
-                }
-                .padding(.horizontal, sidePadding)
-
                 devotionalSection
                     .padding(.horizontal, sidePadding)
+                    .padding(.top, 2)
+                    .padding(.bottom, 10)
 
                 // Today’s Anchor
                 VerseOfDayStrip(verse: anchorOfDay)
                     .padding(.horizontal, sidePadding)
-                    .padding(.bottom, 16)
+                    .padding(.top, 14)
+
+                // Daily Rhythm
+                DailyRhythmView()
+                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 14)
+
+                libraryFooterSection
             }
         }
         .background(Theme.bg.ignoresSafeArea())
@@ -219,6 +213,41 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
+    private var devotionalSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "sunrise.fill")
+                    .foregroundStyle(Theme.accent)
+                Text("Daily Devotional")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                Spacer()
+            }
+
+            Group {
+                if let devotional = devotionalVM.devotional {
+                    NavigationLink(destination: DailyDevotionalDetailView(devotional: devotional)) {
+                        DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    private var libraryFooterSection: some View {
+        LibraryShortcutCard {
+            vm.selectedTab = .library
+        }
+        .padding(.horizontal, sidePadding)
+        .padding(.top, 2)
+        .padding(.bottom, 16)
+    }
+
     private var greetingPrefix: String {
         let hour = Calendar.current.component(.hour, from: now)
         switch hour {
@@ -228,19 +257,29 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private var devotionalSection: some View {
-        if let devotional = devotionalVM.devotional {
-            NavigationLink {
-                DailyDevotionalDetailView(devotional: devotional)
-            } label: {
-                DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
-                    .frame(maxWidth: .infinity)
+}
+
+private struct LibraryShortcutCard: View {
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Looking for something specific?")
+                .font(.footnote)
+                .foregroundStyle(Theme.inkSecondary)
+
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    Text("Explore Verse Library")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                    Image(systemName: "arrow.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
-        } else {
-            DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                .frame(maxWidth: .infinity)
         }
     }
 }
