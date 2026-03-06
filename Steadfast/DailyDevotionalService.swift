@@ -42,7 +42,7 @@ final class DailyDevotionalService {
         #if canImport(FirebaseCore)
         if let app = FirebaseApp.app() {
             let options = app.options
-            print("DailyDevotionalService: Firebase app context (name=\(app.name), projectID=\(options.projectID ?? \"nil\"), googleAppID=\(options.googleAppID))")
+            print("DailyDevotionalService: Firebase app context (name=\(app.name), projectID=\(options.projectID ?? "nil"), googleAppID=\(options.googleAppID))")
         } else {
             print("DailyDevotionalService: Firebase app context unavailable (FirebaseApp.app() == nil)")
         }
