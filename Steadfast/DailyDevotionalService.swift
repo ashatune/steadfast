@@ -2,6 +2,9 @@ import Foundation
 #if canImport(FirebaseFirestore)
 import FirebaseFirestore
 #endif
+#if canImport(FirebaseCore)
+import FirebaseCore
+#endif
 
 /// Loads today's devotional (document ID = `yyyy-MM-dd`), otherwise falls back
 /// to the most recent devotional ordered by `date`.
@@ -29,37 +32,57 @@ final class DailyDevotionalService {
         let todayString = dateKey
         let placeholder = DailyDevotional.placeholder(for: today)
 
+        func completeWithPlaceholder(reason: String) {
+            print("DailyDevotionalService: placeholder fallback triggered (reason=\(reason))")
+            completion(placeholder)
+        }
+
         print("🔥 DevotionalService fetch start")
         print("DailyDevotionalService: fetchDevotionalForToday start (todayString=\(todayString), tz=\(calendar.timeZone.identifier), calendar=\(calendar.identifier), collection=\(collectionName))")
+        #if canImport(FirebaseCore)
+        if let app = FirebaseApp.app() {
+            let options = app.options
+            print("DailyDevotionalService: Firebase app context (name=\(app.name), projectID=\(options.projectID ?? \"nil\"), googleAppID=\(options.googleAppID))")
+        } else {
+            print("DailyDevotionalService: Firebase app context unavailable (FirebaseApp.app() == nil)")
+        }
+        #endif
 
         #if canImport(FirebaseFirestore)
         let db = Firestore.firestore()
         let collection = db.collection(collectionName)
 
-        // Query: find the most recent devotional on or before today (assumes `date` stored as "yyyy-MM-dd" string for ordering)
+        // Query: fetch today's devotional by exact date key
         let stringQuery = collection
-            .whereField("date", isLessThanOrEqualTo: todayString)
-            .order(by: "date", descending: true)
+            .whereField("date", isEqualTo: todayString)
             .limit(to: 1)
 
         func handleSnapshot(_ snapshot: QuerySnapshot?, source: String) {
             let count = snapshot?.documents.count ?? 0
             print("DailyDevotionalService: \(source) query returned \(count) docs")
+            print("DailyDevotionalService: query context (todayString=\(todayString), collection=\(collectionName), source=\(source))")
             guard
                 let document = snapshot?.documents.first,
                 let mapped = self.map(document: document, fallbackDate: today)
             else {
-                print("DailyDevotionalService: no devotional found on or before today; using placeholder")
-                completion(placeholder)
+                if let firstDocument = snapshot?.documents.first {
+                    print("DailyDevotionalService: selected document id=\(firstDocument.documentID)")
+                    print("DailyDevotionalService: selected document raw data=\(firstDocument.data())")
+                    completeWithPlaceholder(reason: "first-document-map-failed")
+                } else {
+                    completeWithPlaceholder(reason: "query-returned-zero-documents")
+                }
                 return
             }
+            print("DailyDevotionalService: selected document id=\(document.documentID)")
+            print("DailyDevotionalService: selected document raw data=\(document.data())")
             print("DailyDevotionalService: using Firestore devotional id=\(mapped.id) date=\(mapped.date)")
             completion(mapped)
         }
 
         let handleError: (Error) -> Void = { error in
             print("DailyDevotionalService: Firestore query error: \(error) | \(error.localizedDescription)")
-            completion(placeholder)
+            completeWithPlaceholder(reason: "firestore-query-error")
         }
 
         // Prefer server to avoid stale cache during debugging
@@ -73,7 +96,7 @@ final class DailyDevotionalService {
         }
         #else
         print("DailyDevotionalService: FirebaseFirestore not available; returning placeholder")
-        completion(placeholder)
+        completeWithPlaceholder(reason: "firebasefirestore-module-unavailable")
         #endif
     }
 
