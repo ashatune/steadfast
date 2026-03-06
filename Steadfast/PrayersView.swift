@@ -91,6 +91,7 @@ struct PrayersView: View {
                 }
             }
             .navigationTitle("Prayerful Meditations")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 }
