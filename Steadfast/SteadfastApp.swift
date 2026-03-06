@@ -114,6 +114,13 @@ struct SteadfastApp: App {
         } else {
             print("Firebase already configured")
         }
+
+        if let app = FirebaseApp.app() {
+            let options = app.options
+            print("Firebase runtime config: appName=\(app.name) projectID=\(options.projectID ?? "nil") googleAppID=\(options.googleAppID) bundleID=\(options.bundleID)")
+        } else {
+            print("Firebase runtime config unavailable: FirebaseApp.app() == nil")
+        }
         #endif
     }
 }
