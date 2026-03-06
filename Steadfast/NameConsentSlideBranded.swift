@@ -10,17 +10,19 @@ import SwiftUI
 struct NameConsentSlideBranded: View {
     @Binding var displayName: String
     @Binding var hasAcceptedTerms: Bool
+    var onContinue: () -> Void
+
     @State private var showTerms = false
+    @FocusState private var isNameFocused: Bool
 
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                Spacer(minLength: 16)
-
                 Text("Let’s personalize your experience")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
+                    .padding(.top, 20)
 
                 VStack(spacing: 10) {
                     Text("What’s your name?")
@@ -30,8 +32,10 @@ struct NameConsentSlideBranded: View {
                     TextField("Your first name", text: $displayName)
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
+                        .submitLabel(.done)
+                        .focused($isNameFocused)
                         .onSubmit {
-                            displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            continueIfValid()
                         }
                         .padding(.vertical, 12)
                         .padding(.horizontal, 14)
@@ -46,6 +50,14 @@ struct NameConsentSlideBranded: View {
                         .foregroundStyle(.primary)
                         .tint(Theme.accent)
                         .frame(maxWidth: 420)
+
+                    Button("Continue") {
+                        continueIfValid()
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle())
+                    .disabled(!canContinue)
+                    .opacity(canContinue ? 1 : 0.6)
+                    .frame(maxWidth: 420)
                 }
 
                 VStack(spacing: 10) {
@@ -69,15 +81,30 @@ struct NameConsentSlideBranded: View {
                     .tint(Theme.accent)
                     .frame(maxWidth: 420)
                 }
-
-                Spacer(minLength: 16)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
             .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, alignment: .top)
         }
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            DispatchQueue.main.async {
+                isNameFocused = true
+            }
+        }
+    }
+
+    private var canContinue: Bool {
+        !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasAcceptedTerms
+    }
+
+    private func continueIfValid() {
+        guard canContinue else { return }
+        displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        isNameFocused = false
+        onContinue()
     }
 }
 
