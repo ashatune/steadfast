@@ -127,7 +127,8 @@ struct OnboardingFlowView: View {
 
                     NameConsentSlideBranded(
                         displayName: $displayName,
-                        hasAcceptedTerms: $hasAcceptedTerms
+                        hasAcceptedTerms: $hasAcceptedTerms,
+                        onContinue: { goForward() }
                     ).tag(Page.nameConsent)
 
                     WelcomeUserSlide()
@@ -164,7 +165,7 @@ struct OnboardingFlowView: View {
                 .indexViewStyle(.page(backgroundDisplayMode: .interactive))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if viewModel.page != .done {
+                if viewModel.page != .done && viewModel.page != .nameConsent {
                     onboardingControls
                         .padding(.horizontal, 24)
                         .padding(.top, 12)
