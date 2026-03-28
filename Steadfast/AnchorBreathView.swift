@@ -23,6 +23,7 @@ struct AnchorBreathView: View {
 
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var streakManager: StreakManager
     @State private var phase: Phase = .inhale
     @State private var countdown: Int = 90
     @State private var phaseRemaining: Int = 0
@@ -39,6 +40,7 @@ struct AnchorBreathView: View {
 
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
+    @State private var isEndingSession: Bool = false
 
     enum Phase { case inhale, hold, exhale }
     private var resolvedBgm: MediaSource? {
@@ -301,6 +303,10 @@ struct AnchorBreathView: View {
     // MARK: - Cleanup / End
 
     private func endSession() {
+        guard !isEndingSession else { return }
+        isEndingSession = true
+        streakManager.markSessionCompleted()
+
         // Fade out music then complete
         fadeMusicVolume(to: 0.0, over: 0.35)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {

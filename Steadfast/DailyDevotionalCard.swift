@@ -123,6 +123,7 @@ struct DailyDevotionalCard: View {
 struct DailyDevotionalDetailView: View {
     let devotional: DailyDevotional
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
+    @EnvironmentObject private var streakManager: StreakManager
     @Environment(\.dismiss) private var dismiss
     @State private var showMeditation = false
     @State private var showReturnTomorrow = false
@@ -159,6 +160,7 @@ struct DailyDevotionalDetailView: View {
                     .frame(maxWidth: .infinity)
 
                     Button("Done") {
+                        streakManager.markSessionCompleted()
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showReturnTomorrow = true
                         }
