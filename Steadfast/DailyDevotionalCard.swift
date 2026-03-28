@@ -123,8 +123,10 @@ struct DailyDevotionalCard: View {
 struct DailyDevotionalDetailView: View {
     let devotional: DailyDevotional
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
+    @EnvironmentObject private var streakManager: StreakManager
     @Environment(\.dismiss) private var dismiss
     @State private var showMeditation = false
+    @State private var showReturnTomorrow = false
 
     var body: some View {
         ScrollView {
@@ -158,7 +160,10 @@ struct DailyDevotionalDetailView: View {
                     .frame(maxWidth: .infinity)
 
                     Button("Done") {
-                        dismiss()
+                        streakManager.markSessionCompleted()
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showReturnTomorrow = true
+                        }
                     }
                     .buttonStyle(.bordered)
                     .frame(maxWidth: .infinity)
@@ -171,15 +176,18 @@ struct DailyDevotionalDetailView: View {
         .background(Theme.bg.ignoresSafeArea())
         .navigationTitle("Daily Devotional")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(showReturnTomorrow)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    savedStore.toggleSave(devotional: devotional)
-                } label: {
-                    Image(systemName: savedStore.isSaved(devotionalID: devotional.id) ? "bookmark.fill" : "bookmark")
-                        .font(.headline)
+            if !showReturnTomorrow {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        savedStore.toggleSave(devotional: devotional)
+                    } label: {
+                        Image(systemName: savedStore.isSaved(devotionalID: devotional.id) ? "bookmark.fill" : "bookmark")
+                            .font(.headline)
+                    }
+                    .accessibilityLabel(savedStore.isSaved(devotionalID: devotional.id) ? "Remove bookmark" : "Save devotional")
                 }
-                .accessibilityLabel(savedStore.isSaved(devotionalID: devotional.id) ? "Remove bookmark" : "Save devotional")
             }
         }
         .background(
@@ -198,5 +206,13 @@ struct DailyDevotionalDetailView: View {
             )
             .hidden()
         )
+        .overlay {
+            if showReturnTomorrow {
+                ReturnTomorrowView {
+                    dismiss()
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
     }
 }

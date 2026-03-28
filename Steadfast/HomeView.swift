@@ -5,6 +5,7 @@ struct HomeView: View {
     @AppStorage("displayName") private var storedDisplayName = ""
 
     @EnvironmentObject var vm: AppViewModel
+    @EnvironmentObject private var streakManager: StreakManager
     @State private var showAnchorFlow = false
     @EnvironmentObject var flags: FeatureFlags
     @State private var showProfileSheet = false
@@ -128,6 +129,10 @@ struct HomeView: View {
                     .padding(.top, 8)
                     .transition(.opacity)
 
+                streakSection
+                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 4)
+
                 // Big SOS button
                 SOSButton { vm.showSOS = true }
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -237,6 +242,50 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private var streakSection: some View {
+        let days = streakManager.statusForLast7Days()
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(streakManager.streakText())
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                Spacer()
+                Text("This week")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.inkSecondary)
+            }
+
+            HStack(spacing: 10) {
+                ForEach(days) { day in
+                    VStack(spacing: 6) {
+                        Text(day.label)
+                            .font(.caption.weight(day.isToday ? .semibold : .regular))
+                            .foregroundStyle(day.isToday ? Theme.ink : Theme.inkSecondary)
+
+                        Circle()
+                            .fill(day.isCompleted ? Theme.accent.opacity(day.isToday ? 0.55 : 0.35) : Theme.line)
+                            .frame(width: 12, height: 12)
+                            .overlay(
+                                Circle()
+                                    .stroke(day.isToday ? Theme.accent.opacity(0.45) : Color.clear, lineWidth: 2)
+                                    .frame(width: 18, height: 18)
+                            )
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Theme.surface.opacity(0.9))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Theme.line)
+        )
     }
 
     private var libraryFooterSection: some View {
