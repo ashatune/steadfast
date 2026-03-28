@@ -306,7 +306,6 @@ struct AnchorBreathView: View {
         guard !isEndingSession else { return }
         isEndingSession = true
         streakManager.markSessionCompleted()
-        StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
 
         // Fade out music then complete
         fadeMusicVolume(to: 0.0, over: 0.35)
