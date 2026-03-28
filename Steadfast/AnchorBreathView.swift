@@ -91,49 +91,9 @@ struct AnchorBreathView: View {
             .padding()
             .opacity(showCompletion ? 0 : 1) // fade out behind overlay
 
-            // COMPLETION OVERLAY
             if showCompletion {
-                Color.black.opacity(0.35).ignoresSafeArea()
-                    .transition(.opacity)
-
-                VStack(spacing: 16) {
-                    Text("Session Complete")
-                        .font(.title2).bold()
-                        .foregroundColor(.white) // 👈 bright white headline
-
-                    Text("Thank yourself for being mindful in this moment.\nCarry this calm with you.")
-                        .multilineTextAlignment(.center)
-                        .font(.body)
-                        .foregroundColor(.white.opacity(0.9)) // 👈 brighter secondary
-
-                    Button {
-                        endSession()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("End Session")
-                                .fontWeight(.semibold)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Theme.accent.opacity(0.25), in: Capsule()) // slightly stronger
-                        .foregroundColor(.white) // 👈 make button text/icons white
-                    }
-                    .padding(.top, 6)
-                }
-                .padding(24)
-                .frame(maxWidth: 360)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.black.opacity(0.55)) // 👈 darker backdrop for more contrast
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(.white.opacity(0.2))
-                )
-                .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 10)
-                .transition(.scale.combined(with: .opacity))
-
+                ReturnTomorrowView(onDone: endSession)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         // Inline mute button overlay (only when requested)
@@ -251,7 +211,9 @@ struct AnchorBreathView: View {
                 t.invalidate()
                 // Stop the phase timer and SHOW completion (do NOT stop music)
                 phaseTimer?.invalidate(); phaseTimer = nil
-                showCompletion = true
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    showCompletion = true
+                }
                 Haptics.success()
             }
         }
