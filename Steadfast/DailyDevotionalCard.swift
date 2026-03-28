@@ -209,10 +209,18 @@ struct DailyDevotionalDetailView: View {
         )
         .overlay {
             if showReturnTomorrow {
-                ReturnTomorrowView {
-                    dismiss()
+                if let milestone = streakManager.pendingMilestone {
+                    StreakMilestoneCelebrationView(milestone: milestone) {
+                        streakManager.clearPendingMilestone()
+                        dismiss()
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    ReturnTomorrowView {
+                        dismiss()
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }

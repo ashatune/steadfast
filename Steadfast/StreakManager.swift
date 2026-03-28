@@ -85,6 +85,10 @@ final class StreakManager: ObservableObject {
         return value
     }
 
+    func clearPendingMilestone() {
+        pendingMilestone = nil
+    }
+
     func isCelebrationMilestone(_ streak: Int) -> Bool {
         let fixed: Set<Int> = [3, 7, 14, 21, 30, 45, 60]
         if fixed.contains(streak) { return true }

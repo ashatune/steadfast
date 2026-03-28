@@ -41,6 +41,7 @@ struct AnchorBreathView: View {
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
     @State private var isEndingSession: Bool = false
+    @State private var hasRecordedCompletion = false
 
     enum Phase { case inhale, hold, exhale }
     private var resolvedBgm: MediaSource? {
@@ -94,8 +95,16 @@ struct AnchorBreathView: View {
             .opacity(showCompletion ? 0 : 1) // fade out behind overlay
 
             if showCompletion {
-                ReturnTomorrowView(onDone: endSession)
+                if let milestone = streakManager.pendingMilestone {
+                    StreakMilestoneCelebrationView(milestone: milestone) {
+                        streakManager.clearPendingMilestone()
+                        endSession()
+                    }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    ReturnTomorrowView(onDone: endSession)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
         }
         // Inline mute button overlay (only when requested)
@@ -213,6 +222,11 @@ struct AnchorBreathView: View {
                 t.invalidate()
                 // Stop the phase timer and SHOW completion (do NOT stop music)
                 phaseTimer?.invalidate(); phaseTimer = nil
+                if !hasRecordedCompletion {
+                    hasRecordedCompletion = true
+                    streakManager.markSessionCompleted()
+                    StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+                }
                 withAnimation(.easeInOut(duration: 0.35)) {
                     showCompletion = true
                 }
@@ -305,8 +319,6 @@ struct AnchorBreathView: View {
     private func endSession() {
         guard !isEndingSession else { return }
         isEndingSession = true
-        streakManager.markSessionCompleted()
-        StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
 
         // Fade out music then complete
         fadeMusicVolume(to: 0.0, over: 0.35)
