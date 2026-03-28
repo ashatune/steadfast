@@ -3,6 +3,7 @@ import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject var vm: AppViewModel
+    @EnvironmentObject private var streakManager: StreakManager
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
     @State private var showingDeniedAlert = false
 
@@ -272,6 +273,7 @@ struct SettingsView: View {
             NotificationManager.shared.cancelDailyCheckins()
             NotificationManager.shared.cancelMorningDevotional()
         }
+        StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
         dumpPending() // optional debug print
     }
 }
