@@ -5,6 +5,8 @@ struct ReturnTomorrowView: View {
 
     var onDone: () -> Void
     var showsSupportingText: Bool = true
+    @State private var activeMilestone: Int?
+    @State private var showMilestone = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -53,6 +55,19 @@ struct ReturnTomorrowView: View {
         .background(Theme.bg.ignoresSafeArea())
         .onAppear {
             Haptics.light()
+            if activeMilestone == nil {
+                activeMilestone = streakManager.consumePendingMilestone()
+                showMilestone = activeMilestone != nil
+            }
+        }
+        .fullScreenCover(isPresented: $showMilestone, onDismiss: {
+            activeMilestone = nil
+        }) {
+            if let activeMilestone {
+                StreakMilestoneCelebrationView(milestone: activeMilestone) {
+                    showMilestone = false
+                }
+            }
         }
     }
 }

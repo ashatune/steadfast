@@ -161,6 +161,7 @@ struct DailyDevotionalDetailView: View {
 
                     Button("Done") {
                         streakManager.markSessionCompleted()
+                        StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showReturnTomorrow = true
                         }
