@@ -71,10 +71,6 @@ final class StreakManager: ObservableObject {
         return "\(prefix) \(currentStreak) \(dayWord) streak"
     }
 
-    func hasCompletion(on date: Date) -> Bool {
-        completionDays.contains(startOfDay(for: date))
-    }
-
     private func startOfDay(for date: Date) -> Date {
         calendar.startOfDay(for: date)
     }
