@@ -145,7 +145,7 @@ struct HomeView: View {
                     .padding(.top, 14)
 
                 // Daily Rhythm
-                VerseOfDayStrip(verse: anchorOfDay)
+                DailyRhythmView()
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 14)
 

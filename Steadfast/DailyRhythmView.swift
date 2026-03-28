@@ -115,8 +115,8 @@ struct DailyRhythmView: View {
 
         private var exploreSlot: DailySlot {
             .init(
-                title: "Explore more meditations",
-                subtitle: "Prayerful meditations",
+                title: "Explore",
+                subtitle: "..guided meditations",
                 systemImage: "hands.sparkles.fill",
                 imageName: "explorecard",
                 titleLineLimit: 2,
