@@ -13,6 +13,7 @@ final class StreakManager: ObservableObject {
     @Published private(set) var currentStreak: Int = 0
     @Published private(set) var lastCompletedDate: Date?
     @Published private(set) var completionDays: Set<Date> = []
+    @Published private(set) var pendingMilestone: Int?
 
     private let defaults: UserDefaults
     private let calendar: Calendar
@@ -20,6 +21,8 @@ final class StreakManager: ObservableObject {
     private let streakKey = "streak.current"
     private let lastCompletedKey = "streak.lastCompletedDay"
     private let completedDaysKey = "streak.completedDays"
+    private let celebratedMilestonesKey = "streak.celebratedMilestones"
+    private var celebratedMilestones: Set<Int> = []
 
     init(defaults: UserDefaults = .standard, calendar: Calendar = .current) {
         self.defaults = defaults
@@ -45,6 +48,7 @@ final class StreakManager: ObservableObject {
         self.lastCompletedDate = day
         completionDays.insert(day)
         pruneOldDays(keepingLast: 30, referenceDate: day)
+        queueMilestoneCelebrationIfNeeded(for: currentStreak)
         save()
     }
 
@@ -71,6 +75,22 @@ final class StreakManager: ObservableObject {
         return "\(prefix) \(currentStreak) \(dayWord) streak"
     }
 
+    func hasCompletion(on date: Date) -> Bool {
+        completionDays.contains(startOfDay(for: date))
+    }
+
+    func consumePendingMilestone() -> Int? {
+        let value = pendingMilestone
+        pendingMilestone = nil
+        return value
+    }
+
+    func isCelebrationMilestone(_ streak: Int) -> Bool {
+        let fixed: Set<Int> = [3, 7, 14, 21, 30, 45, 60]
+        if fixed.contains(streak) { return true }
+        return streak > 60 && streak.isMultiple(of: 10)
+    }
+
     private func startOfDay(for date: Date) -> Date {
         calendar.startOfDay(for: date)
     }
@@ -90,11 +110,22 @@ final class StreakManager: ObservableObject {
         if let intervals = defaults.array(forKey: completedDaysKey) as? [Double] {
             completionDays = Set(intervals.map { startOfDay(for: Date(timeIntervalSince1970: $0)) })
         }
+
+        if let milestones = defaults.array(forKey: celebratedMilestonesKey) as? [Int] {
+            celebratedMilestones = Set(milestones)
+        }
     }
 
     private func save() {
         defaults.set(currentStreak, forKey: streakKey)
         defaults.set(lastCompletedDate?.timeIntervalSince1970, forKey: lastCompletedKey)
         defaults.set(completionDays.map(\.timeIntervalSince1970), forKey: completedDaysKey)
+        defaults.set(Array(celebratedMilestones).sorted(), forKey: celebratedMilestonesKey)
+    }
+
+    private func queueMilestoneCelebrationIfNeeded(for streak: Int) {
+        guard isCelebrationMilestone(streak), !celebratedMilestones.contains(streak) else { return }
+        celebratedMilestones.insert(streak)
+        pendingMilestone = streak
     }
 }
