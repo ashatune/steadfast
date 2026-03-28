@@ -90,7 +90,7 @@ final class StreakManager: ObservableObject {
     }
 
     func isCelebrationMilestone(_ streak: Int) -> Bool {
-        let fixed: Set<Int> = [3, 7, 14, 21, 30, 45, 60]
+        let fixed: Set<Int> = [1, 3, 7, 14, 21, 30, 45, 60]
         if fixed.contains(streak) { return true }
         return streak > 60 && streak.isMultiple(of: 10)
     }

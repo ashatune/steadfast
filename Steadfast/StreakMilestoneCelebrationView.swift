@@ -23,7 +23,7 @@ struct StreakMilestoneCelebrationView: View {
                         .foregroundStyle(Theme.ink)
                         .multilineTextAlignment(.center)
 
-                    Text("\(milestone) day streak")
+                    Text(milestone == 1 ? "Day 1 complete 🙏" : "\(milestone) day streak")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(Theme.accent)
 
