@@ -11,12 +11,16 @@
 		246995582EA853CB0098BB6A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246995572EA853CB0098BB6A /* WidgetKit.framework */; };
 		2469955A2EA853CB0098BB6A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246995592EA853CB0098BB6A /* SwiftUI.framework */; };
 		246995692EA853CC0098BB6A /* SteadfastAnchorsWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 246995552EA853CB0098BB6A /* SteadfastAnchorsWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		246BB0A62FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
-		246BB0A72FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
 		246995722EA854FD0098BB6A /* VerseShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246995712EA854FA0098BB6A /* VerseShared.swift */; };
 		246995732EA855110098BB6A /* VerseShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246995712EA854FA0098BB6A /* VerseShared.swift */; };
 		246995742EA855170098BB6A /* AnchorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246995402EA839D10098BB6A /* AnchorService.swift */; };
 		246995CE2EBCF3B20098BB6A /* SteadfastWatchApp Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 246995AB2EBCF3B10098BB6A /* SteadfastWatchApp Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		246BB0A62FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
+		246BB0A72FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
+		2476296D2F5A63F8001DFEA3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2476296C2F5A63F8001DFEA3 /* GoogleService-Info.plist */; };
+		247629702F5A7FDA001DFEA3 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2476296F2F5A7FDA001DFEA3 /* FirebaseAnalytics */; };
+		247629722F5A7FDA001DFEA3 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 247629712F5A7FDA001DFEA3 /* FirebaseCrashlytics */; };
+		247629742F5A7FDA001DFEA3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 247629732F5A7FDA001DFEA3 /* FirebaseFirestore */; };
 		24B500542E56A6C000AC82BE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 24B500532E56A6C000AC82BE /* LaunchScreen.storyboard */; };
 		24B500642E57D2B700AC82BE /* meditate1.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 24B500632E57D2B700AC82BE /* meditate1.m4a */; };
 /* End PBXBuildFile section */
@@ -93,7 +97,6 @@
 
 /* Begin PBXFileReference section */
 		246995402EA839D10098BB6A /* AnchorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorService.swift; sourceTree = "<group>"; };
-		246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRoute.swift; sourceTree = "<group>"; };
 		246995552EA853CB0098BB6A /* SteadfastAnchorsWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SteadfastAnchorsWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		246995572EA853CB0098BB6A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		246995592EA853CB0098BB6A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -102,6 +105,8 @@
 		246995AB2EBCF3B10098BB6A /* SteadfastWatchApp Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SteadfastWatchApp Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		246995BA2EBCF3B20098BB6A /* SteadfastWatchApp Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SteadfastWatchApp Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		246995C42EBCF3B20098BB6A /* SteadfastWatchApp Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SteadfastWatchApp Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRoute.swift; sourceTree = "<group>"; };
+		2476296C2F5A63F8001DFEA3 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		24B500532E56A6C000AC82BE /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		24B500632E57D2B700AC82BE /* meditate1.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = meditate1.m4a; sourceTree = "<group>"; };
 		24B5FFB72E52646B00AC82BE /* Steadfast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steadfast.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -223,6 +228,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				247629702F5A7FDA001DFEA3 /* FirebaseAnalytics in Frameworks */,
+				247629722F5A7FDA001DFEA3 /* FirebaseCrashlytics in Frameworks */,
+				247629742F5A7FDA001DFEA3 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +273,7 @@
 		24B5FFAE2E52646B00AC82BE = {
 			isa = PBXGroup;
 			children = (
+				2476296C2F5A63F8001DFEA3 /* GoogleService-Info.plist */,
 				246995902EBAC3DE0098BB6A /* SteadfastAnchorsWidgetExtension.entitlements */,
 				246995702EA8540F0098BB6A /* Shared */,
 				246995272EA80BE80098BB6A /* Audio */,
@@ -413,6 +422,9 @@
 			);
 			name = Steadfast;
 			packageProductDependencies = (
+				2476296F2F5A7FDA001DFEA3 /* FirebaseAnalytics */,
+				247629712F5A7FDA001DFEA3 /* FirebaseCrashlytics */,
+				247629732F5A7FDA001DFEA3 /* FirebaseFirestore */,
 			);
 			productName = Steadfast;
 			productReference = 24B5FFB72E52646B00AC82BE /* Steadfast.app */;
@@ -510,6 +522,9 @@
 			);
 			mainGroup = 24B5FFAE2E52646B00AC82BE;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2476296E2F5A7FDA001DFEA3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 24B5FFB82E52646B00AC82BE /* Products */;
 			projectDirPath = "";
@@ -559,6 +574,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2476296D2F5A63F8001DFEA3 /* GoogleService-Info.plist in Resources */,
 				24B500542E56A6C000AC82BE /* LaunchScreen.storyboard in Resources */,
 				24B500642E57D2B700AC82BE /* meditate1.m4a in Resources */,
 			);
@@ -679,8 +695,8 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = SteadfastAnchorsWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SteadfastAnchorsWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SteadfastAnchorsWidget;
@@ -690,8 +706,8 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.Steadfast.SteadfastAnchorsWidget;
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.steadfastanchorwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -707,8 +723,8 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = SteadfastAnchorsWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SteadfastAnchorsWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SteadfastAnchorsWidget;
@@ -718,8 +734,8 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.Steadfast.SteadfastAnchorsWidget;
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.steadfastanchorwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -736,18 +752,18 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SteadfastWatchApp Watch App/Preview Content\"";
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SteadfastWatchApp;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ashatune.Steadfast;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.steadfastmeditation.app;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.Steadfast.watchkitapp;
+				MARKETING_VERSION = 1.1.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -766,18 +782,18 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SteadfastWatchApp Watch App/Preview Content\"";
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = SteadfastWatchApp;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ashatune.Steadfast;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.steadfastmeditation.app;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.Steadfast.watchkitapp;
+				MARKETING_VERSION = 1.1.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -794,10 +810,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "ashatune.SteadfastWatchApp-Watch-AppTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.SteadfastWatchApp-Watch-AppTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -814,10 +830,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "ashatune.SteadfastWatchApp-Watch-AppTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.SteadfastWatchApp-Watch-AppTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -833,10 +849,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "ashatune.SteadfastWatchApp-Watch-AppUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.SteadfastWatchApp-Watch-AppUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -852,10 +868,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "ashatune.SteadfastWatchApp-Watch-AppUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.SteadfastWatchApp-Watch-AppUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -899,6 +915,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -962,6 +979,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -992,10 +1010,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Steadfast/Steadfast.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Steadfast/Preview Content\"";
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1008,8 +1027,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.Steadfast;
+				MARKETING_VERSION = 1.1.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -1024,10 +1043,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Steadfast/Steadfast.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Steadfast/Preview Content\"";
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1040,8 +1060,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.Steadfast;
+				MARKETING_VERSION = 1.1.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -1055,11 +1075,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.SteadfastTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.SteadfastTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1074,11 +1094,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.SteadfastTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.SteadfastTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1092,10 +1112,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.SteadfastUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.SteadfastUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1109,10 +1129,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = C792Z6667C;
+				DEVELOPMENT_TEAM = HQB3WH9NW6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ashatune.SteadfastUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.SteadfastUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1197,6 +1217,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2476296E2F5A7FDA001DFEA3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2476296F2F5A7FDA001DFEA3 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2476296E2F5A7FDA001DFEA3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		247629712F5A7FDA001DFEA3 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2476296E2F5A7FDA001DFEA3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		247629732F5A7FDA001DFEA3 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2476296E2F5A7FDA001DFEA3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 24B5FFAF2E52646B00AC82BE /* Project object */;
 }
