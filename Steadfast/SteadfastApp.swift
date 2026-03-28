@@ -69,6 +69,7 @@ struct SteadfastApp: App {
             .onAppear {
                 NotificationManager.shared.configure()
                 NotificationManager.shared.requestAndScheduleDailyCheckins()
+                StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                 SoundManager.shared.configureAudioSession(playThroughSilentSwitch: true)
                 TTSManager.shared.preparePreferredVoice(languages: ["en-US","en-GB"])
 
@@ -85,6 +86,7 @@ struct SteadfastApp: App {
                         evaluateGate()
                         appVM.refreshToday()
                         appVM.consumePendingRouteFromDefaults()
+                        StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                     }
                 }
             }
