@@ -22,7 +22,11 @@ final class StreakManager: ObservableObject {
     private let lastCompletedKey = "streak.lastCompletedDay"
     private let completedDaysKey = "streak.completedDays"
     private let celebratedMilestonesKey = "streak.celebratedMilestones"
+    private let devotionalCompletedDaysKey = "streak.devotionalCompletedDays"
+    private let anchorCompletedDaysKey = "streak.anchorCompletedDays"
     private var celebratedMilestones: Set<Int> = []
+    @Published private(set) var devotionalCompletionDays: Set<Date> = []
+    @Published private(set) var anchorCompletionDays: Set<Date> = []
 
     init(defaults: UserDefaults = .standard, calendar: Calendar = .current) {
         self.defaults = defaults
@@ -52,6 +56,20 @@ final class StreakManager: ObservableObject {
         save()
     }
 
+    func markDevotionalCompleted(on date: Date = Date()) {
+        let day = startOfDay(for: date)
+        devotionalCompletionDays.insert(day)
+        pruneDevotionalAndAnchorDays(referenceDate: day)
+        markSessionCompleted(on: day)
+    }
+
+    func markAnchorCompleted(on date: Date = Date()) {
+        let day = startOfDay(for: date)
+        anchorCompletionDays.insert(day)
+        pruneDevotionalAndAnchorDays(referenceDate: day)
+        markSessionCompleted(on: day)
+    }
+
     func statusForLast7Days(endingOn endDate: Date = Date()) -> [WeekDayStatus] {
         let end = startOfDay(for: endDate)
         let formatter = DateFormatter()
@@ -79,6 +97,14 @@ final class StreakManager: ObservableObject {
         completionDays.contains(startOfDay(for: date))
     }
 
+    func hasDevotionalCompletion(on date: Date) -> Bool {
+        devotionalCompletionDays.contains(startOfDay(for: date))
+    }
+
+    func hasAnchorCompletion(on date: Date) -> Bool {
+        anchorCompletionDays.contains(startOfDay(for: date))
+    }
+
     func consumePendingMilestone() -> Int? {
         let value = pendingMilestone
         pendingMilestone = nil
@@ -104,6 +130,12 @@ final class StreakManager: ObservableObject {
         completionDays = completionDays.filter { $0 >= oldestAllowed }
     }
 
+    private func pruneDevotionalAndAnchorDays(referenceDate: Date) {
+        guard let oldestAllowed = calendar.date(byAdding: .day, value: -29, to: referenceDate) else { return }
+        devotionalCompletionDays = devotionalCompletionDays.filter { $0 >= oldestAllowed }
+        anchorCompletionDays = anchorCompletionDays.filter { $0 >= oldestAllowed }
+    }
+
     private func load() {
         currentStreak = max(0, defaults.integer(forKey: streakKey))
 
@@ -118,6 +150,14 @@ final class StreakManager: ObservableObject {
         if let milestones = defaults.array(forKey: celebratedMilestonesKey) as? [Int] {
             celebratedMilestones = Set(milestones)
         }
+
+        if let intervals = defaults.array(forKey: devotionalCompletedDaysKey) as? [Double] {
+            devotionalCompletionDays = Set(intervals.map { startOfDay(for: Date(timeIntervalSince1970: $0)) })
+        }
+
+        if let intervals = defaults.array(forKey: anchorCompletedDaysKey) as? [Double] {
+            anchorCompletionDays = Set(intervals.map { startOfDay(for: Date(timeIntervalSince1970: $0)) })
+        }
     }
 
     private func save() {
@@ -125,6 +165,8 @@ final class StreakManager: ObservableObject {
         defaults.set(lastCompletedDate?.timeIntervalSince1970, forKey: lastCompletedKey)
         defaults.set(completionDays.map(\.timeIntervalSince1970), forKey: completedDaysKey)
         defaults.set(Array(celebratedMilestones).sorted(), forKey: celebratedMilestonesKey)
+        defaults.set(devotionalCompletionDays.map(\.timeIntervalSince1970), forKey: devotionalCompletedDaysKey)
+        defaults.set(anchorCompletionDays.map(\.timeIntervalSince1970), forKey: anchorCompletedDaysKey)
     }
 
     private func queueMilestoneCelebrationIfNeeded(for streak: Int) {
