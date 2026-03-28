@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ReturnTomorrowView: View {
+    @EnvironmentObject private var streakManager: StreakManager
+
     var onDone: () -> Void
     var showsSupportingText: Bool = true
 
@@ -9,6 +11,14 @@ struct ReturnTomorrowView: View {
             Spacer()
 
             VStack(spacing: 12) {
+                Text(streakManager.streakText())
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Theme.accent.opacity(0.10), in: Capsule())
+                    .padding(.bottom, 2)
+
                 Text("You showed up for yourself today 🤍")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Theme.ink)
@@ -49,4 +59,5 @@ struct ReturnTomorrowView: View {
 
 #Preview {
     ReturnTomorrowView(onDone: {})
+        .environmentObject(StreakManager())
 }
