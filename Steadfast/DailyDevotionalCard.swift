@@ -127,6 +127,11 @@ struct DailyDevotionalDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showMeditation = false
     @State private var showReturnTomorrow = false
+    @State private var showAnchorFromPrompt = false
+
+    private var anchorOfDay: Verse {
+        DailyVerseProvider.shared.verse(for: Date(), calendar: Calendar.current)
+    }
 
     var body: some View {
         ScrollView {
@@ -160,7 +165,7 @@ struct DailyDevotionalDetailView: View {
                     .frame(maxWidth: .infinity)
 
                     Button("Done") {
-                        streakManager.markSessionCompleted()
+                        streakManager.markDevotionalCompleted()
                         StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showReturnTomorrow = true
@@ -192,20 +197,33 @@ struct DailyDevotionalDetailView: View {
             }
         }
         .background(
-            NavigationLink(
-                "",
-                isActive: $showMeditation,
-                destination: {
+            Group {
+                NavigationLink(
+                    "",
+                    isActive: $showMeditation,
+                    destination: {
+                        AnchorBreathView(
+                            verse: Verse(ref: devotional.verseReference, text: devotional.verseText),
+                            totalDuration: 60,
+                            inhaleSecs: 4,
+                            holdSecs: 4,
+                            exhaleSecs: 6
+                        )
+                    }
+                )
+                .hidden()
+
+                NavigationLink("", isActive: $showAnchorFromPrompt) {
                     AnchorBreathView(
-                        verse: Verse(ref: devotional.verseReference, text: devotional.verseText),
-                        totalDuration: 60,
+                        verse: anchorOfDay,
+                        totalDuration: 90,
                         inhaleSecs: 4,
                         holdSecs: 4,
                         exhaleSecs: 6
                     )
                 }
-            )
-            .hidden()
+                .hidden()
+            }
         )
         .overlay {
             if showReturnTomorrow {
@@ -216,9 +234,19 @@ struct DailyDevotionalDetailView: View {
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
-                    ReturnTomorrowView {
-                        dismiss()
-                    }
+                    ReturnTomorrowView(
+                        onDone: {
+                            dismiss()
+                        },
+                        secondaryPrompt: "Ready for your next step?",
+                        secondaryButtonTitle: "Continue to Anchor",
+                        onSecondaryAction: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showReturnTomorrow = false
+                            }
+                            showAnchorFromPrompt = true
+                        }
+                    )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }

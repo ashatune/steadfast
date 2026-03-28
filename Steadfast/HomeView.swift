@@ -138,6 +138,9 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 4)
 
+                todaysRhythmSection
+                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 2)
 
                 devotionalSection
                     .padding(.horizontal, sidePadding)
@@ -242,6 +245,90 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private var todaysRhythmSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("Today’s rhythm 🙏")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 0) {
+                rhythmStepRow(number: 1, label: "Devotional", isComplete: streakManager.hasDevotionalCompletion(on: now)) {
+                    if devotionalVM.devotional != nil {
+                        showDevotionalDetail = true
+                    } else {
+                        devotionalDeepLinkPending = true
+                        devotionalVM.refresh()
+                    }
+                }
+
+                Rectangle()
+                    .fill(Theme.line)
+                    .frame(width: 1.5, height: 16)
+                    .padding(.leading, 15)
+
+                rhythmStepRow(number: 2, label: "Anchor Exercise", isComplete: streakManager.hasAnchorCompletion(on: now)) {
+                    showAnchorFlow = true
+                }
+            }
+
+            if streakManager.hasDevotionalCompletion(on: now), streakManager.hasAnchorCompletion(on: now) {
+                Text("You’ve completed your rhythm for today 🙏")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(Theme.inkSecondary)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Theme.surface.opacity(0.9))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Theme.line)
+        )
+    }
+
+    private func rhythmStepRow(number: Int, label: String, isComplete: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface)
+                        .frame(width: 30, height: 30)
+                    Circle()
+                        .stroke(isComplete ? Theme.accent.opacity(0.4) : Theme.line, lineWidth: 1)
+                        .frame(width: 30, height: 30)
+                    if isComplete {
+                        Image(systemName: "checkmark")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Theme.accent)
+                    } else {
+                        Text("\(number)")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.inkSecondary)
+                    }
+                }
+
+                Text(label)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+            }
+            .contentShape(Rectangle())
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
     }
 
     private var streakSection: some View {
