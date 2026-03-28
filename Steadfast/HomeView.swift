@@ -138,19 +138,31 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 4)
 
-                todaysRhythmSection
+                rhythmHeader
+                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 8)
+
+                FlowStepCard(
+                    stepNumber: 1,
+                    label: "Devotional",
+                    isComplete: streakManager.hasDevotionalCompletion(on: now),
+                    showsConnector: true
+                ) {
+                    devotionalSection
+                }
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
-                devotionalSection
+                FlowStepCard(
+                    stepNumber: 2,
+                    label: "Anchor Exercise",
+                    isComplete: streakManager.hasAnchorCompletion(on: now),
+                    showsConnector: false
+                ) {
+                    VerseOfDayStrip(verse: anchorOfDay)
+                }
                     .padding(.horizontal, sidePadding)
-                    .padding(.top, 2)
-                    .padding(.bottom, 10)
-
-                // Today’s Anchor
-                VerseOfDayStrip(verse: anchorOfDay)
-                    .padding(.horizontal, sidePadding)
-                    .padding(.top, 14)
+                    .padding(.top, 8)
 
                 // Daily Rhythm
                 DailyRhythmView()
@@ -247,88 +259,18 @@ struct HomeView: View {
         }
     }
 
-    private var todaysRhythmSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Text("Today’s rhythm 🙏")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-                Spacer()
-            }
-
-            VStack(alignment: .leading, spacing: 0) {
-                rhythmStepRow(number: 1, label: "Devotional", isComplete: streakManager.hasDevotionalCompletion(on: now)) {
-                    if devotionalVM.devotional != nil {
-                        showDevotionalDetail = true
-                    } else {
-                        devotionalDeepLinkPending = true
-                        devotionalVM.refresh()
-                    }
-                }
-
-                Rectangle()
-                    .fill(Theme.line)
-                    .frame(width: 1.5, height: 16)
-                    .padding(.leading, 15)
-
-                rhythmStepRow(number: 2, label: "Anchor Exercise", isComplete: streakManager.hasAnchorCompletion(on: now)) {
-                    showAnchorFlow = true
-                }
-            }
+    private var rhythmHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Today’s rhythm 🙏")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.ink)
 
             if streakManager.hasDevotionalCompletion(on: now), streakManager.hasAnchorCompletion(on: now) {
                 Text("You’ve completed your rhythm for today 🙏")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(Theme.inkSecondary)
-                    .padding(.top, 2)
             }
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.surface.opacity(0.9))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Theme.line)
-        )
-    }
-
-    private func rhythmStepRow(number: Int, label: String, isComplete: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface)
-                        .frame(width: 30, height: 30)
-                    Circle()
-                        .stroke(isComplete ? Theme.accent.opacity(0.4) : Theme.line, lineWidth: 1)
-                        .frame(width: 30, height: 30)
-                    if isComplete {
-                        Image(systemName: "checkmark")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(Theme.accent)
-                    } else {
-                        Text("\(number)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.inkSecondary)
-                    }
-                }
-
-                Text(label)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Theme.inkSecondary)
-            }
-            .contentShape(Rectangle())
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
     }
 
     private var streakSection: some View {
@@ -416,6 +358,57 @@ private struct LibraryShortcutCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
+        }
+    }
+}
+
+struct FlowStepCard<Content: View>: View {
+    let stepNumber: Int
+    let label: String
+    let isComplete: Bool
+    var showsConnector: Bool = true
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(spacing: 6) {
+                indicator
+
+                if showsConnector {
+                    Rectangle()
+                        .fill(Theme.line.opacity(0.9))
+                        .frame(width: 1.5)
+                        .frame(maxHeight: .infinity)
+                        .padding(.vertical, 2)
+                }
+            }
+            .frame(width: 32)
+
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Step \(stepNumber): \(label)")
+    }
+
+    private var indicator: some View {
+        ZStack {
+            Circle()
+                .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface)
+                .frame(width: 28, height: 28)
+            Circle()
+                .stroke(isComplete ? Theme.accent.opacity(0.45) : Theme.line, lineWidth: 1)
+                .frame(width: 28, height: 28)
+
+            if isComplete {
+                Image(systemName: "checkmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+            } else {
+                Text("\(stepNumber)")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+            }
         }
     }
 }
