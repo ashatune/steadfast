@@ -224,7 +224,7 @@ struct AnchorBreathView: View {
                 phaseTimer?.invalidate(); phaseTimer = nil
                 if !hasRecordedCompletion {
                     hasRecordedCompletion = true
-                    streakManager.markSessionCompleted()
+                    streakManager.markAnchorCompleted()
                     StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                 }
                 withAnimation(.easeInOut(duration: 0.35)) {

@@ -5,6 +5,9 @@ struct ReturnTomorrowView: View {
 
     var onDone: () -> Void
     var showsSupportingText: Bool = true
+    var secondaryPrompt: String? = nil
+    var secondaryButtonTitle: String? = nil
+    var onSecondaryAction: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 18) {
@@ -40,6 +43,24 @@ struct ReturnTomorrowView: View {
             .padding(.horizontal, 28)
 
             Spacer()
+
+            if let secondaryPrompt,
+               let secondaryButtonTitle,
+               let onSecondaryAction {
+                VStack(spacing: 10) {
+                    Text(secondaryPrompt)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.ink.opacity(0.72))
+                        .multilineTextAlignment(.center)
+
+                    Button(secondaryButtonTitle) {
+                        onSecondaryAction()
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(Theme.accent)
+                }
+                .padding(.horizontal, 24)
+            }
 
             Button("Done") {
                 onDone()
