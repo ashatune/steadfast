@@ -28,7 +28,8 @@ final class StreakNotificationManager {
                 return
             }
 
-            guard !streakManager.hasCompletion(on: now) else {
+            let completedToday = streakManager.completionDays.contains(today)
+            guard !completedToday else {
                 self.clearReminder(for: today)
                 return
             }

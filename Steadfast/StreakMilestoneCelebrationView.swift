@@ -118,17 +118,20 @@ private struct FallingPrayerHandsView: View {
         let opacity: Double
     }
 
-    private let particles: [Particle] = (0..<16).map { idx in
-        Particle(
-            x: CGFloat((idx * 37) % 100) / 100.0,
-            duration: 6.4 + Double((idx * 11) % 7),
-            delay: Double((idx * 13) % 20) * 0.12,
-            size: CGFloat(18 + ((idx * 5) % 10)),
-            opacity: 0.18 + Double((idx * 3) % 8) * 0.07
-        )
-    }
+    private let particles: [Particle] = FallingPrayerHandsView.makeParticles(count: 16)
 
     @State private var animate = false
+
+    private static func makeParticles(count: Int) -> [Particle] {
+        (0..<count).map { idx in
+            let x = CGFloat((idx * 37) % 100) / 100.0
+            let duration = 6.4 + Double((idx * 11) % 7)
+            let delay = Double((idx * 13) % 20) * 0.12
+            let size = CGFloat(18 + ((idx * 5) % 10))
+            let opacity = 0.18 + Double((idx * 3) % 8) * 0.07
+            return Particle(x: x, duration: duration, delay: delay, size: size, opacity: opacity)
+        }
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -153,6 +156,7 @@ private struct FallingPrayerHandsView: View {
 }
 
 private enum MilestoneCardRenderer {
+    @MainActor
     static func renderImage(milestone: Int) -> UIImage? {
         let view = ShareableStreakCardView(milestone: milestone)
         let renderer = ImageRenderer(content: view)
