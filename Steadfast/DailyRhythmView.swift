@@ -22,6 +22,11 @@ struct DailyRhythmView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
+                    ExploreMoreMeditationsCardView(
+                        baseSize: CGSize(width: cardWidth, height: cardHeight),
+                        onTap: { vm.selectedTab = .meditate }
+                    )
+
                     ForEach(slots) { slot in
                         ScalingDailyCard(
                             slot: slot,
@@ -29,11 +34,6 @@ struct DailyRhythmView: View {
                             onTap: action(for: slot)
                         )
                     }
-
-                    ExploreMoreMeditationsCardView(
-                        baseSize: CGSize(width: cardWidth, height: cardHeight),
-                        onTap: { vm.selectedTab = .meditate }
-                    )
                 }
                 .padding(.vertical, 0)
             }
