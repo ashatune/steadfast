@@ -61,24 +61,26 @@ struct VerseCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
 
-            // Play / Pause (only if we have audio)
-            if verse.audioFile != nil {
-                Button {
-                    audio.toggle(verse: verse)
-                } label: {
-                    Image(systemName: audio.isPlaying(verse.id) ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                        .shadow(radius: 3)
-                        .accessibilityLabel(audio.isPlaying(verse.id) ? "Pause audio" : "Play audio")
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 2)
-            } else {
-                Image(systemName: "book")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(iconColor.opacity(0.9))
+            if !isFlatStyle {
+                // Play / Pause (only if we have audio)
+                if verse.audioFile != nil {
+                    Button {
+                        audio.toggle(verse: verse)
+                    } label: {
+                        Image(systemName: audio.isPlaying(verse.id) ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundStyle(iconColor)
+                            .shadow(radius: 3)
+                            .accessibilityLabel(audio.isPlaying(verse.id) ? "Pause audio" : "Play audio")
+                    }
+                    .buttonStyle(.plain)
                     .padding(.top, 2)
+                } else {
+                    Image(systemName: "book")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(iconColor.opacity(0.9))
+                        .padding(.top, 2)
+                }
             }
 
             VStack(alignment: .leading, spacing: 6) {
