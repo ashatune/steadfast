@@ -37,6 +37,8 @@ struct AnchorBreathView: View {
     @State private var musicLooper: AVPlayerLooper?
     @State private var isMusicMuted: Bool = false
     @State private var musicBaseVolume: Float = 0.28
+    @StateObject private var breathingAudio = BreathingAudioManager()
+    @State private var isVoiceGuidanceEnabled: Bool = true
 
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
@@ -90,6 +92,27 @@ struct AnchorBreathView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 24) {
+                    audioControlButton(
+                        systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                        action: toggleMusicMute
+                    )
+                    .accessibilityLabel("Sound")
+                    .accessibilityValue(isMusicMuted ? "Off" : "On")
+
+                    audioControlButton(
+                        systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
+                        action: toggleVoiceGuidance
+                    )
+                    .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
+                    .accessibilityLabel("Voice Guidance")
+                    .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 4)
             }
             .padding()
             .opacity(showCompletion ? 0 : 1) // fade out behind overlay
@@ -107,23 +130,6 @@ struct AnchorBreathView: View {
                 }
             }
         }
-        // Inline mute button overlay (only when requested)
-        .overlay(alignment: .topTrailing) {
-            if showInlineMuteButton {
-                Button {
-                    toggleMusicMute()
-                } label: {
-                    Image(systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .padding(8)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 8)
-                .padding(.trailing, 8)
-                .accessibilityLabel(isMusicMuted ? "Unmute music" : "Mute music")
-            }
-        }
         .navigationTitle("Breathe with Scripture")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -138,13 +144,6 @@ struct AnchorBreathView: View {
                         .symbolRenderingMode(.hierarchical)
                 }
                 .accessibilityLabel("Back")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { toggleMusicMute() } label: {
-                    Image(systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.headline)
-                }
-                .accessibilityLabel(isMusicMuted ? "Unmute music" : "Mute music")
             }
         }
         .onAppear {
@@ -165,9 +164,9 @@ struct AnchorBreathView: View {
     }
     private var phaseLabel: String {
         switch phase {
-        case .inhale: return "Inhale"
+        case .inhale: return "Breathe In"
         case .hold:   return "Hold"
-        case .exhale: return "Exhale"
+        case .exhale: return "Breathe Out"
         }
     }
     private var inhaleText: String {
@@ -175,7 +174,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathIn {
-            return "Inhale \(secs)s"
+            return "Breathe In \(secs)s"
         }
         return splitVerse().0
     }
@@ -185,7 +184,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathOut {
-            return "Exhale \(secs)s"
+            return "Breathe Out \(secs)s"
         }
         return splitVerse().1
     }
@@ -213,6 +212,7 @@ struct AnchorBreathView: View {
         // breathing loop
         phase = .inhale
         phaseRemaining = inhaleSecs
+        playCue(for: .inhale)
         animateScale(to: 1.15, duration: Double(inhaleSecs))
         Haptics.bump()
 
@@ -242,14 +242,17 @@ struct AnchorBreathView: View {
                 case .inhale:
                     phase = .hold
                     phaseRemaining = holdSecs
+                    playCue(for: .hold)
                     animateScale(to: 1.15, duration: 0.2)
                 case .hold:
                     phase = .exhale
                     phaseRemaining = exhaleSecs
+                    playCue(for: .exhale)
                     animateScale(to: 0.85, duration: Double(exhaleSecs))
                 case .exhale:
                     phase = .inhale
                     phaseRemaining = inhaleSecs
+                    playCue(for: .inhale)
                     animateScale(to: 1.15, duration: Double(inhaleSecs))
                 }
                 Haptics.bump()
@@ -289,6 +292,13 @@ struct AnchorBreathView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { musicQueue?.pause() }
         } else {
             musicQueue?.play()
+        }
+    }
+
+    private func toggleVoiceGuidance() {
+        isVoiceGuidanceEnabled.toggle()
+        if !isVoiceGuidanceEnabled {
+            breathingAudio.stop()
         }
     }
 
@@ -342,9 +352,33 @@ struct AnchorBreathView: View {
     private func teardown() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        breathingAudio.stop()
         musicQueue?.pause(); musicQueue = nil
         musicLooper = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func playCue(for phase: Phase) {
+        guard isVoiceGuidanceEnabled else { return }
+        switch phase {
+        case .inhale:
+            breathingAudio.play("breathein")
+        case .hold:
+            breathingAudio.play("hold")
+        case .exhale:
+            breathingAudio.play("breatheout")
+        }
+    }
+
+    @ViewBuilder
+    private func audioControlButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func setupAudioSession() {
