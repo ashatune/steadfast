@@ -58,6 +58,7 @@ struct MiddayFlowView: View {
     @State private var globalTimer: Timer?
     @State private var phaseTimer: Timer?
     @State private var scheduled: [DispatchWorkItem] = []
+    @StateObject private var breathingAudio = BreathingAudioManager()
 
     var body: some View {
         ZStack {
@@ -282,6 +283,7 @@ struct MiddayFlowView: View {
         showCircle = true
         phase = .inhale
         phaseRemaining = boxCount
+        playCue(for: .inhale)
         animateScale(to: 1.12, seconds: boxCount)
         haptic(for: .inhale)
 
@@ -290,11 +292,15 @@ struct MiddayFlowView: View {
             if phaseRemaining <= 0 {
                 switch phase {
                 case .inhale: phase = .hold1; phaseRemaining = boxCount
+                              playCue(for: .hold1)
                 case .hold1:  phase = .exhale; phaseRemaining = boxCount
+                              playCue(for: .exhale)
                               animateScale(to: 0.85, seconds: boxCount)
                               haptic(for: .exhale)
                 case .exhale: phase = .hold2; phaseRemaining = boxCount
+                              playCue(for: .hold2)
                 case .hold2:  phase = .inhale; phaseRemaining = boxCount
+                              playCue(for: .inhale)
                               animateScale(to: 1.12, seconds: boxCount)
                               haptic(for: .inhale)
                 }
@@ -335,6 +341,7 @@ struct MiddayFlowView: View {
         stopPhaseTimer()
         scheduled.forEach { $0.cancel() }
         scheduled.removeAll()
+        breathingAudio.stop()
         SoundManager.shared.fade(to: 0.0, duration: 0.6, stopAfter: true)
     }
 
@@ -344,6 +351,17 @@ struct MiddayFlowView: View {
         case .hold1:  "Hold"
         case .exhale: "Breathe Out"
         case .hold2:  "Hold"
+        }
+    }
+
+    private func playCue(for phase: Phase) {
+        switch phase {
+        case .inhale:
+            breathingAudio.play("breathein")
+        case .hold1, .hold2:
+            breathingAudio.play("hold")
+        case .exhale:
+            breathingAudio.play("breatheout")
         }
     }
 

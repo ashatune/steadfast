@@ -72,6 +72,7 @@ struct MorningFlowView: View {
     @State private var globalTimer: Timer?
     @State private var phaseTimer: Timer?
     @State private var scheduled: [DispatchWorkItem] = []
+    @StateObject private var breathingAudio = BreathingAudioManager()
 
     var body: some View {
         ZStack {
@@ -418,6 +419,7 @@ struct MorningFlowView: View {
         showCircle = true
         phase = .inhale
         phaseRemaining = inhaleSecs
+        playCue(for: .inhale)
         animateScale(to: 1.12, seconds: inhaleSecs)
         hapticSoft()
 
@@ -428,17 +430,20 @@ struct MorningFlowView: View {
                 case .inhale:
                     phase = .hold
                     phaseRemaining = holdSecs
+                    playCue(for: .hold)
                     // keep at full size during hold (small settle)
                     animateScale(to: 1.12, seconds: 0)
                     hapticSoft()
                 case .hold:
                     phase = .exhale
                     phaseRemaining = exhaleSecs
+                    playCue(for: .exhale)
                     animateScale(to: 0.85, seconds: exhaleSecs)
                     hapticSoft()
                 case .exhale:
                     phase = .inhale
                     phaseRemaining = inhaleSecs
+                    playCue(for: .inhale)
                     animateScale(to: 1.12, seconds: inhaleSecs)
                     hapticSoft()
                 }
@@ -472,6 +477,7 @@ struct MorningFlowView: View {
         scheduled.forEach { $0.cancel() }
         scheduled.removeAll()
         prayerTask?.cancel(); prayerTask = nil
+        breathingAudio.stop()
         SoundManager.shared.fade(to: 0.0, duration: 0.6, stopAfter: true)
     }
 
@@ -506,6 +512,17 @@ struct MorningFlowView: View {
 
     private func hapticSoft() {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+    }
+
+    private func playCue(for phase: BreathPhase) {
+        switch phase {
+        case .inhale:
+            breathingAudio.play("breathein")
+        case .hold:
+            breathingAudio.play("hold")
+        case .exhale:
+            breathingAudio.play("breatheout")
+        }
     }
 
     private var prayerLines: [String] {

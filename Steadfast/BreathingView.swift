@@ -17,6 +17,7 @@ struct BreathingView: View {
 
     @State private var phaseTimer: Timer?
     @State private var countdownTimer: Timer?
+    @StateObject private var breathingAudio = BreathingAudioManager()
 
     var body: some View {
         VStack(spacing: 20) {
@@ -54,6 +55,7 @@ struct BreathingView: View {
     private func stop() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        breathingAudio.stop()
         phase = ""; phaseSecondsRemaining = 0
     }
 
@@ -84,6 +86,7 @@ struct BreathingView: View {
             let (label, secs, target) = seq[i]
             phase = label
             phaseSecondsRemaining = secs
+            playCue(for: label)
             Haptics.bump()
 
             // Animate scale over the FULL phase duration if inhale/exhale.
@@ -109,6 +112,19 @@ struct BreathingView: View {
     private func animateScale(to target: CGFloat, duration: Double) {
         withAnimation(.easeInOut(duration: duration)) {
             scale = target
+        }
+    }
+
+    private func playCue(for label: String) {
+        switch label {
+        case "Breathe In":
+            breathingAudio.play("breathein")
+        case "Hold":
+            breathingAudio.play("hold")
+        case "Breathe Out":
+            breathingAudio.play("breatheout")
+        default:
+            break
         }
     }
 

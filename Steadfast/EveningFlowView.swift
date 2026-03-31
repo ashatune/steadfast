@@ -61,6 +61,7 @@ struct EveningFlowView: View {
     @State private var globalTimer: Timer?
     @State private var phaseTimer: Timer?
     @State private var scheduled: [DispatchWorkItem] = []
+    @StateObject private var breathingAudio = BreathingAudioManager()
 
     // Music toggle (default ON)
     @State private var musicMuted = false
@@ -404,6 +405,7 @@ struct EveningFlowView: View {
         // Breath loop WITH HOLD
         phase = .inhale
         phaseRemaining = inhaleSecs
+        playCue(for: .inhale)
         animateScale(to: 1.12, seconds: inhaleSecs)
         Haptics.bump()
 
@@ -414,17 +416,20 @@ struct EveningFlowView: View {
                 case .inhale:
                     phase = .hold
                     phaseRemaining = holdSecs
+                    playCue(for: .hold)
                     // stay at peak size during hold (tiny settle)
                     animateScale(to: 1.12, seconds: 0)
                     Haptics.bump()
                 case .hold:
                     phase = .exhale
                     phaseRemaining = exhaleSecs
+                    playCue(for: .exhale)
                     animateScale(to: 0.85, seconds: exhaleSecs)
                     Haptics.bump()
                 case .exhale:
                     phase = .inhale
                     phaseRemaining = inhaleSecs
+                    playCue(for: .inhale)
                     animateScale(to: 1.12, seconds: inhaleSecs)
                     Haptics.bump()
                 }
@@ -450,6 +455,7 @@ struct EveningFlowView: View {
         stopPhaseTimer()
         scheduled.forEach { $0.cancel() }
         scheduled.removeAll()
+        breathingAudio.stop()
         // Ambient off
         SoundManager.shared.fade(to: 0.0, duration: 0.6, stopAfter: true)
         // reset flags
@@ -467,6 +473,17 @@ struct EveningFlowView: View {
         case .inhale: return "Breathe In"
         case .hold:   return "Hold"
         case .exhale: return "Breathe Out"
+        }
+    }
+
+    private func playCue(for phase: Phase) {
+        switch phase {
+        case .inhale:
+            breathingAudio.play("breathein")
+        case .hold:
+            breathingAudio.play("hold")
+        case .exhale:
+            breathingAudio.play("breatheout")
         }
     }
 
