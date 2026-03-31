@@ -84,9 +84,58 @@ fileprivate struct BeginMeditationSlide: View {
     }
 }
 
+
+fileprivate struct AppleWatchOnboardingSlide: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Spacer(minLength: 24)
+
+                Text("Take Steadfast with you")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 10)
+
+                Text("Steadfast is also available on Apple Watch, so you can stay grounded wherever you are.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Set it up in a minute")
+                        .font(.headline)
+
+                    Text("1. Open the Watch app on your iPhone")
+                    Text("2. Scroll to Available Apps")
+                    Text("3. Find Steadfast and tap Install")
+                    Text("4. Open Steadfast on your Apple Watch")
+                }
+                .frame(maxWidth: 360, alignment: .leading)
+                .padding(16)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal)
+
+                Text("Once it’s installed, you can access Steadfast right from your wrist.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                Spacer(minLength: 24)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+        }
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
-        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, beginMeditation, quickPractice, done
+        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, appleWatchInfo, beginMeditation, quickPractice, done
     }
 
     @StateObject private var viewModel = OnboardingViewModel()
@@ -145,6 +194,9 @@ struct OnboardingFlowView: View {
                         onSkip: { goForward() }
                     )
                     .tag(Page.widgetReminder)
+
+                    AppleWatchOnboardingSlide()
+                        .tag(Page.appleWatchInfo)
 
                     BeginMeditationSlide()
                         .tag(Page.beginMeditation)
@@ -228,6 +280,7 @@ struct OnboardingFlowView: View {
         case .welcomeUser:     return "Continue"
         case .morningReminder: return viewModel.enableMorningReminder ? "Enable & Continue" : "Skip"
         case .widgetReminder:  return "Continue"
+        case .appleWatchInfo:  return "Continue"
         case .beginMeditation: return didCompleteOnboardingMeditation ? "Continue" : "Begin"
         case .quickPractice:   return "Skip"
         case .done:            return "Enter Steadfast"

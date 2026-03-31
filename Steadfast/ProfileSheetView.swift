@@ -30,6 +30,15 @@ struct ProfileSheetView: View {
                 }
             }
 
+
+            Section {
+                NavigationLink {
+                    AppleWatchInfoView()
+                } label: {
+                    Label("Add Steadfast to Apple Watch", systemImage: "applewatch")
+                }
+            }
+
             Section {
                 Button("Save") { save() }
                     .buttonStyle(.borderedProminent)
