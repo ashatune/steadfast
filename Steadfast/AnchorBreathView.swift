@@ -38,6 +38,7 @@ struct AnchorBreathView: View {
     @State private var isMusicMuted: Bool = false
     @State private var musicBaseVolume: Float = 0.28
     @StateObject private var breathingAudio = BreathingAudioManager()
+    @State private var isVoiceGuidanceEnabled: Bool = true
 
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
@@ -91,6 +92,27 @@ struct AnchorBreathView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 24) {
+                    audioControlButton(
+                        systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                        action: toggleMusicMute
+                    )
+                    .accessibilityLabel("Sound")
+                    .accessibilityValue(isMusicMuted ? "Off" : "On")
+
+                    audioControlButton(
+                        systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
+                        action: toggleVoiceGuidance
+                    )
+                    .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
+                    .accessibilityLabel("Voice Guidance")
+                    .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 4)
             }
             .padding()
             .opacity(showCompletion ? 0 : 1) // fade out behind overlay
@@ -108,23 +130,6 @@ struct AnchorBreathView: View {
                 }
             }
         }
-        // Inline mute button overlay (only when requested)
-        .overlay(alignment: .topTrailing) {
-            if showInlineMuteButton {
-                Button {
-                    toggleMusicMute()
-                } label: {
-                    Image(systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .padding(8)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 8)
-                .padding(.trailing, 8)
-                .accessibilityLabel(isMusicMuted ? "Unmute music" : "Mute music")
-            }
-        }
         .navigationTitle("Breathe with Scripture")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -139,13 +144,6 @@ struct AnchorBreathView: View {
                         .symbolRenderingMode(.hierarchical)
                 }
                 .accessibilityLabel("Back")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { toggleMusicMute() } label: {
-                    Image(systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.headline)
-                }
-                .accessibilityLabel(isMusicMuted ? "Unmute music" : "Mute music")
             }
         }
         .onAppear {
@@ -297,6 +295,13 @@ struct AnchorBreathView: View {
         }
     }
 
+    private func toggleVoiceGuidance() {
+        isVoiceGuidanceEnabled.toggle()
+        if !isVoiceGuidanceEnabled {
+            breathingAudio.stop()
+        }
+    }
+
     private func fadeMusicVolume(to target: Float, over duration: TimeInterval) {
         guard let q = musicQueue else { return }
         let steps = 10
@@ -354,6 +359,7 @@ struct AnchorBreathView: View {
     }
 
     private func playCue(for phase: Phase) {
+        guard isVoiceGuidanceEnabled else { return }
         switch phase {
         case .inhale:
             breathingAudio.play("breathein")
@@ -362,6 +368,17 @@ struct AnchorBreathView: View {
         case .exhale:
             breathingAudio.play("breatheout")
         }
+    }
+
+    @ViewBuilder
+    private func audioControlButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func setupAudioSession() {
