@@ -37,6 +37,7 @@ struct AnchorBreathView: View {
     @State private var musicLooper: AVPlayerLooper?
     @State private var isMusicMuted: Bool = false
     @State private var musicBaseVolume: Float = 0.28
+    @StateObject private var breathingAudio = BreathingAudioManager()
 
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
@@ -165,9 +166,9 @@ struct AnchorBreathView: View {
     }
     private var phaseLabel: String {
         switch phase {
-        case .inhale: return "Inhale"
+        case .inhale: return "Breathe In"
         case .hold:   return "Hold"
-        case .exhale: return "Exhale"
+        case .exhale: return "Breathe Out"
         }
     }
     private var inhaleText: String {
@@ -175,7 +176,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathIn {
-            return "Inhale \(secs)s"
+            return "Breathe In \(secs)s"
         }
         return splitVerse().0
     }
@@ -185,7 +186,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathOut {
-            return "Exhale \(secs)s"
+            return "Breathe Out \(secs)s"
         }
         return splitVerse().1
     }
@@ -213,6 +214,7 @@ struct AnchorBreathView: View {
         // breathing loop
         phase = .inhale
         phaseRemaining = inhaleSecs
+        playCue(for: .inhale)
         animateScale(to: 1.15, duration: Double(inhaleSecs))
         Haptics.bump()
 
@@ -242,14 +244,17 @@ struct AnchorBreathView: View {
                 case .inhale:
                     phase = .hold
                     phaseRemaining = holdSecs
+                    playCue(for: .hold)
                     animateScale(to: 1.15, duration: 0.2)
                 case .hold:
                     phase = .exhale
                     phaseRemaining = exhaleSecs
+                    playCue(for: .exhale)
                     animateScale(to: 0.85, duration: Double(exhaleSecs))
                 case .exhale:
                     phase = .inhale
                     phaseRemaining = inhaleSecs
+                    playCue(for: .inhale)
                     animateScale(to: 1.15, duration: Double(inhaleSecs))
                 }
                 Haptics.bump()
@@ -342,9 +347,21 @@ struct AnchorBreathView: View {
     private func teardown() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        breathingAudio.stop()
         musicQueue?.pause(); musicQueue = nil
         musicLooper = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func playCue(for phase: Phase) {
+        switch phase {
+        case .inhale:
+            breathingAudio.play("breathein")
+        case .hold:
+            breathingAudio.play("hold")
+        case .exhale:
+            breathingAudio.play("breatheout")
+        }
     }
 
     private func setupAudioSession() {

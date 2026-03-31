@@ -181,8 +181,8 @@ private struct AutoGroundView: View {
             VStack(spacing: 10) {
                 BreathingDot(isInhale: isInhale)
                     .frame(width: 160, height: 160)
-                    .accessibilityLabel(isInhale ? "Inhale" : "Exhale")
-                Text(isInhale ? "Inhale…" : "Exhale…")
+                    .accessibilityLabel(isInhale ? "Breathe In" : "Breathe Out")
+                Text(isInhale ? "Breathe In…" : "Breathe Out…")
                     .font(.footnote)
                     .foregroundStyle(Theme.inkSecondary)
                     .animation(nil, value: isInhale)
@@ -409,7 +409,7 @@ private struct QuickCalmFlow: View {
                             .font(.title3).bold()
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
-                        Text("Inhale… exhale… you’re doing great.")
+                        Text("Breathe In… Breathe Out… you’re doing great.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.inkSecondary)
                             .padding(.top, 4)
@@ -529,7 +529,7 @@ private struct GuidedPrayerFlow: View {
                             .font(.title3).bold()
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
-                        Text("Inhale… exhale… you’re doing well.")
+                        Text("Breathe In… Breathe Out… you’re doing well.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.inkSecondary)
                             .padding(.top, 4)
@@ -741,7 +741,7 @@ private struct EncouragementFlow: View {
                 case .preBreath:
                     PromptView(
                         title: "Let’s breathe in mindfulness…",
-                        subtitle: "Inhale His peace, exhale your burden..."
+                        subtitle: "Breathe In His peace, Breathe Out your burden..."
                     )
                     .onAppear {
                         speak("Let’s breathe in mindfulness.")
