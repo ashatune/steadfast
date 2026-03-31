@@ -121,6 +121,16 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.inkSecondary)
                 }
 
+
+                // Apple Watch
+                Section {
+                    NavigationLink {
+                        AppleWatchInfoView()
+                    } label: {
+                        Label("Use on Apple Watch", systemImage: "applewatch")
+                    }
+                }
+
                 // System settings
                 Section {
                     Button {
