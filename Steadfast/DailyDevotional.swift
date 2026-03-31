@@ -18,7 +18,20 @@ extension DailyDevotional {
 
     static func fallback(for date: Date = .now) -> DailyDevotional {
         let dateKey = fallbackDateFormatter.string(from: date)
-        let index = fallbackIndex(for: dateKey)
+        guard !fallbackDevotionals.isEmpty else {
+            assertionFailure("Fallback devotionals should not be empty")
+            return DailyDevotional(
+                id: "placeholder-\(dateKey)-empty-pool",
+                date: date,
+                title: "Trust the Lord Today",
+                verseReference: "Proverbs 3:5",
+                verseText: "Trust in the Lord with all your heart and lean not on your own understanding.",
+                body: "Even when plans fail and answers feel far away, the Lord remains faithful. Bring Him your uncertainty and ask for steady trust today.",
+                cta: "Give one concern to God and ask for His peace."
+            )
+        }
+
+        let index = fallbackIndex(for: date)
         var devotional = fallbackDevotionals[index]
         devotional.id = "placeholder-\(dateKey)-\(index)"
         devotional.date = date
@@ -32,10 +45,18 @@ extension DailyDevotional {
         return "\(trimmed[..<endIdx])…"
     }
 
-    private static func fallbackIndex(for dateKey: String) -> Int {
-        let hashValue = dateKey.hashValue
-        let positiveHash = Int(UInt(bitPattern: hashValue))
-        return positiveHash % fallbackDevotionals.count
+    private static func fallbackIndex(for date: Date) -> Int {
+        guard !fallbackDevotionals.isEmpty else {
+            assertionFailure("Fallback devotionals should not be empty")
+            return 0
+        }
+
+        let key = fallbackDateFormatter.string(from: date)
+        var value = 0
+        for scalar in key.unicodeScalars {
+            value = (value * 31 + Int(scalar.value)) % fallbackDevotionals.count
+        }
+        return value
     }
 
     private static let fallbackDateFormatter: DateFormatter = {
