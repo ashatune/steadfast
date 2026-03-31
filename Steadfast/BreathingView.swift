@@ -72,9 +72,9 @@ struct BreathingView: View {
         let seq: [(String, Int, CGFloat?)] = {
             switch pattern {
             case .fourSevenEight:
-                return [("Inhale", 4, 1.15), ("Hold", 7, nil), ("Exhale", 8, 0.85)]
+                return [("Breathe In", 4, 1.15), ("Hold", 7, nil), ("Breathe Out", 8, 0.85)]
             case .box:
-                return [("Inhale", 4, 1.15), ("Hold", 4, nil), ("Exhale", 4, 0.85), ("Hold", 4, nil)]
+                return [("Breathe In", 4, 1.15), ("Hold", 4, nil), ("Breathe Out", 4, 0.85), ("Hold", 4, nil)]
             }
         }()
 
@@ -118,4 +118,3 @@ struct BreathingView: View {
         return String(format: "%01d:%02d", m, s)
     }
 }
-

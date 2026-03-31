@@ -450,9 +450,9 @@ struct MorningFlowView: View {
     // MARK: - Phase Label Helper
     private func titleForPhase(_ phase: BreathPhase) -> String {
         switch phase {
-        case .inhale: return "Inhale"
+        case .inhale: return "Breathe In"
         case .hold:   return "Hold"
-        case .exhale: return "Exhale"
+        case .exhale: return "Breathe Out"
         }
     }
 
@@ -519,4 +519,3 @@ struct MorningFlowView: View {
         ]
     }
 }
-

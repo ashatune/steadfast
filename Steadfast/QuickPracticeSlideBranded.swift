@@ -17,7 +17,7 @@ struct QuickPracticeSlideBranded: View {
         "Find a comfortable position if you can.",
         "Release any tension in your shoulders and jaw.",
         "Let’s begin your first breathing exercise.",
-        "Inhale on the first part of the verse, and exhale with the second part."
+        "Breathe In on the first part of the verse, and Breathe Out with the second part."
     ]
 
     enum Stage { case intro, breathing }

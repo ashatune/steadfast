@@ -324,13 +324,13 @@ final class AppViewModel: ObservableObject {
 
         let biStr: String = {
             if let cue = v.inhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
-            if let secs = v.breathIn { return "Inhale \(secs)s" }
+            if let secs = v.breathIn { return "Breathe In \(secs)s" }
             return ""
         }()
 
         let boStr: String = {
             if let cue = v.exhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
-            if let secs = v.breathOut { return "Exhale \(secs)s" }
+            if let secs = v.breathOut { return "Breathe Out \(secs)s" }
             return ""
         }()
 
