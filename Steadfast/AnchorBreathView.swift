@@ -39,6 +39,9 @@ struct AnchorBreathView: View {
     @State private var musicBaseVolume: Float = 0.28
     @StateObject private var breathingAudio = BreathingAudioManager()
     @State private var isVoiceGuidanceEnabled: Bool = true
+    @State private var showCenterPlaybackOverlay = false
+    @State private var isPaused = false
+    @State private var overlayHideTask: DispatchWorkItem?
 
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
@@ -57,65 +60,61 @@ struct AnchorBreathView: View {
             VStack(spacing: 20) {
                 Text(verse.ref).font(.headline)
 
-                ZStack {
-                    Circle()
-                        .stroke(
-                            AngularGradient(colors: [Theme.accent2, Theme.accent, Theme.accent2],
-                                            center: .center),
-                            lineWidth: 8
-                        )
-                        .frame(width: 220, height: 220)
-                        .scaleEffect(scale)
-
-                    VStack(spacing: 8) {
-                        Text(mainPrompt)
-                            .multilineTextAlignment(.center)
-                            .font(.title3)
-                            .padding(.horizontal)
-                        if phase != .intro {
-                            Text(phaseLabel + " • \(phaseRemaining)s")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                Text(timeString(countdown))
-                    .font(.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-
-                // Replace this block in the body where the link appears:
-                if showBibleLink, let parsed = BibleStore.shared.parseReference(verse.ref) {
-                    NavigationLink("Open in Bible") {
-                        PassageView(book: parsed.book,
-                                    chapter: parsed.chapter,
-                                    verseStart: parsed.verseStart,
-                                    verseEnd: parsed.verseEnd)
-                    }
-                    .buttonStyle(.bordered)
-                }
-
                 Spacer(minLength: 0)
 
-                HStack(spacing: 24) {
-                    audioControlButton(
-                        systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
-                        action: toggleMusicMute
-                    )
-                    .accessibilityLabel("Sound")
-                    .accessibilityValue(isMusicMuted ? "Off" : "On")
+                VStack(spacing: 20) {
+                    ZStack {
+                        Circle()
+                            .stroke(
+                                AngularGradient(colors: [Theme.accent2, Theme.accent, Theme.accent2],
+                                                center: .center),
+                                lineWidth: 8
+                            )
+                            .frame(width: 220, height: 220)
+                            .scaleEffect(scale)
 
-                    audioControlButton(
-                        systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
-                        action: toggleVoiceGuidance
-                    )
-                    .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
-                    .accessibilityLabel("Voice Guidance")
-                    .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+                        VStack(spacing: 8) {
+                            Text(mainPrompt)
+                                .multilineTextAlignment(.center)
+                                .font(.title3)
+                                .padding(.horizontal)
+                            if phase != .intro {
+                                Text(phaseLabel + " • \(phaseRemaining)s")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if showCenterPlaybackOverlay {
+                            Button {
+                                togglePauseResume()
+                            } label: {
+                                Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                                    .font(.system(size: 28, weight: .semibold))
+                                    .padding(20)
+                                    .background(.ultraThinMaterial, in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.opacity)
+                        }
+                    }
+
+                    Text(timeString(countdown))
+                        .font(.footnote)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+
+                    if showBibleLink, let parsed = BibleStore.shared.parseReference(verse.ref) {
+                        NavigationLink("Open in Bible") {
+                            PassageView(book: parsed.book,
+                                        chapter: parsed.chapter,
+                                        verseStart: parsed.verseStart,
+                                        verseEnd: parsed.verseEnd)
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 4)
+                Spacer(minLength: 0)
             }
             .padding()
             .opacity(showCompletion ? 0 : 1) // fade out behind overlay
@@ -136,6 +135,28 @@ struct AnchorBreathView: View {
         .navigationTitle("Breathe with Scripture")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            HStack(spacing: 24) {
+                audioControlButton(
+                    systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                    action: toggleMusicMute
+                )
+                .accessibilityLabel("Sound")
+                .accessibilityValue(isMusicMuted ? "Off" : "On")
+
+                audioControlButton(
+                    systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
+                    action: toggleVoiceGuidance
+                )
+                .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
+                .accessibilityLabel("Voice Guidance")
+                .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 12)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { showPlaybackOverlayTemporarily() }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -222,6 +243,7 @@ struct AnchorBreathView: View {
         scale = 0.95
 
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
+            guard !isPaused else { return }
             guard phase != .intro else { return }
             countdown -= 1
             if countdown <= 0 {
@@ -232,6 +254,7 @@ struct AnchorBreathView: View {
 
         phaseTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             guard !showCompletion else { return } // stop phase changes if completed
+            guard !isPaused else { return }
             phaseRemaining -= 1
             if phaseRemaining <= 0 {
                 switch phase {
@@ -308,6 +331,30 @@ struct AnchorBreathView: View {
         }
     }
 
+    private func togglePauseResume() {
+        isPaused.toggle()
+        showPlaybackOverlayTemporarily()
+        if isPaused {
+            breathingAudio.stop()
+        } else {
+            resumePhaseAnimation()
+        }
+    }
+
+    private func showPlaybackOverlayTemporarily() {
+        overlayHideTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showCenterPlaybackOverlay = true
+        }
+        let task = DispatchWorkItem {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showCenterPlaybackOverlay = false
+            }
+        }
+        overlayHideTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: task)
+    }
+
     private func fadeMusicVolume(to target: Float, over duration: TimeInterval) {
         guard let q = musicQueue else { return }
         let steps = 10
@@ -358,6 +405,9 @@ struct AnchorBreathView: View {
     private func completeSession() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        isPaused = false
+        overlayHideTask?.cancel(); overlayHideTask = nil
+        showCenterPlaybackOverlay = false
         if !hasRecordedCompletion {
             hasRecordedCompletion = true
             streakManager.markAnchorCompleted()
@@ -372,6 +422,9 @@ struct AnchorBreathView: View {
     private func teardown() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        isPaused = false
+        overlayHideTask?.cancel(); overlayHideTask = nil
+        showCenterPlaybackOverlay = false
         breathingAudio.stop()
         musicQueue?.pause(); musicQueue = nil
         musicLooper = nil
@@ -379,6 +432,7 @@ struct AnchorBreathView: View {
     }
 
     private func playCue(for phase: Phase) {
+        guard !isPaused else { return }
         guard isVoiceGuidanceEnabled else { return }
         switch phase {
         case .intro:
@@ -401,6 +455,19 @@ struct AnchorBreathView: View {
                 .background(.ultraThinMaterial, in: Circle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func resumePhaseAnimation() {
+        switch phase {
+        case .intro:
+            break
+        case .inhale:
+            animateScale(to: 1.15, duration: Double(max(phaseRemaining, 1)))
+        case .hold:
+            animateScale(to: 1.15, duration: 0.2)
+        case .exhale:
+            animateScale(to: 0.85, duration: Double(max(phaseRemaining, 1)))
+        }
     }
 
     private func setupAudioSession() {
