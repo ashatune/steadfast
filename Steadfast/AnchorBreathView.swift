@@ -24,7 +24,7 @@ struct AnchorBreathView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
-    @State private var phase: Phase = .inhale
+    @State private var phase: Phase = .intro
     @State private var countdown: Int = 90
     @State private var phaseRemaining: Int = 0
     @State private var scale: CGFloat = 0.95
@@ -44,8 +44,9 @@ struct AnchorBreathView: View {
     @State private var showCompletion: Bool = false
     @State private var isEndingSession: Bool = false
     @State private var hasRecordedCompletion = false
+    @State private var pendingCompletion = false
 
-    enum Phase { case inhale, hold, exhale }
+    enum Phase { case intro, inhale, hold, exhale }
     private var resolvedBgm: MediaSource? {
         bgm ?? VerseAudioResolver.track(for: verse)
     }
@@ -71,9 +72,11 @@ struct AnchorBreathView: View {
                             .multilineTextAlignment(.center)
                             .font(.title3)
                             .padding(.horizontal)
-                        Text(phaseLabel + " • \(phaseRemaining)s")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        if phase != .intro {
+                            Text(phaseLabel + " • \(phaseRemaining)s")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -157,6 +160,7 @@ struct AnchorBreathView: View {
 
     private var mainPrompt: String {
         switch phase {
+        case .intro:  return "Let's Begin"
         case .inhale: return inhaleText
         case .hold:   return "Hold"
         case .exhale: return exhaleText
@@ -164,6 +168,7 @@ struct AnchorBreathView: View {
     }
     private var phaseLabel: String {
         switch phase {
+        case .intro:  return ""
         case .inhale: return "Breathe In"
         case .hold:   return "Hold"
         case .exhale: return "Breathe Out"
@@ -205,32 +210,23 @@ struct AnchorBreathView: View {
     private func start() {
         teardown() // clear old timers/players
         countdown = totalDuration
+        pendingCompletion = false
+        hasRecordedCompletion = false
 
         setupAudioSession()
         configureMusicIfNeeded()
 
-        // breathing loop
-        phase = .inhale
-        phaseRemaining = inhaleSecs
-        playCue(for: .inhale)
-        animateScale(to: 1.15, duration: Double(inhaleSecs))
-        Haptics.bump()
+        // intro phase before breathing starts
+        phase = .intro
+        phaseRemaining = 2
+        scale = 0.95
 
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
+            guard phase != .intro else { return }
             countdown -= 1
             if countdown <= 0 {
                 t.invalidate()
-                // Stop the phase timer and SHOW completion (do NOT stop music)
-                phaseTimer?.invalidate(); phaseTimer = nil
-                if !hasRecordedCompletion {
-                    hasRecordedCompletion = true
-                    streakManager.markAnchorCompleted()
-                    StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
-                }
-                withAnimation(.easeInOut(duration: 0.35)) {
-                    showCompletion = true
-                }
-                Haptics.success()
+                pendingCompletion = true
             }
         }
 
@@ -239,6 +235,11 @@ struct AnchorBreathView: View {
             phaseRemaining -= 1
             if phaseRemaining <= 0 {
                 switch phase {
+                case .intro:
+                    phase = .inhale
+                    phaseRemaining = inhaleSecs
+                    playCue(for: .inhale)
+                    animateScale(to: 1.15, duration: Double(inhaleSecs))
                 case .inhale:
                     phase = .hold
                     phaseRemaining = holdSecs
@@ -250,10 +251,15 @@ struct AnchorBreathView: View {
                     playCue(for: .exhale)
                     animateScale(to: 0.85, duration: Double(exhaleSecs))
                 case .exhale:
-                    phase = .inhale
-                    phaseRemaining = inhaleSecs
-                    playCue(for: .inhale)
-                    animateScale(to: 1.15, duration: Double(inhaleSecs))
+                    if pendingCompletion {
+                        completeSession()
+                        return
+                    } else {
+                        phase = .inhale
+                        phaseRemaining = inhaleSecs
+                        playCue(for: .inhale)
+                        animateScale(to: 1.15, duration: Double(inhaleSecs))
+                    }
                 }
                 Haptics.bump()
             }
@@ -349,6 +355,20 @@ struct AnchorBreathView: View {
         }
     }
 
+    private func completeSession() {
+        phaseTimer?.invalidate(); phaseTimer = nil
+        countdownTimer?.invalidate(); countdownTimer = nil
+        if !hasRecordedCompletion {
+            hasRecordedCompletion = true
+            streakManager.markAnchorCompleted()
+            StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+        }
+        withAnimation(.easeInOut(duration: 0.35)) {
+            showCompletion = true
+        }
+        Haptics.success()
+    }
+
     private func teardown() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
@@ -361,6 +381,8 @@ struct AnchorBreathView: View {
     private func playCue(for phase: Phase) {
         guard isVoiceGuidanceEnabled else { return }
         switch phase {
+        case .intro:
+            return
         case .inhale:
             breathingAudio.play("breathein")
         case .hold:
