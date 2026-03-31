@@ -86,10 +86,12 @@ struct VerseCard: View {
                     .font(.headline)
                     .foregroundStyle(primaryText)
 
-                // ✅ Subtitle now shows a single, meaningful preview (not a duplicate ref)
-                Text(previewLine)
-                    .font(.subheadline)
-                    .foregroundStyle(secondaryText)
+                if !isFlatStyle {
+                    // ✅ Keep full preview in non-anchor contexts only.
+                    Text(previewLine)
+                        .font(.subheadline)
+                        .foregroundStyle(secondaryText)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Breathe In: \(verse.inhalePreview)")
