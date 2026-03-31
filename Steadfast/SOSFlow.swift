@@ -149,20 +149,20 @@ struct SOSFlow: View {
 }
 
 
-// MARK: - AutoGroundView (20–30s with inhale/exhale + timer + 2s fade)
+// MARK: - AutoGroundView (short intro grounding with inhale/exhale + 2s fade)
 private struct AutoGroundView: View {
-    var seconds: Int = 20
+    private let targetCycles: Int = 2
+    private let breathPhaseDuration: TimeInterval = 4
     var speak: (String) -> Void = { _ in }
     @Environment(\.onComplete) private var onComplete
 
-    @State private var remaining: Int = 20
-    @State private var timer: Timer?
+    @State private var remaining: Int = 16
     @State private var breathTimer: Timer?
     @State private var isInhale: Bool = true
+    @State private var completedCycles: Int = 0
     @State private var started = false
     @State private var isFadingOut = false
-    init(seconds: Int = 20, speak: @escaping (String) -> Void = { _ in }) {
-        self.seconds = seconds
+    init(speak: @escaping (String) -> Void = { _ in }) {
         self.speak = speak
     }
 
@@ -202,39 +202,46 @@ private struct AutoGroundView: View {
         .onAppear {
             guard !started else { return }
             started = true
-            remaining = seconds
-            startCountdown()
+            remaining = targetCycles * 2 * Int(breathPhaseDuration)
+            completedCycles = 0
             startBreathCycle()
             speak("Let’s start by breathing.")
         }
         .onDisappear { stopAll() }
     }
 
-    private func startCountdown() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { t in
-            remaining -= 1
-            if remaining <= 0 {
-                t.invalidate()
+    private func startBreathCycle() {
+        breathTimer?.invalidate()
+        breathTimer = Timer.scheduledTimer(withTimeInterval: breathPhaseDuration, repeats: true) { _ in
+            // A full cycle is inhale -> exhale. Count completion only when exhale ends.
+            if isInhale {
+                // Inhale finished; begin exhale.
+                isInhale = false
+                remaining = max(remaining - Int(breathPhaseDuration), 0)
+                return
+            }
+
+            // Exhale finished; cycle is complete.
+            completedCycles += 1
+            remaining = max(remaining - Int(breathPhaseDuration), 0)
+
+            if completedCycles >= targetCycles {
+                // End cleanly at second exhale completion; do not start a third inhale.
                 SoundManager.shared.fade(to: 0.35, duration: 2.0)
                 stopAll()
                 isFadingOut = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     onComplete?()
                 }
+                return
             }
-        }
-    }
 
-    private func startBreathCycle() {
-        breathTimer?.invalidate()
-        breathTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { _ in
-            isInhale.toggle()
+            // Begin next inhale if more cycles are needed.
+            isInhale = true
         }
     }
 
     private func stopAll() {
-        timer?.invalidate(); timer = nil
         breathTimer?.invalidate(); breathTimer = nil
     }
 
