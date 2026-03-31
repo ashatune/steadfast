@@ -104,7 +104,7 @@ struct AnchorBreathView: View {
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
 
-                    if showBibleLink, let parsed = BibleStore.shared.parseReference(verse.ref) {
+                    if showBibleLink, let parsed = anchorBibleReference {
                         NavigationLink("Open in Bible") {
                             PassageView(book: parsed.book,
                                         chapter: parsed.chapter,
@@ -223,6 +223,33 @@ struct AnchorBreathView: View {
         let first = words[..<mid].joined(separator: " ")
         let second = words[mid...].joined(separator: " ")
         return (first, second.isEmpty ? first : second)
+    }
+
+    /// Mirrors the existing exact-verse Bible flow by providing PassageView
+    /// with parsed verseStart/verseEnd whenever present.
+    private var anchorBibleReference: BibleStore.ParsedRef? {
+        let raw = verse.ref.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+
+        // First try the direct parser path used throughout Bible navigation.
+        if let parsed = BibleStore.shared.parseReference(raw) {
+            // If chapter parsed but verse did not, normalize punctuation and retry
+            // to preserve exact-verse jumps for refs like “John 14:27–28”.
+            if parsed.verseStart != nil { return parsed }
+        }
+
+        let normalized = raw.replacingOccurrences(of: "–", with: "-")
+        if let exactRange = normalized.range(
+            of: #"^\s*(?:[1-3]\s+)?[A-Za-z][A-Za-z\s]*\d+:\d+(?:-\d+)?"#,
+            options: .regularExpression
+        ) {
+            let candidate = String(normalized[exactRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if let parsed = BibleStore.shared.parseReference(candidate) {
+                return parsed
+            }
+        }
+
+        return BibleStore.shared.parseReference(normalized)
     }
 
 
