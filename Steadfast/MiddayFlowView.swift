@@ -340,9 +340,9 @@ struct MiddayFlowView: View {
 
     private func titleForPhase(_ p: Phase) -> String {
         switch p {
-        case .inhale: "Inhale"
+        case .inhale: "Breathe In"
         case .hold1:  "Hold"
-        case .exhale: "Exhale"
+        case .exhale: "Breathe Out"
         case .hold2:  "Hold"
         }
     }

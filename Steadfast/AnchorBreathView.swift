@@ -165,9 +165,9 @@ struct AnchorBreathView: View {
     }
     private var phaseLabel: String {
         switch phase {
-        case .inhale: return "Inhale"
+        case .inhale: return "Breathe In"
         case .hold:   return "Hold"
-        case .exhale: return "Exhale"
+        case .exhale: return "Breathe Out"
         }
     }
     private var inhaleText: String {
@@ -175,7 +175,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathIn {
-            return "Inhale \(secs)s"
+            return "Breathe In \(secs)s"
         }
         return splitVerse().0
     }
@@ -185,7 +185,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathOut {
-            return "Exhale \(secs)s"
+            return "Breathe Out \(secs)s"
         }
         return splitVerse().1
     }

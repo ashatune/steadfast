@@ -82,7 +82,7 @@ enum AnchorOfDayStore {
         if let cue = verse.inhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty {
             return cue
         }
-        if let secs = verse.breathIn { return "Inhale \(secs)s" }
+        if let secs = verse.breathIn { return "Breathe In \(secs)s" }
         return textWords.prefix(4).joined(separator: " ")
     }
 
@@ -90,8 +90,7 @@ enum AnchorOfDayStore {
         if let cue = verse.exhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty {
             return cue
         }
-        if let secs = verse.breathOut { return "Exhale \(secs)s" }
+        if let secs = verse.breathOut { return "Breathe Out \(secs)s" }
         return textWords.dropFirst(4).joined(separator: " ")
     }
 }
-
