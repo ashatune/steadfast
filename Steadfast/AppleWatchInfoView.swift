@@ -8,30 +8,28 @@ struct AppleWatchInfoView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Label {
-                    Text("Use Steadfast on Apple Watch")
+                    Text("Take Steadfast with you")
                         .font(.title2.weight(.bold))
                 } icon: {
                     Image(systemName: "applewatch")
                         .foregroundStyle(Theme.accent)
                 }
 
-                Text("Take Steadfast with you on Apple Watch")
+                Text("Steadfast is available on Apple Watch so you can stay grounded wherever you are.")
                     .font(.headline)
-
-                Text("Use the Watch app on your iPhone to make sure Steadfast is installed on your Apple Watch.")
                     .foregroundStyle(Theme.inkSecondary)
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("How to add it:")
+                    Text("Set it up in a minute")
                         .font(.headline)
 
                     Text("1. Open the Watch app on your iPhone")
-                    Text("2. Scroll to Available Apps or find Steadfast")
-                    Text("3. Tap Install")
-                    Text("4. Once installed, open Steadfast on your Apple Watch")
+                    Text("2. Scroll to Available Apps")
+                    Text("3. Find Steadfast and tap Install")
+                    Text("4. Open Steadfast on your Apple Watch")
                 }
 
-                Text("If Steadfast is already installed, you can launch it from your watch’s app list.")
+                Text("Once it’s installed, you can access your breathing and grounding moments right from your wrist.")
                     .foregroundStyle(Theme.inkSecondary)
 
                 Button {
@@ -42,6 +40,10 @@ struct AppleWatchInfoView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 8)
+
+                Text("You can open the Watch app anytime from your iPhone to install Steadfast.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.inkSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
