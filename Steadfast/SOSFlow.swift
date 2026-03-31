@@ -149,20 +149,20 @@ struct SOSFlow: View {
 }
 
 
-// MARK: - AutoGroundView (20–30s with inhale/exhale + timer + 2s fade)
+// MARK: - AutoGroundView (short intro grounding with inhale/exhale + 2s fade)
 private struct AutoGroundView: View {
-    var seconds: Int = 20
+    private let introCycleCount: Int = 2
+    private let breathPhaseDuration: TimeInterval = 4
     var speak: (String) -> Void = { _ in }
     @Environment(\.onComplete) private var onComplete
 
-    @State private var remaining: Int = 20
-    @State private var timer: Timer?
+    @State private var remaining: Int = 8
     @State private var breathTimer: Timer?
     @State private var isInhale: Bool = true
+    @State private var completedCycles: Int = 0
     @State private var started = false
     @State private var isFadingOut = false
-    init(seconds: Int = 20, speak: @escaping (String) -> Void = { _ in }) {
-        self.seconds = seconds
+    init(speak: @escaping (String) -> Void = { _ in }) {
         self.speak = speak
     }
 
@@ -202,39 +202,32 @@ private struct AutoGroundView: View {
         .onAppear {
             guard !started else { return }
             started = true
-            remaining = seconds
-            startCountdown()
+            remaining = introCycleCount * Int(breathPhaseDuration)
+            completedCycles = 0
             startBreathCycle()
             speak("Let’s start by breathing.")
         }
         .onDisappear { stopAll() }
     }
 
-    private func startCountdown() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { t in
-            remaining -= 1
-            if remaining <= 0 {
-                t.invalidate()
-                SoundManager.shared.fade(to: 0.35, duration: 2.0)
-                stopAll()
-                isFadingOut = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    onComplete?()
-                }
+    private func startBreathCycle() {
+        breathTimer?.invalidate()
+        breathTimer = Timer.scheduledTimer(withTimeInterval: breathPhaseDuration, repeats: true) { _ in
+            completedCycles += 1
+            remaining = max((introCycleCount - completedCycles) * Int(breathPhaseDuration), 0)
+            isInhale.toggle()
+
+            guard completedCycles >= introCycleCount else { return }
+            SoundManager.shared.fade(to: 0.35, duration: 2.0)
+            stopAll()
+            isFadingOut = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                onComplete?()
             }
         }
     }
 
-    private func startBreathCycle() {
-        breathTimer?.invalidate()
-        breathTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { _ in
-            isInhale.toggle()
-        }
-    }
-
     private func stopAll() {
-        timer?.invalidate(); timer = nil
         breathTimer?.invalidate(); breathTimer = nil
     }
 
