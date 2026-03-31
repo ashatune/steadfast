@@ -24,7 +24,7 @@ struct AnchorBreathView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
-    @State private var phase: Phase = .inhale
+    @State private var phase: Phase = .intro
     @State private var countdown: Int = 90
     @State private var phaseRemaining: Int = 0
     @State private var scale: CGFloat = 0.95
@@ -37,13 +37,19 @@ struct AnchorBreathView: View {
     @State private var musicLooper: AVPlayerLooper?
     @State private var isMusicMuted: Bool = false
     @State private var musicBaseVolume: Float = 0.28
+    @StateObject private var breathingAudio = BreathingAudioManager()
+    @State private var isVoiceGuidanceEnabled: Bool = true
+    @State private var showCenterPlaybackOverlay = false
+    @State private var isPaused = false
+    @State private var overlayHideTask: DispatchWorkItem?
 
     // NEW: completion overlay state
     @State private var showCompletion: Bool = false
     @State private var isEndingSession: Bool = false
     @State private var hasRecordedCompletion = false
+    @State private var pendingCompletion = false
 
-    enum Phase { case inhale, hold, exhale }
+    enum Phase { case intro, inhale, hold, exhale }
     private var resolvedBgm: MediaSource? {
         bgm ?? VerseAudioResolver.track(for: verse)
     }
@@ -54,42 +60,61 @@ struct AnchorBreathView: View {
             VStack(spacing: 20) {
                 Text(verse.ref).font(.headline)
 
-                ZStack {
-                    Circle()
-                        .stroke(
-                            AngularGradient(colors: [Theme.accent2, Theme.accent, Theme.accent2],
-                                            center: .center),
-                            lineWidth: 8
-                        )
-                        .frame(width: 220, height: 220)
-                        .scaleEffect(scale)
+                Spacer(minLength: 0)
 
-                    VStack(spacing: 8) {
-                        Text(mainPrompt)
-                            .multilineTextAlignment(.center)
-                            .font(.title3)
-                            .padding(.horizontal)
-                        Text(phaseLabel + " • \(phaseRemaining)s")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                VStack(spacing: 20) {
+                    ZStack {
+                        Circle()
+                            .stroke(
+                                AngularGradient(colors: [Theme.accent2, Theme.accent, Theme.accent2],
+                                                center: .center),
+                                lineWidth: 8
+                            )
+                            .frame(width: 220, height: 220)
+                            .scaleEffect(scale)
+
+                        VStack(spacing: 8) {
+                            Text(mainPrompt)
+                                .multilineTextAlignment(.center)
+                                .font(.title3)
+                                .padding(.horizontal)
+                            if phase != .intro {
+                                Text(phaseLabel + " • \(phaseRemaining)s")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if showCenterPlaybackOverlay {
+                            Button {
+                                togglePauseResume()
+                            } label: {
+                                Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                                    .font(.system(size: 28, weight: .semibold))
+                                    .padding(20)
+                                    .background(.ultraThinMaterial, in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.opacity)
+                        }
+                    }
+
+                    Text(timeString(countdown))
+                        .font(.footnote)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+
+                    if showBibleLink, let parsed = BibleStore.shared.parseReference(verse.ref) {
+                        NavigationLink("Open in Bible") {
+                            PassageView(book: parsed.book,
+                                        chapter: parsed.chapter,
+                                        verseStart: parsed.verseStart,
+                                        verseEnd: parsed.verseEnd)
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
-
-                Text(timeString(countdown))
-                    .font(.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-
-                // Replace this block in the body where the link appears:
-                if showBibleLink, let parsed = BibleStore.shared.parseReference(verse.ref) {
-                    NavigationLink("Open in Bible") {
-                        PassageView(book: parsed.book,
-                                    chapter: parsed.chapter,
-                                    verseStart: parsed.verseStart,
-                                    verseEnd: parsed.verseEnd)
-                    }
-                    .buttonStyle(.bordered)
-                }
+                Spacer(minLength: 0)
             }
             .padding()
             .opacity(showCompletion ? 0 : 1) // fade out behind overlay
@@ -107,26 +132,31 @@ struct AnchorBreathView: View {
                 }
             }
         }
-        // Inline mute button overlay (only when requested)
-        .overlay(alignment: .topTrailing) {
-            if showInlineMuteButton {
-                Button {
-                    toggleMusicMute()
-                } label: {
-                    Image(systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .padding(8)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 8)
-                .padding(.trailing, 8)
-                .accessibilityLabel(isMusicMuted ? "Unmute music" : "Mute music")
-            }
-        }
         .navigationTitle("Breathe with Scripture")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            HStack(spacing: 24) {
+                audioControlButton(
+                    systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                    action: toggleMusicMute
+                )
+                .accessibilityLabel("Sound")
+                .accessibilityValue(isMusicMuted ? "Off" : "On")
+
+                audioControlButton(
+                    systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
+                    action: toggleVoiceGuidance
+                )
+                .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
+                .accessibilityLabel("Voice Guidance")
+                .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 12)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { showPlaybackOverlayTemporarily() }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -138,13 +168,6 @@ struct AnchorBreathView: View {
                         .symbolRenderingMode(.hierarchical)
                 }
                 .accessibilityLabel("Back")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { toggleMusicMute() } label: {
-                    Image(systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.headline)
-                }
-                .accessibilityLabel(isMusicMuted ? "Unmute music" : "Mute music")
             }
         }
         .onAppear {
@@ -158,6 +181,7 @@ struct AnchorBreathView: View {
 
     private var mainPrompt: String {
         switch phase {
+        case .intro:  return "Let's Begin"
         case .inhale: return inhaleText
         case .hold:   return "Hold"
         case .exhale: return exhaleText
@@ -165,9 +189,10 @@ struct AnchorBreathView: View {
     }
     private var phaseLabel: String {
         switch phase {
-        case .inhale: return "Inhale"
+        case .intro:  return ""
+        case .inhale: return "Breathe In"
         case .hold:   return "Hold"
-        case .exhale: return "Exhale"
+        case .exhale: return "Breathe Out"
         }
     }
     private var inhaleText: String {
@@ -175,7 +200,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathIn {
-            return "Inhale \(secs)s"
+            return "Breathe In \(secs)s"
         }
         return splitVerse().0
     }
@@ -185,7 +210,7 @@ struct AnchorBreathView: View {
             return cue
         }
         if let secs = verse.breathOut {
-            return "Exhale \(secs)s"
+            return "Breathe Out \(secs)s"
         }
         return splitVerse().1
     }
@@ -206,51 +231,58 @@ struct AnchorBreathView: View {
     private func start() {
         teardown() // clear old timers/players
         countdown = totalDuration
+        pendingCompletion = false
+        hasRecordedCompletion = false
 
         setupAudioSession()
         configureMusicIfNeeded()
 
-        // breathing loop
-        phase = .inhale
-        phaseRemaining = inhaleSecs
-        animateScale(to: 1.15, duration: Double(inhaleSecs))
-        Haptics.bump()
+        // intro phase before breathing starts
+        phase = .intro
+        phaseRemaining = 2
+        scale = 0.95
 
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
+            guard !isPaused else { return }
+            guard phase != .intro else { return }
             countdown -= 1
             if countdown <= 0 {
                 t.invalidate()
-                // Stop the phase timer and SHOW completion (do NOT stop music)
-                phaseTimer?.invalidate(); phaseTimer = nil
-                if !hasRecordedCompletion {
-                    hasRecordedCompletion = true
-                    streakManager.markAnchorCompleted()
-                    StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
-                }
-                withAnimation(.easeInOut(duration: 0.35)) {
-                    showCompletion = true
-                }
-                Haptics.success()
+                pendingCompletion = true
             }
         }
 
         phaseTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             guard !showCompletion else { return } // stop phase changes if completed
+            guard !isPaused else { return }
             phaseRemaining -= 1
             if phaseRemaining <= 0 {
                 switch phase {
+                case .intro:
+                    phase = .inhale
+                    phaseRemaining = inhaleSecs
+                    playCue(for: .inhale)
+                    animateScale(to: 1.15, duration: Double(inhaleSecs))
                 case .inhale:
                     phase = .hold
                     phaseRemaining = holdSecs
+                    playCue(for: .hold)
                     animateScale(to: 1.15, duration: 0.2)
                 case .hold:
                     phase = .exhale
                     phaseRemaining = exhaleSecs
+                    playCue(for: .exhale)
                     animateScale(to: 0.85, duration: Double(exhaleSecs))
                 case .exhale:
-                    phase = .inhale
-                    phaseRemaining = inhaleSecs
-                    animateScale(to: 1.15, duration: Double(inhaleSecs))
+                    if pendingCompletion {
+                        completeSession()
+                        return
+                    } else {
+                        phase = .inhale
+                        phaseRemaining = inhaleSecs
+                        playCue(for: .inhale)
+                        animateScale(to: 1.15, duration: Double(inhaleSecs))
+                    }
                 }
                 Haptics.bump()
             }
@@ -290,6 +322,37 @@ struct AnchorBreathView: View {
         } else {
             musicQueue?.play()
         }
+    }
+
+    private func toggleVoiceGuidance() {
+        isVoiceGuidanceEnabled.toggle()
+        if !isVoiceGuidanceEnabled {
+            breathingAudio.stop()
+        }
+    }
+
+    private func togglePauseResume() {
+        isPaused.toggle()
+        showPlaybackOverlayTemporarily()
+        if isPaused {
+            breathingAudio.stop()
+        } else {
+            resumePhaseAnimation()
+        }
+    }
+
+    private func showPlaybackOverlayTemporarily() {
+        overlayHideTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showCenterPlaybackOverlay = true
+        }
+        let task = DispatchWorkItem {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showCenterPlaybackOverlay = false
+            }
+        }
+        overlayHideTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: task)
     }
 
     private func fadeMusicVolume(to target: Float, over duration: TimeInterval) {
@@ -339,12 +402,72 @@ struct AnchorBreathView: View {
         }
     }
 
+    private func completeSession() {
+        phaseTimer?.invalidate(); phaseTimer = nil
+        countdownTimer?.invalidate(); countdownTimer = nil
+        isPaused = false
+        overlayHideTask?.cancel(); overlayHideTask = nil
+        showCenterPlaybackOverlay = false
+        if !hasRecordedCompletion {
+            hasRecordedCompletion = true
+            streakManager.markAnchorCompleted()
+            StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+        }
+        withAnimation(.easeInOut(duration: 0.35)) {
+            showCompletion = true
+        }
+        Haptics.success()
+    }
+
     private func teardown() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        isPaused = false
+        overlayHideTask?.cancel(); overlayHideTask = nil
+        showCenterPlaybackOverlay = false
+        breathingAudio.stop()
         musicQueue?.pause(); musicQueue = nil
         musicLooper = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func playCue(for phase: Phase) {
+        guard !isPaused else { return }
+        guard isVoiceGuidanceEnabled else { return }
+        switch phase {
+        case .intro:
+            return
+        case .inhale:
+            breathingAudio.play("breathein")
+        case .hold:
+            breathingAudio.play("hold")
+        case .exhale:
+            breathingAudio.play("breatheout")
+        }
+    }
+
+    @ViewBuilder
+    private func audioControlButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func resumePhaseAnimation() {
+        switch phase {
+        case .intro:
+            break
+        case .inhale:
+            animateScale(to: 1.15, duration: Double(max(phaseRemaining, 1)))
+        case .hold:
+            animateScale(to: 1.15, duration: 0.2)
+        case .exhale:
+            animateScale(to: 0.85, duration: Double(max(phaseRemaining, 1)))
+        }
     }
 
     private func setupAudioSession() {

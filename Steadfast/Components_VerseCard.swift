@@ -51,7 +51,7 @@ struct VerseCard: View {
 
         // Then durations (if provided)
         if let bi = verse.breathIn, let bo = verse.breathOut {
-            return "Inhale \(bi)s • Exhale \(bo)s"
+            return "Breathe In \(bi)s • Breathe Out \(bo)s"
         }
 
         // Last resort: just the ref
@@ -92,8 +92,8 @@ struct VerseCard: View {
                     .foregroundStyle(secondaryText)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Inhale: \(verse.inhalePreview)")
-                    Text("Exhale: \(verse.exhalePreview)")
+                    Text("Breathe In: \(verse.inhalePreview)")
+                    Text("Breathe Out: \(verse.exhalePreview)")
                 }
                 .font(.subheadline)
                 .foregroundStyle(secondaryText)

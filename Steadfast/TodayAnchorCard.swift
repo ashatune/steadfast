@@ -18,8 +18,8 @@ struct TodayAnchorCard: View {
             // Subtitle: show Inhale/Exhale if available, else nothing
             if !inhaleLine.isEmpty || !exhaleLine.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
-                    if !inhaleLine.isEmpty { Text("Inhale: \(inhaleLine)") }
-                    if !exhaleLine.isEmpty { Text("Exhale: \(exhaleLine)") }
+                    if !inhaleLine.isEmpty { Text("Breathe In: \(inhaleLine)") }
+                    if !exhaleLine.isEmpty { Text("Breathe Out: \(exhaleLine)") }
                 }
                 .font(.callout)
                 .foregroundStyle(.secondary)     // ← adaptive: dark=light text, light=dark text
@@ -42,7 +42,7 @@ struct TodayAnchorCard: View {
         if let cue = v.inhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
         let text = v.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.isEmpty { return split(text).0 }
-        if let secs = v.breathIn { return "Inhale \(secs)s" }
+        if let secs = v.breathIn { return "Breathe In \(secs)s" }
         return ""
     }
 
@@ -50,7 +50,7 @@ struct TodayAnchorCard: View {
         if let cue = v.exhaleCue?.trimmingCharacters(in: .whitespacesAndNewlines), !cue.isEmpty { return cue }
         let text = v.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.isEmpty { return split(text).1 }
-        if let secs = v.breathOut { return "Exhale \(secs)s" }
+        if let secs = v.breathOut { return "Breathe Out \(secs)s" }
         return ""
     }
 

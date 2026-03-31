@@ -21,7 +21,7 @@ extension Verse {
 
             // durations
             if let bi = breathIn, let bo = breathOut {
-                return "Inhale \(bi)s • Exhale \(bo)s"
+                return "Breathe In \(bi)s • Breathe Out \(bo)s"
             }
             // fallback
             return ref
@@ -33,7 +33,7 @@ extension Verse {
         }
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !t.isEmpty { return splitText(t).0 }
-        if let bi = breathIn { return "Inhale \(bi)s" }
+        if let bi = breathIn { return "Breathe In \(bi)s" }
         return ""
     }
 
@@ -43,7 +43,7 @@ extension Verse {
         }
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !t.isEmpty { return splitText(t).1 }
-        if let bo = breathOut { return "Exhale \(bo)s" }
+        if let bo = breathOut { return "Breathe Out \(bo)s" }
         return ""
     }
 
@@ -57,5 +57,4 @@ extension Verse {
         return (first, second.isEmpty ? first : second)
     }
 }
-
 
