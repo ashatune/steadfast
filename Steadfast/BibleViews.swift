@@ -129,8 +129,19 @@ struct PassageView: View {
                 }
                 // Auto-scroll to first highlighted verse on first appear
                 .onAppear {
+                    print("PASSAGE_VIEW onAppear verseStart=\(String(describing: verseStart)) verseEnd=\(String(describing: verseEnd))")
                     if let s = verseStart {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            print("PASSAGE_VIEW scrolling to verse-\(s)")
+                            withAnimation { proxy.scrollTo("verse-\(s)", anchor: .top) }
+                        }
+                    }
+                }
+                .onChange(of: verseStart) { newStart in
+                    print("PASSAGE_VIEW onChange verseStart=\(String(describing: newStart)) verseEnd=\(String(describing: verseEnd))")
+                    if let s = newStart {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            print("PASSAGE_VIEW scrolling to verse-\(s)")
                             withAnimation { proxy.scrollTo("verse-\(s)", anchor: .top) }
                         }
                     }

@@ -42,7 +42,10 @@ final class BibleStore: ObservableObject {
 
     /// Accepts strings like "John 3:16", "Jn 3", "Genesis 1:1-3"
     func parseReference(_ query: String) -> ParsedRef? {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedQuery = query
+            .replacingOccurrences(of: "–", with: "-")
+            .replacingOccurrences(of: "—", with: "-")
+        let q = normalizedQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !q.isEmpty else { return nil }
 
         // find book by prefix / abbreviation
@@ -65,10 +68,17 @@ final class BibleStore: ObservableObject {
         if parts.count == 1 {
             return ParsedRef(book: book, chapter: chap, verseStart: nil, verseEnd: nil)
         } else {
-            let vs = parts[1]
-            if let dash = vs.firstIndex(of: "-") {
-                let s = Int(vs[..<dash].filter(\.isNumber))
-                let e = Int(vs[vs.index(after: dash)...].filter(\.isNumber))
+            let vs = String(parts[1])
+                .replacingOccurrences(of: "–", with: "-")
+                .replacingOccurrences(of: "—", with: "-")
+                .trimmingCharacters(in: .whitespaces)
+
+            if vs.contains("-") {
+                let rangeParts = vs.split(separator: "-", maxSplits: 1, omittingEmptySubsequences: true)
+                let s = rangeParts.first.flatMap { Int($0.trimmingCharacters(in: .whitespaces).filter(\.isNumber)) }
+                let e = rangeParts.count > 1
+                    ? Int(rangeParts[1].trimmingCharacters(in: .whitespaces).filter(\.isNumber))
+                    : s
                 return ParsedRef(book: book, chapter: chap, verseStart: s, verseEnd: e)
             } else {
                 let s = Int(vs.filter(\.isNumber))
