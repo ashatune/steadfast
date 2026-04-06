@@ -7,6 +7,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     @Published var duration: Double = 0
     @Published var isDraggingSlider = false
     @Published var didFailToLoadAudio = false
+    var onPlaybackEnded: (() -> Void)?
 
     private var player: AVPlayer?
     private var timeObserverToken: Any?
@@ -96,6 +97,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             isPlaying = false
             currentTime = duration
             player?.pause()
+            onPlaybackEnded?()
         }
     }
 
@@ -106,7 +108,10 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
 
 struct MorningRhythmAudioPlayerView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var streakManager: StreakManager
     @StateObject private var viewModel = MorningRhythmAudioPlayerViewModel()
+    @State private var hasProcessedCompletion = false
+    @State private var dismissAfterOverlay = false
 
     var body: some View {
         ZStack {
@@ -215,10 +220,13 @@ struct MorningRhythmAudioPlayerView: View {
                     }
 
                     Button {
-                        AppReviewManager.shared.registerMeaningfulEvent()
-                        dismiss()
+                        if hasProcessedCompletion {
+                            dismiss()
+                        } else {
+                            completeMorningRhythmAndMaybeDismiss(shouldDismiss: true)
+                        }
                     } label: {
-                        Text("Mark Complete")
+                        Text(hasProcessedCompletion ? "Done" : "Mark Complete")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                     }
@@ -229,12 +237,28 @@ struct MorningRhythmAudioPlayerView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
+
+            if let milestone = streakManager.pendingMilestone {
+                StreakMilestoneCelebrationView(milestone: milestone) {
+                    streakManager.clearPendingMilestone()
+                    if dismissAfterOverlay {
+                        dismiss()
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
+            hasProcessedCompletion = streakManager.hasMorningRhythmCompletion(on: Date())
+            dismissAfterOverlay = false
+            viewModel.onPlaybackEnded = {
+                completeMorningRhythmAndMaybeDismiss(shouldDismiss: false)
+            }
             viewModel.configureIfNeeded()
         }
         .onDisappear {
+            viewModel.onPlaybackEnded = nil
             viewModel.cleanup()
         }
     }
@@ -257,5 +281,23 @@ struct MorningRhythmAudioPlayerView: View {
         let minutes = totalSeconds / 60
         let remainingSeconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, remainingSeconds)
+    }
+
+    private func completeMorningRhythmAndMaybeDismiss(shouldDismiss: Bool) {
+        if hasProcessedCompletion {
+            if shouldDismiss { dismiss() }
+            return
+        }
+
+        hasProcessedCompletion = true
+        dismissAfterOverlay = shouldDismiss
+
+        streakManager.markMorningRhythmCompleted()
+        StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+        AppReviewManager.shared.registerMeaningfulEvent()
+
+        if streakManager.pendingMilestone == nil, shouldDismiss {
+            dismiss()
+        }
     }
 }
