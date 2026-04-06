@@ -40,10 +40,7 @@ struct DailyRhythmView: View {
             
             // Hidden navigation triggers
             NavigationLink("", isActive: $showMorning) {
-                MorningFlowView(
-                    verse: pickVerseForMorning(),
-                    totalSeconds: 180, inhaleSecs: 4, exhaleSecs: 6
-                )
+                MorningRhythmAudioPlayerView()
             }.hidden()
             
             NavigationLink("", isActive: $showMidday) {
