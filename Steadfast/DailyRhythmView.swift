@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DailyRhythmView: View {
     @EnvironmentObject var vm: AppViewModel
+    @EnvironmentObject private var streakManager: StreakManager
     @State private var showMorning = false
     @State private var showMidday  = false
     @State private var showEvening = false
@@ -30,6 +31,7 @@ struct DailyRhythmView: View {
                     ForEach(slots) { slot in
                         ScalingDailyCard(
                             slot: slot,
+                            isCompleted: completionState(for: slot),
                             baseSize: CGSize(width: cardWidth, height: cardHeight),
                             onTap: action(for: slot)
                         )
@@ -40,10 +42,7 @@ struct DailyRhythmView: View {
             
             // Hidden navigation triggers
             NavigationLink("", isActive: $showMorning) {
-                MorningFlowView(
-                    verse: pickVerseForMorning(),
-                    totalSeconds: 180, inhaleSecs: 4, exhaleSecs: 6
-                )
+                MorningRhythmAudioPlayerView()
             }.hidden()
             
             NavigationLink("", isActive: $showMidday) {
@@ -85,6 +84,11 @@ struct DailyRhythmView: View {
         case "Evening": return { showEvening = true }
         default:        return nil
         }
+    }
+
+    private func completionState(for slot: DailySlot) -> Bool? {
+        guard slot.title == "Morning" else { return nil }
+        return streakManager.hasMorningRhythmCompletion(on: Date())
     }
     
     private func pickVerseForMorning() -> Verse {
@@ -131,6 +135,7 @@ struct DailyRhythmView: View {
 
     struct ScalingDailyCard: View {
         let slot: DailySlot
+        var isCompleted: Bool? = nil
         let baseSize: CGSize
         var onTap: (() -> Void)? = nil
         
@@ -171,6 +176,12 @@ struct DailyRhythmView: View {
                             .foregroundStyle(.white.opacity(0.9))
                     }
                     .padding(12)
+
+                    if let isCompleted {
+                        completionIndicator(isCompleted: isCompleted)
+                            .padding(10)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    }
                 }
                 .frame(width: baseSize.width, height: baseSize.height)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -184,6 +195,23 @@ struct DailyRhythmView: View {
                 .accessibilityLabel("\(slot.title). \(slot.subtitle)")
             }
             .frame(width: baseSize.width, height: baseSize.height)
+        }
+
+        private func completionIndicator(isCompleted: Bool) -> some View {
+            ZStack {
+                Circle()
+                    .fill(isCompleted ? Theme.accent.opacity(0.20) : .black.opacity(0.20))
+                    .frame(width: 22, height: 22)
+                Circle()
+                    .stroke(isCompleted ? Theme.accent.opacity(0.75) : .white.opacity(0.45), lineWidth: 1)
+                    .frame(width: 22, height: 22)
+
+                if isCompleted {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
         }
     }
     
