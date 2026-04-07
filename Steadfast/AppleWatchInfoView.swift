@@ -7,12 +7,15 @@ struct AppleWatchInfoView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Label {
+                VStack(spacing: 14) {
+                    Image(systemName: "applewatch")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+
                     Text("Take Steadfast with you")
                         .font(.title2.weight(.bold))
-                } icon: {
-                    Image(systemName: "applewatch")
-                        .foregroundStyle(Theme.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Text("Steadfast is available on Apple Watch so you can stay grounded wherever you are.")
