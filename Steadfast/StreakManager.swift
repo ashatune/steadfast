@@ -25,10 +25,14 @@ final class StreakManager: ObservableObject {
     private let devotionalCompletedDaysKey = "streak.devotionalCompletedDays"
     private let anchorCompletedDaysKey = "streak.anchorCompletedDays"
     private let morningRhythmCompletedDaysKey = "streak.morningRhythmCompletedDays"
+    private let middayRhythmCompletedDaysKey = "streak.middayRhythmCompletedDays"
+    private let eveningRhythmCompletedDaysKey = "streak.eveningRhythmCompletedDays"
     private var celebratedMilestones: Set<Int> = []
     @Published private(set) var devotionalCompletionDays: Set<Date> = []
     @Published private(set) var anchorCompletionDays: Set<Date> = []
     @Published private(set) var morningRhythmCompletionDays: Set<Date> = []
+    @Published private(set) var middayRhythmCompletionDays: Set<Date> = []
+    @Published private(set) var eveningRhythmCompletionDays: Set<Date> = []
 
     init(defaults: UserDefaults = .standard, calendar: Calendar = .current) {
         self.defaults = defaults
@@ -79,6 +83,20 @@ final class StreakManager: ObservableObject {
         markSessionCompleted(on: day)
     }
 
+    func markMiddayRhythmCompleted(on date: Date = Date()) {
+        let day = startOfDay(for: date)
+        middayRhythmCompletionDays.insert(day)
+        pruneDevotionalAndAnchorDays(referenceDate: day)
+        markSessionCompleted(on: day)
+    }
+
+    func markEveningRhythmCompleted(on date: Date = Date()) {
+        let day = startOfDay(for: date)
+        eveningRhythmCompletionDays.insert(day)
+        pruneDevotionalAndAnchorDays(referenceDate: day)
+        markSessionCompleted(on: day)
+    }
+
     func statusForLast7Days(endingOn endDate: Date = Date()) -> [WeekDayStatus] {
         let end = startOfDay(for: endDate)
         let formatter = DateFormatter()
@@ -118,6 +136,14 @@ final class StreakManager: ObservableObject {
         morningRhythmCompletionDays.contains(startOfDay(for: date))
     }
 
+    func hasMiddayRhythmCompletion(on date: Date) -> Bool {
+        middayRhythmCompletionDays.contains(startOfDay(for: date))
+    }
+
+    func hasEveningRhythmCompletion(on date: Date) -> Bool {
+        eveningRhythmCompletionDays.contains(startOfDay(for: date))
+    }
+
     func consumePendingMilestone() -> Int? {
         let value = pendingMilestone
         pendingMilestone = nil
@@ -148,6 +174,8 @@ final class StreakManager: ObservableObject {
         devotionalCompletionDays = devotionalCompletionDays.filter { $0 >= oldestAllowed }
         anchorCompletionDays = anchorCompletionDays.filter { $0 >= oldestAllowed }
         morningRhythmCompletionDays = morningRhythmCompletionDays.filter { $0 >= oldestAllowed }
+        middayRhythmCompletionDays = middayRhythmCompletionDays.filter { $0 >= oldestAllowed }
+        eveningRhythmCompletionDays = eveningRhythmCompletionDays.filter { $0 >= oldestAllowed }
     }
 
     private func load() {
@@ -176,6 +204,14 @@ final class StreakManager: ObservableObject {
         if let intervals = defaults.array(forKey: morningRhythmCompletedDaysKey) as? [Double] {
             morningRhythmCompletionDays = Set(intervals.map { startOfDay(for: Date(timeIntervalSince1970: $0)) })
         }
+
+        if let intervals = defaults.array(forKey: middayRhythmCompletedDaysKey) as? [Double] {
+            middayRhythmCompletionDays = Set(intervals.map { startOfDay(for: Date(timeIntervalSince1970: $0)) })
+        }
+
+        if let intervals = defaults.array(forKey: eveningRhythmCompletedDaysKey) as? [Double] {
+            eveningRhythmCompletionDays = Set(intervals.map { startOfDay(for: Date(timeIntervalSince1970: $0)) })
+        }
     }
 
     private func save() {
@@ -186,6 +222,8 @@ final class StreakManager: ObservableObject {
         defaults.set(devotionalCompletionDays.map(\.timeIntervalSince1970), forKey: devotionalCompletedDaysKey)
         defaults.set(anchorCompletionDays.map(\.timeIntervalSince1970), forKey: anchorCompletedDaysKey)
         defaults.set(morningRhythmCompletionDays.map(\.timeIntervalSince1970), forKey: morningRhythmCompletedDaysKey)
+        defaults.set(middayRhythmCompletionDays.map(\.timeIntervalSince1970), forKey: middayRhythmCompletedDaysKey)
+        defaults.set(eveningRhythmCompletionDays.map(\.timeIntervalSince1970), forKey: eveningRhythmCompletedDaysKey)
     }
 
     private func queueMilestoneCelebrationIfNeeded(for streak: Int) {

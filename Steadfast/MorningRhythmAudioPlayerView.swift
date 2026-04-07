@@ -9,14 +9,21 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     @Published var didFailToLoadAudio = false
     var onPlaybackEnded: (() -> Void)?
 
+    private let audioFileName: String
+    private let audioFileExtension: String
     private var player: AVPlayer?
     private var timeObserverToken: Any?
     private var endObserverToken: NSObjectProtocol?
 
+    init(audioFileName: String, audioFileExtension: String) {
+        self.audioFileName = audioFileName
+        self.audioFileExtension = audioFileExtension
+    }
+
     func configureIfNeeded() {
         guard player == nil else { return }
 
-        guard let url = Bundle.main.url(forResource: "SteadfastMorningRhythm", withExtension: "mp3") else {
+        guard let url = Bundle.main.url(forResource: audioFileName, withExtension: audioFileExtension) else {
             didFailToLoadAudio = true
             return
         }
@@ -106,16 +113,65 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     }
 }
 
-struct MorningRhythmAudioPlayerView: View {
+enum DailyRhythmType {
+    case morning
+    case midday
+    case evening
+
+    func isCompleted(in streakManager: StreakManager, on date: Date = Date()) -> Bool {
+        switch self {
+        case .morning: return streakManager.hasMorningRhythmCompletion(on: date)
+        case .midday: return streakManager.hasMiddayRhythmCompletion(on: date)
+        case .evening: return streakManager.hasEveningRhythmCompletion(on: date)
+        }
+    }
+
+    func markCompleted(in streakManager: StreakManager, on date: Date = Date()) {
+        switch self {
+        case .morning: streakManager.markMorningRhythmCompleted(on: date)
+        case .midday: streakManager.markMiddayRhythmCompleted(on: date)
+        case .evening: streakManager.markEveningRhythmCompleted(on: date)
+        }
+    }
+}
+
+struct RhythmAudioPlayerView: View {
+    let title: String
+    let subtitle: String?
+    let audioFileName: String
+    let audioFileExtension: String
+    let backgroundImageName: String
+    let rhythmType: DailyRhythmType
+
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
-    @StateObject private var viewModel = MorningRhythmAudioPlayerViewModel()
+    @StateObject private var viewModel: MorningRhythmAudioPlayerViewModel
     @State private var hasProcessedCompletion = false
     @State private var dismissAfterOverlay = false
 
+    init(
+        title: String,
+        subtitle: String? = nil,
+        audioFileName: String,
+        audioFileExtension: String,
+        backgroundImageName: String,
+        rhythmType: DailyRhythmType
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.audioFileName = audioFileName
+        self.audioFileExtension = audioFileExtension
+        self.backgroundImageName = backgroundImageName
+        self.rhythmType = rhythmType
+        _viewModel = StateObject(wrappedValue: MorningRhythmAudioPlayerViewModel(
+            audioFileName: audioFileName,
+            audioFileExtension: audioFileExtension
+        ))
+    }
+
     var body: some View {
         ZStack {
-            Image("morningRhythmImage")
+            Image(backgroundImageName)
                 .resizable()
                 .scaledToFill()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -151,13 +207,15 @@ struct MorningRhythmAudioPlayerView: View {
                 .padding(.top, 8)
 
                 VStack(spacing: 8) {
-                    Text("Morning Rhythm")
+                    Text(title)
                         .font(.largeTitle.weight(.semibold))
                         .foregroundStyle(.white)
 
-                    Text("Start your day with God")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.92))
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.92))
+                    }
                 }
                 .padding(.top, 8)
 
@@ -223,7 +281,7 @@ struct MorningRhythmAudioPlayerView: View {
                         if hasProcessedCompletion {
                             dismiss()
                         } else {
-                            completeMorningRhythmAndMaybeDismiss(shouldDismiss: true)
+                            completeRhythmAndMaybeDismiss(shouldDismiss: true)
                         }
                     } label: {
                         Text(hasProcessedCompletion ? "Done" : "Mark Complete")
@@ -250,10 +308,10 @@ struct MorningRhythmAudioPlayerView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
-            hasProcessedCompletion = streakManager.hasMorningRhythmCompletion(on: Date())
+            hasProcessedCompletion = rhythmType.isCompleted(in: streakManager)
             dismissAfterOverlay = false
             viewModel.onPlaybackEnded = {
-                completeMorningRhythmAndMaybeDismiss(shouldDismiss: false)
+                completeRhythmAndMaybeDismiss(shouldDismiss: false)
             }
             viewModel.configureIfNeeded()
         }
@@ -283,7 +341,7 @@ struct MorningRhythmAudioPlayerView: View {
         return String(format: "%d:%02d", minutes, remainingSeconds)
     }
 
-    private func completeMorningRhythmAndMaybeDismiss(shouldDismiss: Bool) {
+    private func completeRhythmAndMaybeDismiss(shouldDismiss: Bool) {
         if hasProcessedCompletion {
             if shouldDismiss { dismiss() }
             return
@@ -292,12 +350,51 @@ struct MorningRhythmAudioPlayerView: View {
         hasProcessedCompletion = true
         dismissAfterOverlay = shouldDismiss
 
-        streakManager.markMorningRhythmCompleted()
+        rhythmType.markCompleted(in: streakManager)
         StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
         AppReviewManager.shared.registerMeaningfulEvent()
 
         if streakManager.pendingMilestone == nil, shouldDismiss {
             dismiss()
         }
+    }
+}
+
+struct MorningRhythmAudioPlayerView: View {
+    var body: some View {
+        RhythmAudioPlayerView(
+            title: "Morning Rhythm",
+            subtitle: "Start your day with God",
+            audioFileName: "SteadfastMorningRhythm",
+            audioFileExtension: "mp3",
+            backgroundImageName: "morningRhythmImage",
+            rhythmType: .morning
+        )
+    }
+}
+
+struct MiddayRhythmAudioPlayerView: View {
+    var body: some View {
+        RhythmAudioPlayerView(
+            title: "Midday Reset",
+            subtitle: "Pause and realign with God",
+            audioFileName: "SteadfastMiddayReset",
+            audioFileExtension: "mp3",
+            backgroundImageName: "middayRhythmImage",
+            rhythmType: .midday
+        )
+    }
+}
+
+struct EveningRhythmAudioPlayerView: View {
+    var body: some View {
+        RhythmAudioPlayerView(
+            title: "Evening Rhythm",
+            subtitle: "Wind down in peace with God",
+            audioFileName: "SteadfastEveningRhythm",
+            audioFileExtension: "wav",
+            backgroundImageName: "eveningRhythmImage",
+            rhythmType: .evening
+        )
     }
 }

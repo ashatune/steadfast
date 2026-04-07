@@ -32,6 +32,7 @@ struct DailyRhythmView: View {
                         ScalingDailyCard(
                             slot: slot,
                             isCompleted: completionState(for: slot),
+                            showsCompletionIndicator: slot.title != "Explore",
                             baseSize: CGSize(width: cardWidth, height: cardHeight),
                             onTap: action(for: slot)
                         )
@@ -46,11 +47,11 @@ struct DailyRhythmView: View {
             }.hidden()
             
             NavigationLink("", isActive: $showMidday) {
-                MiddayFlowView(totalSeconds: 90, boxCount: 4)
+                MiddayRhythmAudioPlayerView()
             }.hidden()
             
             NavigationLink("", isActive: $showEvening) {
-                EveningFlowView(totalSeconds: 60, inhaleSecs: 3, exhaleSecs: 6)
+                EveningRhythmAudioPlayerView()
             }.hidden()
         }
         // Theme (no background here—HomeView owns page bg)
@@ -86,9 +87,18 @@ struct DailyRhythmView: View {
         }
     }
 
-    private func completionState(for slot: DailySlot) -> Bool? {
-        guard slot.title == "Morning" else { return nil }
-        return streakManager.hasMorningRhythmCompletion(on: Date())
+    private func completionState(for slot: DailySlot) -> Bool {
+        let today = Date()
+        switch slot.title {
+        case "Morning":
+            return streakManager.hasMorningRhythmCompletion(on: today)
+        case "Midday":
+            return streakManager.hasMiddayRhythmCompletion(on: today)
+        case "Evening":
+            return streakManager.hasEveningRhythmCompletion(on: today)
+        default:
+            return false
+        }
     }
     
     private func pickVerseForMorning() -> Verse {
@@ -129,13 +139,14 @@ struct DailyRhythmView: View {
         }
 
         var body: some View {
-            ScalingDailyCard(slot: exploreSlot, baseSize: baseSize, onTap: onTap)
+            ScalingDailyCard(slot: exploreSlot, isCompleted: false, showsCompletionIndicator: false, baseSize: baseSize, onTap: onTap)
         }
     }
 
     struct ScalingDailyCard: View {
         let slot: DailySlot
-        var isCompleted: Bool? = nil
+        var isCompleted: Bool = false
+        var showsCompletionIndicator: Bool = true
         let baseSize: CGSize
         var onTap: (() -> Void)? = nil
         
@@ -177,7 +188,7 @@ struct DailyRhythmView: View {
                     }
                     .padding(12)
 
-                    if let isCompleted {
+                    if showsCompletionIndicator {
                         completionIndicator(isCompleted: isCompleted)
                             .padding(10)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
