@@ -11,13 +11,18 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
 
     private let audioFileName: String
     private let audioFileExtension: String
+    private let nowPlayingTitle: String
+    private let nowPlayingArtworkImageName: String
+    private let nowPlayingManager = RhythmNowPlayingManager.shared
     private var player: AVPlayer?
     private var timeObserverToken: Any?
     private var endObserverToken: NSObjectProtocol?
 
-    init(audioFileName: String, audioFileExtension: String) {
+    init(audioFileName: String, audioFileExtension: String, nowPlayingTitle: String, nowPlayingArtworkImageName: String) {
         self.audioFileName = audioFileName
         self.audioFileExtension = audioFileExtension
+        self.nowPlayingTitle = nowPlayingTitle
+        self.nowPlayingArtworkImageName = nowPlayingArtworkImageName
     }
 
     func configureIfNeeded() {
@@ -35,6 +40,8 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         duration = max(playerItem.asset.duration.seconds, 0)
         addTimeObserver(to: newPlayer)
         addPlaybackEndObserver(for: playerItem)
+        configureRemoteCommands()
+        updateNowPlaying()
     }
 
     func cleanup() {
@@ -52,16 +59,16 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         }
 
         player = nil
+        nowPlayingManager.clearRemoteHandlers()
+        nowPlayingManager.clearNowPlaying()
     }
 
     func togglePlayPause() {
         guard let player else { return }
         if isPlaying {
-            player.pause()
-            isPlaying = false
+            pausePlayback()
         } else {
-            player.play()
-            isPlaying = true
+            playPlayback()
         }
     }
 
@@ -71,6 +78,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         let targetTime = CMTime(seconds: bounded, preferredTimescale: 600)
         player.seek(to: targetTime, toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = bounded
+        updateNowPlaying()
     }
 
     func skip(by delta: Double) {
@@ -91,6 +99,8 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
                     duration = itemDuration
                 }
             }
+
+            updateNowPlaying()
         }
     }
 
@@ -104,8 +114,42 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             isPlaying = false
             currentTime = duration
             player?.pause()
+            updateNowPlaying()
             onPlaybackEnded?()
         }
+    }
+
+    private func configureRemoteCommands() {
+        nowPlayingManager.setRemoteHandlers(
+            onPlay: { [weak self] in self?.playPlayback() },
+            onPause: { [weak self] in self?.pausePlayback() },
+            onSkipForward: { [weak self] interval in self?.skip(by: interval) },
+            onSkipBackward: { [weak self] interval in self?.skip(by: -interval) }
+        )
+    }
+
+    private func playPlayback() {
+        guard let player else { return }
+        AudioSessionManager.shared.configureForBackgroundPlayback()
+        player.play()
+        isPlaying = true
+        updateNowPlaying()
+    }
+
+    private func pausePlayback() {
+        player?.pause()
+        isPlaying = false
+        updateNowPlaying()
+    }
+
+    private func updateNowPlaying() {
+        nowPlayingManager.updateNowPlaying(
+            title: nowPlayingTitle,
+            artworkImageName: nowPlayingArtworkImageName,
+            elapsed: currentTime,
+            duration: duration,
+            isPlaying: isPlaying
+        )
     }
 
     deinit {
@@ -165,7 +209,9 @@ struct RhythmAudioPlayerView: View {
         self.rhythmType = rhythmType
         _viewModel = StateObject(wrappedValue: MorningRhythmAudioPlayerViewModel(
             audioFileName: audioFileName,
-            audioFileExtension: audioFileExtension
+            audioFileExtension: audioFileExtension,
+            nowPlayingTitle: title,
+            nowPlayingArtworkImageName: backgroundImageName
         ))
     }
 
