@@ -16,6 +16,8 @@ struct AnchorBreathView: View {
     
     var showBibleLink: Bool = true                 // hide in onboarding
     var launchSource: LaunchSource = .standard
+    var shouldSkipOnAppear: Bool = false
+    var onSkip: (() -> Void)? = nil
     var onCompleted: (() -> Void)? = nil           // advance onboarding when finished
     
     var showInlineMuteButton: Bool = false    // NEW
@@ -172,10 +174,24 @@ struct AnchorBreathView: View {
                 }
                 .accessibilityLabel("Back")
             }
+            if launchSource == .onboarding {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Skip") {
+                        teardown()
+                        onSkip?()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+            }
         }
         .onAppear {
             isMusicMuted = startMuted
-            start() }
+            guard !shouldSkipOnAppear else {
+                onSkip?()
+                return
+            }
+            start()
+        }
         .onDisappear { teardown() }
         .animation(.easeInOut(duration: 0.25), value: showCompletion)
     }
