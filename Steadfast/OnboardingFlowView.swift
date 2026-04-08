@@ -6,6 +6,7 @@
 
 import SwiftUI
 import UserNotifications
+import UIKit
 
 fileprivate struct WidgetReminderSlide: View {
     let imageName: String
@@ -86,10 +87,38 @@ fileprivate struct BeginMeditationSlide: View {
 
 
 fileprivate struct AppleWatchOnboardingSlide: View {
+    private var usesAppleWatchSymbol: Bool {
+        UIImage(systemName: "applewatch") != nil
+    }
+
+    private var symbolName: String {
+        usesAppleWatchSymbol ? "applewatch" : "applelogo"
+    }
+
+    private var symbolSize: CGFloat {
+        usesAppleWatchSymbol ? 60 : 34
+    }
+
+    private var symbolColor: Color {
+        usesAppleWatchSymbol ? .secondary : .primary
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 Spacer(minLength: 24)
+
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray6))
+                        .frame(width: 88, height: 88)
+
+                    Image(systemName: symbolName)
+                        .font(.system(size: symbolSize))
+                        .foregroundStyle(symbolColor)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 14)
 
                 Text("Take Steadfast with you")
                     .font(.title3.weight(.semibold))
@@ -144,6 +173,7 @@ struct OnboardingFlowView: View {
     @AppStorage("hasAcceptedTerms") private var hasAcceptedTerms = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("didCompleteOnboardingMeditation") private var didCompleteOnboardingMeditation = false
+    @State private var shouldSkipMeditation = false
 
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
@@ -239,6 +269,10 @@ struct OnboardingFlowView: View {
                     exhaleSecs: 6,
                     showBibleLink: false,
                     launchSource: .onboarding,
+                    shouldSkipOnAppear: shouldSkipMeditation,
+                    onSkip: {
+                        skipMeditationAndAdvance()
+                    },
                     onCompleted: {
                         finishIntroMeditationStep()
                     },
@@ -262,7 +296,7 @@ struct OnboardingFlowView: View {
             }
 
             if viewModel.page == .beginMeditation && !didCompleteOnboardingMeditation {
-                Button("Skip") { finishIntroMeditationStep() }
+                Button("Skip") { skipMeditationAndAdvance() }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 10)
@@ -307,7 +341,7 @@ struct OnboardingFlowView: View {
         }
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if viewModel.page == .beginMeditation {
-            if didCompleteOnboardingMeditation {
+            if didCompleteOnboardingMeditation || shouldSkipMeditation {
                 advance(from: .beginMeditation)
             } else {
                 viewModel.showBeginMeditation = true
@@ -327,6 +361,11 @@ struct OnboardingFlowView: View {
         if viewModel.page == .beginMeditation {
             advance(from: .beginMeditation)
         }
+    }
+
+    private func skipMeditationAndAdvance() {
+        shouldSkipMeditation = true
+        finishIntroMeditationStep()
     }
 
     private func advance(from page: Page) {
