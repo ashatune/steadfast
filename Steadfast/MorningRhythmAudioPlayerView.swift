@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import UIKit
 
 final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     @Published var isPlaying = false
@@ -17,6 +18,9 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     private var player: AVPlayer?
     private var timeObserverToken: Any?
     private var endObserverToken: NSObjectProtocol?
+    private var interruptionObserver: NSObjectProtocol?
+    private var appDidBecomeActiveObserver: NSObjectProtocol?
+    private var shouldResumeAfterInterruption = false
 
     init(audioFileName: String, audioFileExtension: String, nowPlayingTitle: String, nowPlayingArtworkImageName: String) {
         self.audioFileName = audioFileName
@@ -40,6 +44,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         duration = max(playerItem.asset.duration.seconds, 0)
         addTimeObserver(to: newPlayer)
         addPlaybackEndObserver(for: playerItem)
+        addLifecycleObservers()
         configureRemoteCommands()
         updateNowPlaying()
     }
@@ -58,13 +63,23 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             self.endObserverToken = nil
         }
 
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+            self.interruptionObserver = nil
+        }
+
+        if let appDidBecomeActiveObserver {
+            NotificationCenter.default.removeObserver(appDidBecomeActiveObserver)
+            self.appDidBecomeActiveObserver = nil
+        }
+
         player = nil
         nowPlayingManager.clearRemoteHandlers()
         nowPlayingManager.clearNowPlaying()
     }
 
     func togglePlayPause() {
-        guard let player else { return }
+        guard player != nil else { return }
         if isPlaying {
             pausePlayback()
         } else {
@@ -131,9 +146,12 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     private func playPlayback() {
         guard let player else { return }
         AudioSessionManager.shared.configureForBackgroundPlayback()
-        player.play()
+        if player.timeControlStatus != .playing {
+            player.play()
+        }
         isPlaying = true
         updateNowPlaying()
+        logPlaybackState(context: "playPlayback")
     }
 
     private func pausePlayback() {
@@ -150,6 +168,73 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             duration: duration,
             isPlaying: isPlaying
         )
+    }
+
+    private func addLifecycleObservers() {
+        if interruptionObserver == nil {
+            interruptionObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.interruptionNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleInterruption(notification: notification)
+            }
+        }
+
+        if appDidBecomeActiveObserver == nil {
+            appDidBecomeActiveObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.handleAppDidBecomeActive()
+            }
+        }
+    }
+
+    private func handleInterruption(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+        switch type {
+        case .began:
+            shouldResumeAfterInterruption = isPlaying
+            isPlaying = false
+            updateNowPlaying()
+        case .ended:
+            let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            let shouldResume = shouldResumeAfterInterruption || options.contains(.shouldResume)
+            shouldResumeAfterInterruption = false
+            guard shouldResume else { return }
+            reactivateSessionAndResumeIfNeeded()
+        @unknown default:
+            break
+        }
+    }
+
+    private func handleAppDidBecomeActive() {
+        guard isPlaying else { return }
+        reactivateSessionAndResumeIfNeeded()
+    }
+
+    private func reactivateSessionAndResumeIfNeeded() {
+        guard let player else { return }
+        AudioSessionManager.shared.configureForBackgroundPlayback()
+        if player.timeControlStatus != .playing {
+            player.play()
+        }
+        isPlaying = true
+        updateNowPlaying()
+        logPlaybackState(context: "reactivateSessionAndResumeIfNeeded")
+    }
+
+    private func logPlaybackState(context: String) {
+        guard let player else { return }
+        print("[RhythmAudio] \(context) TimeControlStatus:", player.timeControlStatus.rawValue)
+        print("[RhythmAudio] \(context) Rate:", player.rate)
+        print("[RhythmAudio] \(context) Session active:", AVAudioSession.sharedInstance().isOtherAudioPlaying)
     }
 
     deinit {
@@ -238,7 +323,7 @@ struct RhythmAudioPlayerView: View {
             VStack(spacing: 20) {
                 HStack {
                     Button {
-                        dismiss()
+                        closePlayerAndDismiss()
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(.headline)
@@ -325,7 +410,7 @@ struct RhythmAudioPlayerView: View {
 
                     Button {
                         if hasProcessedCompletion {
-                            dismiss()
+                            closePlayerAndDismiss()
                         } else {
                             completeRhythmAndMaybeDismiss(shouldDismiss: true)
                         }
@@ -346,7 +431,7 @@ struct RhythmAudioPlayerView: View {
                 StreakMilestoneCelebrationView(milestone: milestone) {
                     streakManager.clearPendingMilestone()
                     if dismissAfterOverlay {
-                        dismiss()
+                        closePlayerAndDismiss()
                     }
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -360,10 +445,6 @@ struct RhythmAudioPlayerView: View {
                 completeRhythmAndMaybeDismiss(shouldDismiss: false)
             }
             viewModel.configureIfNeeded()
-        }
-        .onDisappear {
-            viewModel.onPlaybackEnded = nil
-            viewModel.cleanup()
         }
     }
 
@@ -389,7 +470,7 @@ struct RhythmAudioPlayerView: View {
 
     private func completeRhythmAndMaybeDismiss(shouldDismiss: Bool) {
         if hasProcessedCompletion {
-            if shouldDismiss { dismiss() }
+            if shouldDismiss { closePlayerAndDismiss() }
             return
         }
 
@@ -401,8 +482,14 @@ struct RhythmAudioPlayerView: View {
         AppReviewManager.shared.registerMeaningfulEvent()
 
         if streakManager.pendingMilestone == nil, shouldDismiss {
-            dismiss()
+            closePlayerAndDismiss()
         }
+    }
+
+    private func closePlayerAndDismiss() {
+        viewModel.onPlaybackEnded = nil
+        viewModel.cleanup()
+        dismiss()
     }
 }
 
