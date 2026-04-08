@@ -19,8 +19,10 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     private var timeObserverToken: Any?
     private var endObserverToken: NSObjectProtocol?
     private var interruptionObserver: NSObjectProtocol?
+    private var willResignActiveObserver: NSObjectProtocol?
     private var appDidBecomeActiveObserver: NSObjectProtocol?
     private var shouldResumeAfterInterruption = false
+    private var shouldResumeOnAppActive = false
 
     init(audioFileName: String, audioFileExtension: String, nowPlayingTitle: String, nowPlayingArtworkImageName: String) {
         self.audioFileName = audioFileName
@@ -73,7 +75,14 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             self.appDidBecomeActiveObserver = nil
         }
 
+        if let willResignActiveObserver {
+            NotificationCenter.default.removeObserver(willResignActiveObserver)
+            self.willResignActiveObserver = nil
+        }
+
         player = nil
+        shouldResumeAfterInterruption = false
+        shouldResumeOnAppActive = false
         nowPlayingManager.clearRemoteHandlers()
         nowPlayingManager.clearNowPlaying()
     }
@@ -181,6 +190,16 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             }
         }
 
+        if willResignActiveObserver == nil {
+            willResignActiveObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.willResignActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.handleWillResignActive()
+            }
+        }
+
         if appDidBecomeActiveObserver == nil {
             appDidBecomeActiveObserver = NotificationCenter.default.addObserver(
                 forName: UIApplication.didBecomeActiveNotification,
@@ -199,7 +218,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
 
         switch type {
         case .began:
-            shouldResumeAfterInterruption = isPlaying
+            shouldResumeAfterInterruption = isPlaying || player?.timeControlStatus == .playing
             isPlaying = false
             updateNowPlaying()
         case .ended:
@@ -215,8 +234,13 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     }
 
     private func handleAppDidBecomeActive() {
-        guard isPlaying else { return }
+        guard shouldResumeOnAppActive || shouldResumeAfterInterruption else { return }
+        shouldResumeOnAppActive = false
         reactivateSessionAndResumeIfNeeded()
+    }
+
+    private func handleWillResignActive() {
+        shouldResumeOnAppActive = isPlaying || player?.timeControlStatus == .playing
     }
 
     private func reactivateSessionAndResumeIfNeeded() {
