@@ -3,9 +3,22 @@ import WidgetKit   // optional, for reloads/logs
 #if canImport(FirebaseCore)
 import FirebaseCore
 #endif
+import UIKit
+
+final class SteadfastAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        NotificationManager.shared.configure()
+        return true
+    }
+}
 
 @main
 struct SteadfastApp: App {
+    @UIApplicationDelegateAdaptor(SteadfastAppDelegate.self) private var appDelegate
+
     // Existing app VM + scene phase
     @StateObject private var appVM = AppViewModel()
     @StateObject private var savedDevotionals = SavedDevotionalsStore()
@@ -67,7 +80,6 @@ struct SteadfastApp: App {
             }
             // One-time startup setup
             .onAppear {
-                NotificationManager.shared.configure()
                 NotificationManager.shared.requestAndScheduleDailyCheckins()
                 StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                 SoundManager.shared.configureAudioSession(playThroughSilentSwitch: true)
