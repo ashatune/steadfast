@@ -18,11 +18,13 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     private var player: AVPlayer?
     private var timeObserverToken: Any?
     private var endObserverToken: NSObjectProtocol?
+    private var itemFailedObserver: NSObjectProtocol?
     private var interruptionObserver: NSObjectProtocol?
     private var willResignActiveObserver: NSObjectProtocol?
     private var appDidBecomeActiveObserver: NSObjectProtocol?
+    private var routeChangeObserver: NSObjectProtocol?
     private var shouldResumeAfterInterruption = false
-    private var shouldResumeOnAppActive = false
+    private var requestedPlayback = false
 
     init(audioFileName: String, audioFileExtension: String, nowPlayingTitle: String, nowPlayingArtworkImageName: String) {
         self.audioFileName = audioFileName
@@ -46,8 +48,10 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         duration = max(playerItem.asset.duration.seconds, 0)
         addTimeObserver(to: newPlayer)
         addPlaybackEndObserver(for: playerItem)
+        addItemFailureObserver(for: playerItem)
         addLifecycleObservers()
         configureRemoteCommands()
+        logPlaybackState(context: "configureIfNeeded")
         updateNowPlaying()
     }
 
@@ -65,6 +69,11 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             self.endObserverToken = nil
         }
 
+        if let itemFailedObserver {
+            NotificationCenter.default.removeObserver(itemFailedObserver)
+            self.itemFailedObserver = nil
+        }
+
         if let interruptionObserver {
             NotificationCenter.default.removeObserver(interruptionObserver)
             self.interruptionObserver = nil
@@ -80,9 +89,14 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             self.willResignActiveObserver = nil
         }
 
+        if let routeChangeObserver {
+            NotificationCenter.default.removeObserver(routeChangeObserver)
+            self.routeChangeObserver = nil
+        }
+
         player = nil
         shouldResumeAfterInterruption = false
-        shouldResumeOnAppActive = false
+        requestedPlayback = false
         nowPlayingManager.clearRemoteHandlers()
         nowPlayingManager.clearNowPlaying()
     }
@@ -124,6 +138,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
                 }
             }
 
+            refreshPlaybackState(reason: "periodicTimeObserver")
             updateNowPlaying()
         }
     }
@@ -135,11 +150,24 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            isPlaying = false
             currentTime = duration
             player?.pause()
+            requestedPlayback = false
+            refreshPlaybackState(reason: "itemDidEnd")
             updateNowPlaying()
             onPlaybackEnded?()
+        }
+    }
+
+    private func addItemFailureObserver(for playerItem: AVPlayerItem) {
+        itemFailedObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: playerItem,
+            queue: .main
+        ) { [weak self] _ in
+            self?.logPlaybackState(context: "itemFailedToPlayToEnd")
+            self?.refreshPlaybackState(reason: "itemFailedToPlayToEnd")
+            self?.updateNowPlaying()
         }
     }
 
@@ -154,19 +182,22 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
 
     private func playPlayback() {
         guard let player else { return }
+        requestedPlayback = true
         AudioSessionManager.shared.configureForBackgroundPlayback()
         if player.timeControlStatus != .playing {
             player.play()
         }
-        isPlaying = true
+        refreshPlaybackState(reason: "playPlayback")
         updateNowPlaying()
         logPlaybackState(context: "playPlayback")
     }
 
     private func pausePlayback() {
+        requestedPlayback = false
         player?.pause()
-        isPlaying = false
+        refreshPlaybackState(reason: "pausePlayback")
         updateNowPlaying()
+        logPlaybackState(context: "pausePlayback")
     }
 
     private func updateNowPlaying() {
@@ -209,6 +240,16 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
                 self?.handleAppDidBecomeActive()
             }
         }
+
+        if routeChangeObserver == nil {
+            routeChangeObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.routeChangeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.logPlaybackState(context: "routeChange")
+            }
+        }
     }
 
     private func handleInterruption(notification: Notification) {
@@ -218,8 +259,8 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
 
         switch type {
         case .began:
-            shouldResumeAfterInterruption = isPlaying || player?.timeControlStatus == .playing
-            isPlaying = false
+            shouldResumeAfterInterruption = requestedPlayback || player?.timeControlStatus == .playing
+            refreshPlaybackState(reason: "interruptionBegan")
             updateNowPlaying()
         case .ended:
             let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
@@ -234,13 +275,12 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     }
 
     private func handleAppDidBecomeActive() {
-        guard shouldResumeOnAppActive || shouldResumeAfterInterruption else { return }
-        shouldResumeOnAppActive = false
+        guard requestedPlayback || shouldResumeAfterInterruption else { return }
         reactivateSessionAndResumeIfNeeded()
     }
 
     private func handleWillResignActive() {
-        shouldResumeOnAppActive = isPlaying || player?.timeControlStatus == .playing
+        logPlaybackState(context: "willResignActive")
     }
 
     private func reactivateSessionAndResumeIfNeeded() {
@@ -249,15 +289,36 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         if player.timeControlStatus != .playing {
             player.play()
         }
-        isPlaying = true
+        refreshPlaybackState(reason: "reactivateSessionAndResumeIfNeeded")
         updateNowPlaying()
         logPlaybackState(context: "reactivateSessionAndResumeIfNeeded")
     }
 
+    private func refreshPlaybackState(reason: String) {
+        guard let player else {
+            isPlaying = false
+            return
+        }
+        let playingNow = player.timeControlStatus == .playing && player.rate > 0.0
+        if isPlaying != playingNow {
+            print("[RhythmAudio] state-sync(\(reason)) -> isPlaying=\(playingNow)")
+        }
+        isPlaying = playingNow
+    }
+
     private func logPlaybackState(context: String) {
         guard let player else { return }
+        let playerID = ObjectIdentifier(player).hashValue
+        let itemURL = (player.currentItem?.asset as? AVURLAsset)?.url.absoluteString ?? "nil"
+        let route = AVAudioSession.sharedInstance().currentRoute.outputs.map(\\.portType.rawValue).joined(separator: ",")
+        let waitingReason = player.reasonForWaitingToPlay?.rawValue ?? "none"
+        let timeSeconds = CMTimeGetSeconds(player.currentTime())
         print("[RhythmAudio] \(context) TimeControlStatus:", player.timeControlStatus.rawValue)
+        print("[RhythmAudio] \(context) PlayerID:", playerID, "ItemURL:", itemURL)
         print("[RhythmAudio] \(context) Rate:", player.rate)
+        print("[RhythmAudio] \(context) CurrentTime:", timeSeconds, "WaitingReason:", waitingReason)
+        print("[RhythmAudio] \(context) Route:", route)
+        print("[RhythmAudio] \(context) RequestedPlayback:", requestedPlayback)
         print("[RhythmAudio] \(context) Session active:", AVAudioSession.sharedInstance().isOtherAudioPlaying)
     }
 
