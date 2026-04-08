@@ -7,13 +7,7 @@ struct AppleWatchInfoView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Label {
-                    Text("Take Steadfast with you")
-                        .font(.title2.weight(.bold))
-                } icon: {
-                    Image(systemName: "applewatch")
-                        .foregroundStyle(Theme.accent)
-                }
+                AppleWatchHeaderView()
 
                 Text("Steadfast is available on Apple Watch so you can stay grounded wherever you are.")
                     .font(.headline)
@@ -60,5 +54,42 @@ struct AppleWatchInfoView: View {
     private func openWatchAppIfPossible() {
         // Apple does not document a public URL scheme for directly opening the Watch app.
         showManualOpenAlert = true
+    }
+}
+
+private struct AppleWatchHeaderView: View {
+    private var usesAppleWatchSymbol: Bool {
+        UIImage(systemName: "applewatch") != nil
+    }
+
+    private var symbolName: String {
+        usesAppleWatchSymbol ? "applewatch" : "applelogo"
+    }
+
+    private var symbolSize: CGFloat {
+        usesAppleWatchSymbol ? 58 : 34
+    }
+
+    private var symbolColor: Color {
+        usesAppleWatchSymbol ? .secondary : .primary
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Color(.systemGray6))
+                    .frame(width: 88, height: 88)
+
+                Image(systemName: symbolName)
+                    .font(.system(size: symbolSize, weight: .regular))
+                    .foregroundStyle(symbolColor)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+
+            Text("Take Steadfast with you")
+                .font(.title2.weight(.bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
