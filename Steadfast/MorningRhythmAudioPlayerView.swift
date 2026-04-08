@@ -298,13 +298,14 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         player.isMuted = false
         player.volume = 1.0
 
-        // If player reports "playing" but audio path was disrupted in background/lock transitions,
-        // force a lightweight rebind of the render pipeline.
-        if player.timeControlStatus == .playing {
-            player.pause()
+        let alreadyAudible = player.timeControlStatus == .playing && player.rate > 0.0
+        if alreadyAudible {
+            print("[RhythmAudio] ensureAudibleOutput(\(reason)) no-op (already playing)")
+            return
         }
+
         player.play()
-        print("[RhythmAudio] ensureAudibleOutput(\(reason)) reapplied play/unmute")
+        print("[RhythmAudio] ensureAudibleOutput(\(reason)) reapplied play/unmute for stalled state")
     }
 
     private func refreshPlaybackState(reason: String) {
