@@ -199,14 +199,17 @@ final class AppViewModel: ObservableObject {
         }
 
         if host == "morning" || path.contains("/morning") {
+            selectedTab = .home
             pendingDeepLink = .morning
             return
         }
         if host == "midday" || path.contains("/midday") {
+            selectedTab = .home
             pendingDeepLink = .midday
             return
         }
         if host == "evening" || path.contains("/evening") {
+            selectedTab = .home
             pendingDeepLink = .evening
             return
         }
@@ -220,10 +223,13 @@ final class AppViewModel: ObservableObject {
 
         switch route {
         case "morning":
+            selectedTab = .home
             pendingDeepLink = .morning
         case "midday":
+            selectedTab = .home
             pendingDeepLink = .midday
         case "evening":
+            selectedTab = .home
             pendingDeepLink = .evening
         case "anchor":
             triggerAnchorNavigation(anchorID: nil)
