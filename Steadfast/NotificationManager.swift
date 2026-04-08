@@ -7,6 +7,12 @@ import UIKit
 final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     private override init() {}
+
+    enum RhythmType: String {
+        case morning
+        case midday
+        case evening
+    }
     
     // Add a new id
     private let anchorId = "steadfast.anchor.verse.11am"
@@ -37,6 +43,14 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let userInfo = response.notification.request.content.userInfo
+
+        if let rhythmToken = userInfo["rhythmType"] as? String,
+           let rhythmType = RhythmType(rawValue: rhythmToken.lowercased()) {
+            UserDefaults.standard.set(rhythmType.rawValue, forKey: DeepLinkRoute.pendingRouteDefaultsKey)
+            NotificationCenter.default.post(name: .steadfastPendingRoute, object: rhythmType.rawValue)
+            completionHandler()
+            return
+        }
 
         if let route = userInfo["route"] as? String {
             // save for RootView / AppViewModel to consume on next appear
@@ -137,12 +151,15 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                  _ title: String,
                  _ body: String,
                  _ date: Date,
-                 route: String) {
+                 rhythmType: RhythmType) {
             let content = UNMutableNotificationContent()
             content.title = title
             content.body = body
             content.sound = .default
-            content.userInfo = ["route": route]   // now 'route' is defined
+            content.userInfo = [
+                "route": rhythmType.rawValue,
+                "rhythmType": rhythmType.rawValue
+            ]
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps(date), repeats: true)
             let req = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
@@ -154,24 +171,24 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         if morning.enabled {
             add(ids[0],
-                "Good Morning ☀️",
-                "Take a moment with today’s verse and a breath.",
+                "Good morning ☀️",
+                "Take a moment for your morning rhythm with God.",
                 morning.date,
-                route: "morning")
+                rhythmType: .morning)
         }
         if midday.enabled {
             add(ids[1],
-                "Got a sec for Midday reset?",
-                "🙏 Pause, breathe, and cast your cares.",
+                "Midday reset 🌿",
+                "Pause for your midday rhythm and reconnect.",
                 midday.date,
-                route: "midday")
+                rhythmType: .midday)
         }
         if evening.enabled {
             add(ids[2],
-                "Evening wind-down 🌜",
-                "Lay it down and rest in GOD’s care.",
+                "Wind down tonight 🌙",
+                "End the day with your evening rhythm.",
                 evening.date,
-                route: "evening")
+                rhythmType: .evening)
         }
 
         // Morning devotional (fixed 8:00 AM local)
