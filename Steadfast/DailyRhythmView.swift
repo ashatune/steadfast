@@ -57,25 +57,32 @@ struct DailyRhythmView: View {
         // Theme (no background here—HomeView owns page bg)
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
-        .onChange(of: vm.pendingDeepLink) { dest in
-            guard let dest = dest else { return }
-
-            switch dest {
-            case .morning:
-                showMorning = true
-            case .midday:
-                showMidday = true
-            case .evening:
-                showEvening = true
-            case .anchor:
-                // ignore here; handled in HomeView
-                break
-            case .devotional:
-                break
-            }
-
-            vm.pendingDeepLink = nil
+        .onAppear {
+            handlePendingRhythmDeepLink(vm.pendingDeepLink)
         }
+        .onChange(of: vm.pendingDeepLink) { dest in
+            handlePendingRhythmDeepLink(dest)
+        }
+    }
+
+    private func handlePendingRhythmDeepLink(_ dest: AppViewModel.DeepLinkDestination?) {
+        guard let dest = dest else { return }
+
+        switch dest {
+        case .morning:
+            showMorning = true
+        case .midday:
+            showMidday = true
+        case .evening:
+            showEvening = true
+        case .anchor:
+            // ignore here; handled in HomeView
+            return
+        case .devotional:
+            return
+        }
+
+        vm.pendingDeepLink = nil
     }
     
     private func action(for slot: DailySlot) -> (() -> Void)? {
