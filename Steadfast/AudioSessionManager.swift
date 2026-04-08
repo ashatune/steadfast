@@ -11,7 +11,7 @@ final class AudioSessionManager {
         /// This category and mode keeps meditation audio active in the background.
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.playback, mode: .default, options: [.defaultToSpeaker, .allowAirPlay])
+            try session.setCategory(.playback, mode: .default, options: [.allowBluetooth, .allowAirPlay])
             try session.setActive(true)
         } catch {
             print("Audio session configuration error: \(error)")
