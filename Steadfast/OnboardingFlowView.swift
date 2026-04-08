@@ -144,6 +144,7 @@ struct OnboardingFlowView: View {
     @AppStorage("hasAcceptedTerms") private var hasAcceptedTerms = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("didCompleteOnboardingMeditation") private var didCompleteOnboardingMeditation = false
+    @State private var shouldSkipMeditation = false
 
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
@@ -239,6 +240,10 @@ struct OnboardingFlowView: View {
                     exhaleSecs: 6,
                     showBibleLink: false,
                     launchSource: .onboarding,
+                    shouldSkipOnAppear: shouldSkipMeditation,
+                    onSkip: {
+                        skipMeditationAndAdvance()
+                    },
                     onCompleted: {
                         finishIntroMeditationStep()
                     },
@@ -262,7 +267,7 @@ struct OnboardingFlowView: View {
             }
 
             if viewModel.page == .beginMeditation && !didCompleteOnboardingMeditation {
-                Button("Skip") { finishIntroMeditationStep() }
+                Button("Skip") { skipMeditationAndAdvance() }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 10)
@@ -307,7 +312,7 @@ struct OnboardingFlowView: View {
         }
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if viewModel.page == .beginMeditation {
-            if didCompleteOnboardingMeditation {
+            if didCompleteOnboardingMeditation || shouldSkipMeditation {
                 advance(from: .beginMeditation)
             } else {
                 viewModel.showBeginMeditation = true
@@ -327,6 +332,11 @@ struct OnboardingFlowView: View {
         if viewModel.page == .beginMeditation {
             advance(from: .beginMeditation)
         }
+    }
+
+    private func skipMeditationAndAdvance() {
+        shouldSkipMeditation = true
+        finishIntroMeditationStep()
     }
 
     private func advance(from page: Page) {
