@@ -248,6 +248,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
                 queue: .main
             ) { [weak self] _ in
                 self?.logPlaybackState(context: "routeChange")
+                self?.ensureAudibleOutput(reason: "routeChange")
             }
         }
     }
@@ -286,12 +287,24 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
     private func reactivateSessionAndResumeIfNeeded() {
         guard let player else { return }
         AudioSessionManager.shared.configureForBackgroundPlayback()
-        if player.timeControlStatus != .playing {
-            player.play()
-        }
+        ensureAudibleOutput(reason: "reactivateSessionAndResumeIfNeeded")
         refreshPlaybackState(reason: "reactivateSessionAndResumeIfNeeded")
         updateNowPlaying()
         logPlaybackState(context: "reactivateSessionAndResumeIfNeeded")
+    }
+
+    private func ensureAudibleOutput(reason: String) {
+        guard let player, requestedPlayback else { return }
+        player.isMuted = false
+        player.volume = 1.0
+
+        // If player reports "playing" but audio path was disrupted in background/lock transitions,
+        // force a lightweight rebind of the render pipeline.
+        if player.timeControlStatus == .playing {
+            player.pause()
+        }
+        player.play()
+        print("[RhythmAudio] ensureAudibleOutput(\(reason)) reapplied play/unmute")
     }
 
     private func refreshPlaybackState(reason: String) {
@@ -316,10 +329,13 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         print("[RhythmAudio] \(context) TimeControlStatus:", player.timeControlStatus.rawValue)
         print("[RhythmAudio] \(context) PlayerID:", playerID, "ItemURL:", itemURL)
         print("[RhythmAudio] \(context) Rate:", player.rate)
+        print("[RhythmAudio] \(context) Volume:", player.volume, "Muted:", player.isMuted)
         print("[RhythmAudio] \(context) CurrentTime:", timeSeconds, "WaitingReason:", waitingReason)
         print("[RhythmAudio] \(context) Route:", route)
         print("[RhythmAudio] \(context) RequestedPlayback:", requestedPlayback)
-        print("[RhythmAudio] \(context) Session active:", AVAudioSession.sharedInstance().isOtherAudioPlaying)
+        let session = AVAudioSession.sharedInstance()
+        print("[RhythmAudio] \(context) Session category:", session.category.rawValue, "mode:", session.mode.rawValue)
+        print("[RhythmAudio] \(context) OtherAudioPlaying:", session.isOtherAudioPlaying)
     }
 
     deinit {
