@@ -38,12 +38,14 @@ final class RhythmNowPlayingManager {
 
         commandCenter.playCommand.addTarget { [weak self] _ in
             guard let action = self?.onPlay else { return .commandFailed }
+            print("[RhythmAudio][Remote] play command received")
             action()
             return .success
         }
 
         commandCenter.pauseCommand.addTarget { [weak self] _ in
             guard let action = self?.onPause else { return .commandFailed }
+            print("[RhythmAudio][Remote] pause command received")
             action()
             return .success
         }
@@ -51,6 +53,7 @@ final class RhythmNowPlayingManager {
         commandCenter.skipForwardCommand.addTarget { [weak self] event in
             guard let action = self?.onSkipForward else { return .commandFailed }
             let interval = (event as? MPSkipIntervalCommandEvent)?.interval ?? 10
+            print("[RhythmAudio][Remote] skip forward command received interval=\(interval)")
             action(interval)
             return .success
         }
@@ -58,6 +61,7 @@ final class RhythmNowPlayingManager {
         commandCenter.skipBackwardCommand.addTarget { [weak self] event in
             guard let action = self?.onSkipBackward else { return .commandFailed }
             let interval = (event as? MPSkipIntervalCommandEvent)?.interval ?? 10
+            print("[RhythmAudio][Remote] skip backward command received interval=\(interval)")
             action(interval)
             return .success
         }

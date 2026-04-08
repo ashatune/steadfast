@@ -173,10 +173,10 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
 
     private func configureRemoteCommands() {
         nowPlayingManager.setRemoteHandlers(
-            onPlay: { [weak self] in self?.playPlayback() },
-            onPause: { [weak self] in self?.pausePlayback() },
-            onSkipForward: { [weak self] interval in self?.skip(by: interval) },
-            onSkipBackward: { [weak self] interval in self?.skip(by: -interval) }
+            onPlay: { self.playPlayback() },
+            onPause: { self.pausePlayback() },
+            onSkipForward: { interval in self.skip(by: interval) },
+            onSkipBackward: { interval in self.skip(by: -interval) }
         )
     }
 
