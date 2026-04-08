@@ -6,6 +6,7 @@
 
 import SwiftUI
 import UserNotifications
+import UIKit
 
 fileprivate struct WidgetReminderSlide: View {
     let imageName: String
@@ -86,10 +87,38 @@ fileprivate struct BeginMeditationSlide: View {
 
 
 fileprivate struct AppleWatchOnboardingSlide: View {
+    private var usesAppleWatchSymbol: Bool {
+        UIImage(systemName: "applewatch") != nil
+    }
+
+    private var symbolName: String {
+        usesAppleWatchSymbol ? "applewatch" : "applelogo"
+    }
+
+    private var symbolSize: CGFloat {
+        usesAppleWatchSymbol ? 60 : 34
+    }
+
+    private var symbolColor: Color {
+        usesAppleWatchSymbol ? .secondary : .primary
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 Spacer(minLength: 24)
+
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray6))
+                        .frame(width: 88, height: 88)
+
+                    Image(systemName: symbolName)
+                        .font(.system(size: symbolSize))
+                        .foregroundStyle(symbolColor)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 14)
 
                 Text("Take Steadfast with you")
                     .font(.title3.weight(.semibold))
