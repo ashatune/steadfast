@@ -310,7 +310,7 @@ final class MorningRhythmAudioPlayerViewModel: ObservableObject {
         guard let player else { return }
         let playerID = ObjectIdentifier(player).hashValue
         let itemURL = (player.currentItem?.asset as? AVURLAsset)?.url.absoluteString ?? "nil"
-        let route = AVAudioSession.sharedInstance().currentRoute.outputs.map(\\.portType.rawValue).joined(separator: ",")
+        let route = AVAudioSession.sharedInstance().currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
         let waitingReason = player.reasonForWaitingToPlay?.rawValue ?? "none"
         let timeSeconds = CMTimeGetSeconds(player.currentTime())
         print("[RhythmAudio] \(context) TimeControlStatus:", player.timeControlStatus.rawValue)
