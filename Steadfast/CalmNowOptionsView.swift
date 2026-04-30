@@ -12,7 +12,13 @@ struct CalmNowOptionsView: View {
                 .foregroundStyle(Theme.inkSecondary)
 
             VStack(spacing: 12) {
-                optionButton(title: "Panic Reset")
+                NavigationLink {
+                    PanicResetView()
+                } label: {
+                    optionLabel(title: "Panic Reset")
+                }
+                .buttonStyle(.plain)
+
                 optionButton(title: "God Is With You")
                 optionButton(title: "Body Calm Scan")
             }
@@ -23,20 +29,24 @@ struct CalmNowOptionsView: View {
 
     private func optionButton(title: String) -> some View {
         Button(action: {}) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color.white)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Theme.line.opacity(0.6), lineWidth: 1)
-                )
+            optionLabel(title: title)
         }
         .buttonStyle(.plain)
+    }
+
+    private func optionLabel(title: String) -> some View {
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(Theme.ink)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Theme.line.opacity(0.6), lineWidth: 1)
+            )
     }
 }

@@ -23,30 +23,48 @@ struct CalmNowIntroView: View {
     ]
 
     var body: some View {
-        ZStack {
-            Color.white.ignoresSafeArea()
-
-            VStack(spacing: 20) {
-                breathingCircle
-                    .padding(.top, 28)
-
-                Text(messages[currentMessageIndex])
-                    .font(.title3.weight(.medium))
-                    .foregroundStyle(Theme.ink)
-                    .multilineTextAlignment(.center)
-                    .id(currentMessageIndex)
-                    .transition(.opacity)
-                    .frame(maxWidth: 320)
-                    .animation(.easeInOut(duration: 0.5), value: currentMessageIndex)
+        NavigationStack {
+            ZStack {
+                Color.white.ignoresSafeArea()
 
                 if showOptions {
-                    CalmNowOptionsView()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                    VStack(spacing: 20) {
+                        breathingCircle
+                            .padding(.top, 24)
+                        CalmNowOptionsView()
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    VStack(spacing: 22) {
+                        Spacer()
 
-                Spacer()
+                        Text(messages[currentMessageIndex])
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.center)
+                            .id(currentMessageIndex)
+                            .transition(.opacity)
+                            .frame(maxWidth: 320)
+                            .animation(.easeInOut(duration: 0.7), value: currentMessageIndex)
+
+                        breathingCircle
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
-            .padding(.horizontal, 24)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Text("Calm Now")
+                        .font(.headline)
+                        .foregroundStyle(Theme.ink)
+                }
+            }
         }
         .onAppear {
             startBreathingLoop()
@@ -102,9 +120,9 @@ struct CalmNowIntroView: View {
 
     private func startMessageRotation() {
         messageTimer?.invalidate()
-        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.45)) {
-                currentMessageIndex = (currentMessageIndex + 1) % messages.count
+        messageTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.7)) {
+                currentMessageIndex = min(currentMessageIndex + 1, messages.count - 1)
             }
         }
     }
