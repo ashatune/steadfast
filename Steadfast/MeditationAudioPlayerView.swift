@@ -45,8 +45,11 @@ struct MeditationAudioPlayerView: View {
     @Binding var isPlaying: Bool
 
     let rewindInterval: Double
+    let forwardInterval: Double
+    let showsRemainingTime: Bool
     let onTogglePlay: () -> Void
     let onRewind: (Double) -> Void
+    let onForward: (Double) -> Void
     let onSeek: (Double) -> Void
     let onUserInteraction: () -> Void
 
@@ -54,16 +57,22 @@ struct MeditationAudioPlayerView: View {
         player: AVPlayer,
         isPlaying: Binding<Bool>,
         rewindInterval: Double = 15,
+        forwardInterval: Double = 0,
+        showsRemainingTime: Bool = true,
         onTogglePlay: @escaping () -> Void,
         onRewind: @escaping (Double) -> Void,
+        onForward: @escaping (Double) -> Void = { _ in },
         onSeek: @escaping (Double) -> Void,
         onUserInteraction: @escaping () -> Void
     ) {
         self.observer = MeditationPlayerObserver(player: player)
         self._isPlaying = isPlaying
         self.rewindInterval = rewindInterval
+        self.forwardInterval = forwardInterval
+        self.showsRemainingTime = showsRemainingTime
         self.onTogglePlay = onTogglePlay
         self.onRewind = onRewind
+        self.onForward = onForward
         self.onSeek = onSeek
         self.onUserInteraction = onUserInteraction
     }
@@ -77,7 +86,7 @@ struct MeditationAudioPlayerView: View {
                     observer.currentTime = newTime
                     onRewind(rewindInterval)
                 } label: {
-                    Image(systemName: "gobackward.15")
+                    Image(systemName: "gobackward.\(Int(rewindInterval))")
                         .font(.system(size: 22, weight: .semibold))
                 }
 
@@ -91,6 +100,19 @@ struct MeditationAudioPlayerView: View {
                         .background(Circle().fill(Color.white.opacity(0.16)))
                 }
                 .buttonStyle(.plain)
+
+                if forwardInterval > 0 {
+                    Button {
+                        onUserInteraction()
+                        let maxDuration = observer.duration.isFinite ? observer.duration : observer.currentTime + forwardInterval
+                        let newTime = min(observer.currentTime + forwardInterval, maxDuration)
+                        observer.currentTime = newTime
+                        onForward(forwardInterval)
+                    } label: {
+                        Image(systemName: "goforward.\(Int(forwardInterval))")
+                            .font(.system(size: 22, weight: .semibold))
+                    }
+                }
             }
             .foregroundColor(.white)
 
@@ -116,8 +138,12 @@ struct MeditationAudioPlayerView: View {
                 HStack {
                     Text(timeString(observer.currentTime))
                     Spacer()
-                    let remaining = max((observer.duration.isFinite ? observer.duration : 0) - observer.currentTime, 0)
-                    Text("-" + timeString(remaining))
+                    if showsRemainingTime {
+                        let remaining = max((observer.duration.isFinite ? observer.duration : 0) - observer.currentTime, 0)
+                        Text("-" + timeString(remaining))
+                    } else {
+                        Text(timeString(observer.duration))
+                    }
                 }
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.8))
@@ -145,6 +171,7 @@ struct MeditationAudioPlayerView_Previews: PreviewProvider {
             rewindInterval: 15,
             onTogglePlay: {},
             onRewind: { _ in },
+            onForward: { _ in },
             onSeek: { _ in },
             onUserInteraction: {}
         )
