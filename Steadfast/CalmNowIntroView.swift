@@ -10,9 +10,10 @@ struct CalmNowIntroView: View {
     @State private var scale: CGFloat = 0.8
     @State private var currentMessageIndex = 0
     @State private var showOptions = false
+    @State private var messageOpacity = 1.0
 
     @State private var breathTimer: Timer?
-    @State private var messageTimer: Timer?
+    @State private var introTask: Task<Void, Never>?
 
     private let messages: [String] = [
         "You did the right thing coming here.",
@@ -22,16 +23,24 @@ struct CalmNowIntroView: View {
         "God is our refuge and strength, an ever-present help in trouble.\nPsalm 46:1"
     ]
 
+    private let fadeOutDuration: Double = 0.35
+    private let gapBetweenPrompts: Double = 0.2
+    private let fadeInDuration: Double = 0.35
+    private let holdDuration: Double = 3.1
+    private let finalPromptMinimumHold: Double = 1.0
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.white.ignoresSafeArea()
 
                 if showOptions {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 24) {
                         breathingCircle
                             .padding(.top, 24)
+
                         CalmNowOptionsView()
+
                         Spacer()
                     }
                     .padding(.horizontal, 24)
@@ -44,10 +53,8 @@ struct CalmNowIntroView: View {
                             .font(.title3.weight(.medium))
                             .foregroundStyle(Theme.ink)
                             .multilineTextAlignment(.center)
-                            .id(currentMessageIndex)
-                            .transition(.opacity)
                             .frame(maxWidth: 320)
-                            .animation(.easeInOut(duration: 0.7), value: currentMessageIndex)
+                            .opacity(messageOpacity)
 
                         breathingCircle
 
@@ -68,16 +75,11 @@ struct CalmNowIntroView: View {
         }
         .onAppear {
             startBreathingLoop()
-            startMessageRotation()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 11) {
-                withAnimation(.easeInOut(duration: 0.6)) {
-                    showOptions = true
-                }
-            }
+            startIntroSequence()
         }
         .onDisappear {
             breathTimer?.invalidate()
-            messageTimer?.invalidate()
+            introTask?.cancel()
         }
     }
 
@@ -118,11 +120,37 @@ struct CalmNowIntroView: View {
         }
     }
 
-    private func startMessageRotation() {
-        messageTimer?.invalidate()
-        messageTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.7)) {
-                currentMessageIndex = min(currentMessageIndex + 1, messages.count - 1)
+    private func startIntroSequence() {
+        introTask?.cancel()
+        introTask = Task {
+            for idx in 0..<messages.count {
+                if idx > 0 {
+                    await MainActor.run {
+                        withAnimation(.easeInOut(duration: fadeOutDuration)) {
+                            messageOpacity = 0
+                        }
+                    }
+                    try? await Task.sleep(nanoseconds: UInt64(fadeOutDuration * 1_000_000_000))
+                    try? await Task.sleep(nanoseconds: UInt64(gapBetweenPrompts * 1_000_000_000))
+
+                    await MainActor.run {
+                        currentMessageIndex = idx
+                        withAnimation(.easeInOut(duration: fadeInDuration)) {
+                            messageOpacity = 1
+                        }
+                    }
+                    try? await Task.sleep(nanoseconds: UInt64(fadeInDuration * 1_000_000_000))
+                }
+
+                let hold = (idx == messages.count - 1) ? max(finalPromptMinimumHold, holdDuration) : holdDuration
+                try? await Task.sleep(nanoseconds: UInt64(hold * 1_000_000_000))
+                if Task.isCancelled { return }
+            }
+
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    showOptions = true
+                }
             }
         }
     }

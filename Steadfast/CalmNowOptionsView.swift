@@ -2,16 +2,22 @@ import SwiftUI
 
 struct CalmNowOptionsView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("What would you like to focus on right now?")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+        VStack(spacing: 24) {
+            VStack(spacing: 10) {
+                Text("What would you like to focus on right now?")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-            Text("Choose what feels most helpful in this moment.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.inkSecondary)
+                Text("Choose what feels most helpful in this moment.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.inkSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 NavigationLink {
                     PanicResetView()
                 } label: {
@@ -22,9 +28,9 @@ struct CalmNowOptionsView: View {
                 optionButton(title: "God Is With You")
                 optionButton(title: "Body Calm Scan")
             }
-            .padding(.top, 8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
     }
 
     private func optionButton(title: String) -> some View {
