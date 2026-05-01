@@ -56,7 +56,7 @@ struct RootView: View {
         .tint(Theme.accent)
         .background(Theme.bg.ignoresSafeArea())
         .sheet(isPresented: $vm.showSOS) {
-            SOSFlow()
+            CalmNowIntroView()
         }
     }
 }
