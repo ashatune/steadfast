@@ -25,7 +25,12 @@ struct CalmNowOptionsView: View {
                 }
                 .buttonStyle(.plain)
 
-                optionButton(title: "God Is With You")
+                NavigationLink {
+                    GodIsWithYouView()
+                } label: {
+                    optionLabel(title: "God Is With You")
+                }
+                .buttonStyle(.plain)
                 optionButton(title: "Body Calm Scan")
             }
         }
