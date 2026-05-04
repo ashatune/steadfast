@@ -73,6 +73,6 @@ struct CalmNowOptionsView: View {
     }
 }
 
-private extension CalmNowOptionsView.Destination: Identifiable {
+extension CalmNowOptionsView.Destination: Identifiable {
     var id: Self { self }
 }
