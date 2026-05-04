@@ -14,25 +14,26 @@ struct CalmNowOptionsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-            VStack(spacing: 10) {
-                Text("What would you like to focus on right now?")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                VStack(spacing: 10) {
+                    Text("What would you like to focus on right now?")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
 
-                Text("Choose what feels most helpful in this moment.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.inkSecondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
+                    Text("Choose what feels most helpful in this moment.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.inkSecondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
 
-            VStack(spacing: 16) {
-                optionNavButton(title: "Panic Reset", destination: .panicReset)
-                optionNavButton(title: "God Is With You", destination: .godIsWithYou)
-                optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
-                optionNavButton(title: "Flight Calm", destination: .flightCalm)
+                VStack(spacing: 16) {
+                    optionNavButton(title: "Panic Reset", destination: .panicReset)
+                    optionNavButton(title: "God Is With You", destination: .godIsWithYou)
+                    optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
+                    optionNavButton(title: "Flight Calm", destination: .flightCalm)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
