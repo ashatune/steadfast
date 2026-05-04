@@ -13,6 +13,7 @@ struct SOSExerciseView: View {
     let audioExtension: String
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var breathPhase: BreathPhase = .inhale
     @State private var scale: CGFloat = 0.8
@@ -21,12 +22,30 @@ struct SOSExerciseView: View {
     @State private var audioPlayer: AVPlayer?
     @State private var isPlaying = false
 
+    @State private var currentVerse = ""
+    @State private var showVerse = false
+    @State private var verseTask: Task<Void, Never>?
+
+    private let haptic = UIImpactFeedbackGenerator(style: .soft)
+
+    private let groundingVerses = [
+        "God is our refuge and strength. — Psalm 46:1",
+        "The Lord is near to the brokenhearted. — Psalm 34:18",
+        "When I am afraid, I put my trust in You. — Psalm 56:3",
+        "Peace I leave with you; My peace I give you. — John 14:27",
+        "Be still, and know that I am God. — Psalm 46:10",
+        "Cast all your anxiety on Him. — 1 Peter 5:7"
+    ]
+
     var body: some View {
         GeometryReader { geometry in
             let circleSize = min(160.0, geometry.size.width * 0.42)
 
             ZStack {
-                Color.white.ignoresSafeArea()
+                Color.white
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { showRandomGroundingVerse() }
 
                 VStack(spacing: 0) {
                     headerSection
@@ -62,6 +81,13 @@ struct SOSExerciseView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 20)
+
+                if !currentVerse.isEmpty {
+                    GroundingVerseOverlay(verse: currentVerse, showVerse: showVerse)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 120)
+                        .allowsHitTesting(false)
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -72,6 +98,7 @@ struct SOSExerciseView: View {
         }
         .onDisappear {
             breathTimer?.invalidate()
+            verseTask?.cancel()
             audioPlayer?.pause()
             audioPlayer = nil
             isPlaying = false
@@ -127,10 +154,40 @@ struct SOSExerciseView: View {
 
     private func animateBreath(to phase: BreathPhase) {
         breathPhase = phase
+        triggerBreathHaptic()
         let duration: Double = phase == .inhale ? 4 : 6
         let targetScale: CGFloat = phase == .inhale ? 1.2 : 0.8
         withAnimation(.easeInOut(duration: duration)) {
             scale = targetScale
+        }
+    }
+
+    private func triggerBreathHaptic() {
+        guard !reduceMotion else { return }
+        haptic.prepare()
+        haptic.impactOccurred(intensity: 0.45)
+    }
+
+    private func showRandomGroundingVerse() {
+        verseTask?.cancel()
+
+        let options = groundingVerses.filter { $0 != currentVerse }
+        let nextVerse = options.randomElement() ?? groundingVerses.randomElement() ?? ""
+        currentVerse = nextVerse
+
+        verseTask = Task {
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.8)) {
+                    showVerse = true
+                }
+            }
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            if Task.isCancelled { return }
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 1.2)) {
+                    showVerse = false
+                }
+            }
         }
     }
 
@@ -174,5 +231,29 @@ struct SOSExerciseView: View {
     private func seek(to seconds: Double) {
         guard let audioPlayer else { return }
         audioPlayer.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+    }
+}
+
+private struct GroundingVerseOverlay: View {
+    let verse: String
+    let showVerse: Bool
+
+    var body: some View {
+        VStack {
+            Spacer()
+            Text(verse)
+                .font(.system(size: 17, weight: .medium, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.white.opacity(0.85))
+                        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 6)
+                )
+                .opacity(showVerse ? 1 : 0)
+            Spacer()
+        }
     }
 }
