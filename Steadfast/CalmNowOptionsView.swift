@@ -1,6 +1,15 @@
 import SwiftUI
 
 struct CalmNowOptionsView: View {
+    enum Destination: Hashable {
+        case panicReset
+        case godIsWithYou
+        case bodyCalmScan
+    }
+
+    var onExerciseSelected: () -> Void = {}
+    @State private var destination: Destination?
+
     var body: some View {
         VStack(spacing: 24) {
             VStack(spacing: 10) {
@@ -18,28 +27,30 @@ struct CalmNowOptionsView: View {
             }
 
             VStack(spacing: 16) {
-                NavigationLink {
-                    PanicResetView()
-                } label: {
-                    optionLabel(title: "Panic Reset")
-                }
-                .buttonStyle(.plain)
-
-                NavigationLink {
-                    GodIsWithYouView()
-                } label: {
-                    optionLabel(title: "God Is With You")
-                }
-                .buttonStyle(.plain)
-                optionButton(title: "Body Calm Scan")
+                optionNavButton(title: "Panic Reset", destination: .panicReset)
+                optionNavButton(title: "God Is With You", destination: .godIsWithYou)
+                optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
+        .navigationDestination(item: $destination) { destination in
+            switch destination {
+            case .panicReset:
+                PanicResetView()
+            case .godIsWithYou:
+                GodIsWithYouView()
+            case .bodyCalmScan:
+                BodyCalmScanView()
+            }
+        }
     }
 
-    private func optionButton(title: String) -> some View {
-        Button(action: {}) {
+    private func optionNavButton(title: String, destination: Destination) -> some View {
+        Button {
+            onExerciseSelected()
+            self.destination = destination
+        } label: {
             optionLabel(title: title)
         }
         .buttonStyle(.plain)
@@ -60,4 +71,8 @@ struct CalmNowOptionsView: View {
                     .stroke(Theme.line.opacity(0.6), lineWidth: 1)
             )
     }
+}
+
+private extension CalmNowOptionsView.Destination: Identifiable {
+    var id: Self { self }
 }

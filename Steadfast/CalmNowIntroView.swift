@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct CalmNowIntroView: View {
     enum BreathPhase {
@@ -14,6 +15,8 @@ struct CalmNowIntroView: View {
 
     @State private var breathTimer: Timer?
     @State private var introTask: Task<Void, Never>?
+
+    @State private var backgroundMusicPlayer: AVAudioPlayer?
 
     private let messages: [String] = [
         "You did the right thing coming here.",
@@ -39,7 +42,7 @@ struct CalmNowIntroView: View {
                         breathingCircle
                             .padding(.top, 24)
 
-                        CalmNowOptionsView()
+                        CalmNowOptionsView(onExerciseSelected: stopBackgroundMusic)
 
                         Spacer()
                     }
@@ -75,11 +78,13 @@ struct CalmNowIntroView: View {
         }
         .onAppear {
             startBreathingLoop()
+            startBackgroundMusic()
             startIntroSequence()
         }
         .onDisappear {
             breathTimer?.invalidate()
             introTask?.cancel()
+            stopBackgroundMusic()
         }
     }
 
@@ -154,4 +159,36 @@ struct CalmNowIntroView: View {
             }
         }
     }
+
+
+    private func startBackgroundMusic() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            print("Unable to configure SOS background session: \(error.localizedDescription)")
+        }
+
+        guard let url = Bundle.main.url(forResource: "Steadfast SOS background music", withExtension: "wav") else {
+            return
+        }
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = -1
+            player.volume = 0.25
+            player.prepareToPlay()
+            player.play()
+            backgroundMusicPlayer = player
+        } catch {
+            print("Unable to play SOS background music: \(error.localizedDescription)")
+        }
+    }
+
+    private func stopBackgroundMusic() {
+        backgroundMusicPlayer?.stop()
+        backgroundMusicPlayer = nil
+    }
+
 }

@@ -5,7 +5,7 @@ struct GodIsWithYouView: View {
         SOSExerciseView(
             title: "God Is With You",
             subtitle: "Let God’s presence steady you right now.",
-            audioResource: "SteadfastSOSPanic54321",
+            audioResource: "God is with you draft 2",
             audioExtension: "wav"
         )
     }

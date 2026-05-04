@@ -5,7 +5,7 @@ struct PanicResetView: View {
         SOSExerciseView(
             title: "Panic Reset",
             subtitle: "Let’s slow things down together.",
-            audioResource: "SteadfastSOSbodyScan",
+            audioResource: "SteadfastSOSPanic54321",
             audioExtension: "wav"
         )
     }
