@@ -5,13 +5,15 @@ struct CalmNowOptionsView: View {
         case panicReset
         case godIsWithYou
         case bodyCalmScan
+        case flightCalm
     }
 
     var onExerciseSelected: () -> Void = {}
     @State private var destination: Destination?
 
     var body: some View {
-        VStack(spacing: 24) {
+        ScrollView {
+            VStack(spacing: 24) {
             VStack(spacing: 10) {
                 Text("What would you like to focus on right now?")
                     .font(.title3.weight(.semibold))
@@ -30,10 +32,12 @@ struct CalmNowOptionsView: View {
                 optionNavButton(title: "Panic Reset", destination: .panicReset)
                 optionNavButton(title: "God Is With You", destination: .godIsWithYou)
                 optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
+                optionNavButton(title: "Flight Calm", destination: .flightCalm)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 8)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 24)
         .navigationDestination(item: $destination) { destination in
             switch destination {
             case .panicReset:
@@ -42,6 +46,8 @@ struct CalmNowOptionsView: View {
                 GodIsWithYouView()
             case .bodyCalmScan:
                 BodyCalmScanView()
+            case .flightCalm:
+                FlightCalmView()
             }
         }
     }
@@ -61,7 +67,7 @@ struct CalmNowOptionsView: View {
             .font(.headline)
             .foregroundStyle(Theme.ink)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.white)

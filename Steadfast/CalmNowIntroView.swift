@@ -170,7 +170,8 @@ struct CalmNowIntroView: View {
             print("Unable to configure SOS background session: \(error.localizedDescription)")
         }
 
-        guard let url = Bundle.main.url(forResource: "Steadfast SOS background music", withExtension: "wav") else {
+        guard let url = audioURL(named: "SteadfastSOSBackgroundMusic.wav") else {
+            print("Audio file not found:", "SteadfastSOSBackgroundMusic.wav")
             return
         }
 
@@ -189,6 +190,19 @@ struct CalmNowIntroView: View {
     private func stopBackgroundMusic() {
         backgroundMusicPlayer?.stop()
         backgroundMusicPlayer = nil
+    }
+
+
+
+    private func audioURL(named fileName: String) -> URL? {
+        let ns = fileName as NSString
+        let base = ns.deletingPathExtension
+        let ext = ns.pathExtension.isEmpty ? "wav" : ns.pathExtension
+
+        if let url = Bundle.main.url(forResource: base, withExtension: ext) { return url }
+        if let url = Bundle.main.url(forResource: base, withExtension: ext, subdirectory: "audio") { return url }
+        if let url = Bundle.main.url(forResource: base, withExtension: ext, subdirectory: "Audio") { return url }
+        return nil
     }
 
 }
