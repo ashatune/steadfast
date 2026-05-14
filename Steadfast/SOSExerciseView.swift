@@ -92,6 +92,19 @@ struct SOSExerciseView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.headline)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .foregroundStyle(Theme.accent)
+                .accessibilityLabel("Back")
+            }
+        }
         .onAppear {
             startBreathingLoop()
             setupAndPlayAudio()
@@ -107,13 +120,6 @@ struct SOSExerciseView: View {
 
     private var headerSection: some View {
         VStack(spacing: 8) {
-            HStack {
-                Button("Close") { dismiss() }
-                    .font(.headline)
-                    .foregroundStyle(Theme.accent)
-                Spacer()
-            }
-
             Text(title)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(Theme.ink)
