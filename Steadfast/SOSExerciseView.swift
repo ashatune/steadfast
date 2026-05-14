@@ -42,7 +42,7 @@ struct SOSExerciseView: View {
             let circleSize = min(160.0, geometry.size.width * 0.42)
 
             ZStack {
-                Color.white
+                Theme.bg
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture { showRandomGroundingVerse() }
@@ -70,6 +70,9 @@ struct SOSExerciseView: View {
                             rewindInterval: 10,
                             forwardInterval: 10,
                             showsRemainingTime: false,
+                            controlColor: Theme.ink,
+                            timeColor: Theme.inkSecondary,
+                            playButtonBackgroundColor: Theme.accent.opacity(0.16),
                             onTogglePlay: togglePlayPause,
                             onRewind: { _ in skip(by: -10) },
                             onForward: { _ in skip(by: 10) },
@@ -92,6 +95,19 @@ struct SOSExerciseView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.headline)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .foregroundStyle(Theme.accent)
+                .accessibilityLabel("Back")
+            }
+        }
         .onAppear {
             startBreathingLoop()
             setupAndPlayAudio()
@@ -107,13 +123,6 @@ struct SOSExerciseView: View {
 
     private var headerSection: some View {
         VStack(spacing: 8) {
-            HStack {
-                Button("Close") { dismiss() }
-                    .font(.headline)
-                    .foregroundStyle(Theme.accent)
-                Spacer()
-            }
-
             Text(title)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(Theme.ink)
@@ -244,13 +253,13 @@ private struct GroundingVerseOverlay: View {
             Text(verse)
                 .font(.system(size: 17, weight: .medium, design: .rounded))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Theme.ink)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.white.opacity(0.85))
-                        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 6)
+                        .fill(Theme.surface.opacity(0.94))
+                        .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
                 )
                 .opacity(showVerse ? 1 : 0)
             Spacer()

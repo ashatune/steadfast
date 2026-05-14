@@ -5,7 +5,6 @@ struct CalmNowOptionsView: View {
         case panicReset
         case godIsWithYou
         case bodyCalmScan
-        case flightCalm
     }
 
     var onExerciseSelected: () -> Void = {}
@@ -32,7 +31,6 @@ struct CalmNowOptionsView: View {
                     optionNavButton(title: "Panic Reset", destination: .panicReset)
                     optionNavButton(title: "God Is With You", destination: .godIsWithYou)
                     optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
-                    optionNavButton(title: "Flight Calm", destination: .flightCalm)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -47,8 +45,6 @@ struct CalmNowOptionsView: View {
                 GodIsWithYouView()
             case .bodyCalmScan:
                 BodyCalmScanView()
-            case .flightCalm:
-                FlightCalmView()
             }
         }
     }
@@ -71,7 +67,7 @@ struct CalmNowOptionsView: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white)
+                    .fill(Theme.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)

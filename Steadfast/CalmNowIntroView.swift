@@ -7,6 +7,8 @@ struct CalmNowIntroView: View {
         case exhale
     }
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var breathPhase: BreathPhase = .inhale
     @State private var scale: CGFloat = 0.8
     @State private var currentMessageIndex = 0
@@ -35,7 +37,7 @@ struct CalmNowIntroView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white.ignoresSafeArea()
+                Theme.bg.ignoresSafeArea()
 
                 if showOptions {
                     VStack(spacing: 24) {
@@ -68,11 +70,18 @@ struct CalmNowIntroView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Text("Calm Now")
-                        .font(.headline)
-                        .foregroundStyle(Theme.ink)
+                    Button {
+                        handleBack()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.headline)
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                    .foregroundStyle(Theme.accent)
+                    .accessibilityLabel("Back")
                 }
             }
         }
@@ -85,6 +94,23 @@ struct CalmNowIntroView: View {
             breathTimer?.invalidate()
             introTask?.cancel()
             stopBackgroundMusic()
+        }
+    }
+
+    private func handleBack() {
+        if showOptions {
+            introTask?.cancel()
+            currentMessageIndex = 0
+            messageOpacity = 1
+            withAnimation(.easeInOut(duration: 0.6)) {
+                showOptions = false
+            }
+            if backgroundMusicPlayer == nil {
+                startBackgroundMusic()
+            }
+            startIntroSequence()
+        } else {
+            dismiss()
         }
     }
 
