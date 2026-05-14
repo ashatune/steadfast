@@ -47,6 +47,9 @@ struct MeditationAudioPlayerView: View {
     let rewindInterval: Double
     let forwardInterval: Double
     let showsRemainingTime: Bool
+    let controlColor: Color
+    let timeColor: Color
+    let playButtonBackgroundColor: Color
     let onTogglePlay: () -> Void
     let onRewind: (Double) -> Void
     let onForward: (Double) -> Void
@@ -59,6 +62,9 @@ struct MeditationAudioPlayerView: View {
         rewindInterval: Double = 15,
         forwardInterval: Double = 0,
         showsRemainingTime: Bool = true,
+        controlColor: Color = .white,
+        timeColor: Color = .white.opacity(0.8),
+        playButtonBackgroundColor: Color = Color.white.opacity(0.16),
         onTogglePlay: @escaping () -> Void,
         onRewind: @escaping (Double) -> Void,
         onForward: @escaping (Double) -> Void = { _ in },
@@ -70,6 +76,9 @@ struct MeditationAudioPlayerView: View {
         self.rewindInterval = rewindInterval
         self.forwardInterval = forwardInterval
         self.showsRemainingTime = showsRemainingTime
+        self.controlColor = controlColor
+        self.timeColor = timeColor
+        self.playButtonBackgroundColor = playButtonBackgroundColor
         self.onTogglePlay = onTogglePlay
         self.onRewind = onRewind
         self.onForward = onForward
@@ -97,7 +106,7 @@ struct MeditationAudioPlayerView: View {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 24, weight: .bold))
                         .frame(width: 44, height: 44)
-                        .background(Circle().fill(Color.white.opacity(0.16)))
+                        .background(Circle().fill(playButtonBackgroundColor))
                 }
                 .buttonStyle(.plain)
 
@@ -114,7 +123,7 @@ struct MeditationAudioPlayerView: View {
                     }
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(controlColor)
 
             VStack(spacing: 6) {
                 Slider(
@@ -146,7 +155,7 @@ struct MeditationAudioPlayerView: View {
                     }
                 }
                 .font(.caption)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(timeColor)
             }
         }
         .padding()

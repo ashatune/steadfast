@@ -37,7 +37,7 @@ struct CalmNowIntroView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white.ignoresSafeArea()
+                Theme.bg.ignoresSafeArea()
 
                 if showOptions {
                     VStack(spacing: 24) {
