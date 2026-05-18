@@ -91,6 +91,16 @@ struct CalmNowIntroView: View {
                     }
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
