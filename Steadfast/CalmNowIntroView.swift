@@ -16,7 +16,9 @@ struct CalmNowIntroView: View {
     @State private var messageOpacity = 1.0
 
     @State private var breathTimer: Timer?
+    @State private var countdownTimer: Timer?
     @State private var introTask: Task<Void, Never>?
+    @State private var remainingIntroSeconds = 0
 
     @State private var backgroundMusicPlayer: AVAudioPlayer?
 
@@ -33,6 +35,15 @@ struct CalmNowIntroView: View {
     private let fadeInDuration: Double = 0.35
     private let holdDuration: Double = 3.1
     private let finalPromptMinimumHold: Double = 1.0
+
+    private var introDuration: Double {
+        guard !messages.isEmpty else { return 0 }
+        let transitionDuration = fadeOutDuration + gapBetweenPrompts + fadeInDuration
+        let finalHold = max(finalPromptMinimumHold, holdDuration)
+        return holdDuration * Double(messages.count - 1)
+            + transitionDuration * Double(messages.count - 1)
+            + finalHold
+    }
 
     var body: some View {
         NavigationStack {
@@ -63,6 +74,8 @@ struct CalmNowIntroView: View {
 
                         breathingCircle
 
+                        countdownPill
+
                         Spacer()
                     }
                     .padding(.horizontal, 24)
@@ -83,6 +96,19 @@ struct CalmNowIntroView: View {
                     .foregroundStyle(Theme.accent)
                     .accessibilityLabel("Back")
                 }
+
+                if !showOptions {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Skip Intro") {
+                            skipIntro()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Skip Intro")
+                    }
+                }
             }
         }
         .onAppear {
@@ -93,6 +119,7 @@ struct CalmNowIntroView: View {
         .onDisappear {
             breathTimer?.invalidate()
             introTask?.cancel()
+            stopIntroCountdown()
             stopBackgroundMusic()
         }
     }
@@ -100,6 +127,7 @@ struct CalmNowIntroView: View {
     private func handleBack() {
         if showOptions {
             introTask?.cancel()
+            stopIntroCountdown()
             currentMessageIndex = 0
             messageOpacity = 1
             withAnimation(.easeInOut(duration: 0.6)) {
@@ -112,6 +140,30 @@ struct CalmNowIntroView: View {
         } else {
             dismiss()
         }
+    }
+
+    private func skipIntro() {
+        introTask?.cancel()
+        stopIntroCountdown()
+        messageOpacity = 1
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showOptions = true
+        }
+    }
+
+    private var countdownPill: some View {
+        Text("Intro ends in \(remainingIntroSeconds) sec")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Theme.inkSecondary)
+            .monospacedDigit()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Theme.surface.opacity(0.85), in: Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Theme.accent.opacity(0.18), lineWidth: 1)
+            )
+            .accessibilityLabel("Intro ends in \(remainingIntroSeconds) seconds")
     }
 
     private var breathingCircle: some View {
@@ -153,6 +205,7 @@ struct CalmNowIntroView: View {
 
     private func startIntroSequence() {
         introTask?.cancel()
+        startIntroCountdown()
         introTask = Task {
             for idx in 0..<messages.count {
                 if idx > 0 {
@@ -179,6 +232,7 @@ struct CalmNowIntroView: View {
             }
 
             await MainActor.run {
+                stopIntroCountdown()
                 withAnimation(.easeInOut(duration: 0.6)) {
                     showOptions = true
                 }
@@ -186,6 +240,24 @@ struct CalmNowIntroView: View {
         }
     }
 
+    private func startIntroCountdown() {
+        countdownTimer?.invalidate()
+        remainingIntroSeconds = Int(ceil(introDuration))
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            if remainingIntroSeconds > 1 {
+                remainingIntroSeconds -= 1
+            } else {
+                remainingIntroSeconds = 0
+                timer.invalidate()
+                countdownTimer = nil
+            }
+        }
+    }
+
+    private func stopIntroCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
 
     private func startBackgroundMusic() {
         do {
