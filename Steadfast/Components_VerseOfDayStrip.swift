@@ -6,10 +6,9 @@ struct VerseOfDayStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "sparkles").foregroundStyle(Theme.accent)
-                Text("Anchor of the Day").font(.title3).bold()
-            }
+            Text("Anchor of the Day")
+                .font(.title3)
+                .bold()
 
             NavigationLink {
                 AnchorBreathView(verse: verse,
