@@ -74,7 +74,15 @@ struct CalmNowIntroView: View {
 
                         breathingCircle
 
+                        countdownPill
+
                         Spacer()
+
+                        VStack(spacing: 10) {
+                            countdownPill
+                            skipIntroButton
+                        }
+                        .padding(.bottom, 24)
                     }
                     .padding(.horizontal, 24)
                     .overlay(alignment: .bottom) {
@@ -97,6 +105,19 @@ struct CalmNowIntroView: View {
                     }
                     .foregroundStyle(Theme.accent)
                     .accessibilityLabel("Back")
+                }
+
+                if !showOptions {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Skip Intro") {
+                            skipIntro()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Skip Intro")
+                    }
                 }
             }
         }
