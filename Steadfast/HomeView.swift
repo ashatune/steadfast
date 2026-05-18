@@ -261,12 +261,12 @@ struct HomeView: View {
 
     private var rhythmHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Today’s rhythm 🙏")
+            Text("Today’s rhythm")
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.ink)
 
             if streakManager.hasDevotionalCompletion(on: now), streakManager.hasAnchorCompletion(on: now) {
-                Text("You’ve completed your rhythm for today 🙏")
+                Text("You’ve completed your rhythm for today")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(Theme.inkSecondary)
             }
@@ -277,7 +277,7 @@ struct HomeView: View {
         let days = streakManager.statusForLast7Days()
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Text(streakManager.streakText())
+                Text(streakManager.streakText(prefix: ""))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.accent)
                 Spacer()
