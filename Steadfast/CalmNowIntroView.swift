@@ -111,6 +111,16 @@ struct CalmNowIntroView: View {
                     .padding(.horizontal, 24)
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -195,7 +205,6 @@ struct CalmNowIntroView: View {
         .accessibilityLabel("Skip Intro")
     }
 
-
     private var breathingCircle: some View {
         Circle()
             .fill(
@@ -270,25 +279,6 @@ struct CalmNowIntroView: View {
         }
     }
 
-    private func startIntroCountdown() {
-        countdownTimer?.invalidate()
-        remainingIntroSeconds = Int(ceil(introDuration))
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            if remainingIntroSeconds > 1 {
-                remainingIntroSeconds -= 1
-            } else {
-                remainingIntroSeconds = 0
-                timer.invalidate()
-                countdownTimer = nil
-            }
-        }
-    }
-
-    private func stopIntroCountdown() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-    }
-
     private func startBackgroundMusic() {
         do {
             let session = AVAudioSession.sharedInstance()
@@ -320,8 +310,6 @@ struct CalmNowIntroView: View {
         backgroundMusicPlayer = nil
     }
 
-
-
     private func audioURL(named fileName: String) -> URL? {
         let ns = fileName as NSString
         let base = ns.deletingPathExtension
@@ -332,5 +320,4 @@ struct CalmNowIntroView: View {
         if let url = Bundle.main.url(forResource: base, withExtension: ext, subdirectory: "Audio") { return url }
         return nil
     }
-
 }
