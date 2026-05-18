@@ -32,6 +32,12 @@ struct CalmNowOptionsView: View {
                     optionNavButton(title: "God Is With You", destination: .godIsWithYou)
                     optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
                 }
+
+                Text("Tip: tap the blank space during a workflow to reveal verses.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.inkSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
