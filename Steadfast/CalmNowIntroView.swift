@@ -77,6 +77,12 @@ struct CalmNowIntroView: View {
                         countdownPill
 
                         Spacer()
+
+                        VStack(spacing: 10) {
+                            countdownPill
+                            skipIntroButton
+                        }
+                        .padding(.bottom, 24)
                     }
                     .padding(.horizontal, 24)
                     .transition(.opacity)
@@ -149,6 +155,17 @@ struct CalmNowIntroView: View {
         withAnimation(.easeInOut(duration: 0.3)) {
             showOptions = true
         }
+    }
+
+    private var skipIntroButton: some View {
+        Button("Skip Intro") {
+            skipIntro()
+        }
+        .font(.caption.weight(.semibold))
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .tint(Theme.accent)
+        .accessibilityLabel("Skip Intro")
     }
 
     private var countdownPill: some View {
