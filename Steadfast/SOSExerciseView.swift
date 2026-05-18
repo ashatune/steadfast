@@ -130,6 +130,11 @@ struct SOSExerciseView: View {
             Text(subtitle)
                 .font(.subheadline)
                 .foregroundStyle(Theme.inkSecondary)
+
+            Text("Tip: Tap blank space to show a verse.")
+                .font(.footnote)
+                .foregroundStyle(Theme.inkSecondary)
+                .multilineTextAlignment(.center)
         }
     }
 
