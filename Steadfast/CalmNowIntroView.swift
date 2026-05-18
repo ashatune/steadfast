@@ -16,7 +16,9 @@ struct CalmNowIntroView: View {
     @State private var messageOpacity = 1.0
 
     @State private var breathTimer: Timer?
+    @State private var countdownTimer: Timer?
     @State private var introTask: Task<Void, Never>?
+    @State private var remainingIntroSeconds = 0
 
     @State private var backgroundMusicPlayer: AVAudioPlayer?
 
@@ -33,6 +35,15 @@ struct CalmNowIntroView: View {
     private let fadeInDuration: Double = 0.35
     private let holdDuration: Double = 3.1
     private let finalPromptMinimumHold: Double = 1.0
+
+    private var introDuration: Double {
+        guard !messages.isEmpty else { return 0 }
+        let transitionDuration = fadeOutDuration + gapBetweenPrompts + fadeInDuration
+        let finalHold = max(finalPromptMinimumHold, holdDuration)
+        return holdDuration * Double(messages.count - 1)
+            + transitionDuration * Double(messages.count - 1)
+            + finalHold
+    }
 
     var body: some View {
         NavigationStack {
@@ -63,7 +74,39 @@ struct CalmNowIntroView: View {
 
                         breathingCircle
 
+                        countdownPill
+
                         Spacer()
+
+                        VStack(spacing: 10) {
+                            countdownPill
+                            skipIntroButton
+                        }
+                        .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .overlay(alignment: .bottom) {
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .transition(.opacity)
+                }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
                     }
                     .padding(.horizontal, 24)
                     .transition(.opacity)
@@ -93,6 +136,19 @@ struct CalmNowIntroView: View {
                     .foregroundStyle(Theme.accent)
                     .accessibilityLabel("Back")
                 }
+
+                if !showOptions {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Skip Intro") {
+                            skipIntro()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Skip Intro")
+                    }
+                }
             }
         }
         .onAppear {
@@ -103,6 +159,7 @@ struct CalmNowIntroView: View {
         .onDisappear {
             breathTimer?.invalidate()
             introTask?.cancel()
+            stopIntroCountdown()
             stopBackgroundMusic()
         }
     }
@@ -110,6 +167,7 @@ struct CalmNowIntroView: View {
     private func handleBack() {
         if showOptions {
             introTask?.cancel()
+            stopIntroCountdown()
             currentMessageIndex = 0
             messageOpacity = 1
             withAnimation(.easeInOut(duration: 0.6)) {
@@ -186,6 +244,7 @@ struct CalmNowIntroView: View {
 
     private func startIntroSequence() {
         introTask?.cancel()
+        startIntroCountdown()
         introTask = Task {
             for idx in 0..<messages.count {
                 if idx > 0 {
@@ -212,6 +271,7 @@ struct CalmNowIntroView: View {
             }
 
             await MainActor.run {
+                stopIntroCountdown()
                 withAnimation(.easeInOut(duration: 0.6)) {
                     showOptions = true
                 }
