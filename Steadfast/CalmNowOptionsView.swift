@@ -32,6 +32,7 @@ struct CalmNowOptionsView: View {
                     optionNavButton(title: "God Is With You", destination: .godIsWithYou)
                     optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
                 }
+
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)

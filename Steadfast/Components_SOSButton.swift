@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SOSButton: View {
     var action: () -> Void
-    var imageName: String = "SOSIcon"    // asset name
+    var imageName: String = "SteadfastCROSS1024"    // asset name
     var imageIsTemplate: Bool = false    // true: tintable PDF, false: full-color PNG/JPG
     var size: CGFloat = 160              // button diameter
     var iconScale: CGFloat = 0.55        // icon relative size
