@@ -68,6 +68,16 @@ struct CalmNowIntroView: View {
                     .padding(.horizontal, 24)
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -113,6 +123,30 @@ struct CalmNowIntroView: View {
             dismiss()
         }
     }
+
+    private func skipIntro() {
+        introTask?.cancel()
+        messageOpacity = 1
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showOptions = true
+        }
+    }
+
+    private var introFooter: some View {
+        skipIntroButton
+    }
+
+    private var skipIntroButton: some View {
+        Button("Skip Intro") {
+            skipIntro()
+        }
+        .font(.caption.weight(.semibold))
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .tint(Theme.accent)
+        .accessibilityLabel("Skip Intro")
+    }
+
 
     private var breathingCircle: some View {
         Circle()
