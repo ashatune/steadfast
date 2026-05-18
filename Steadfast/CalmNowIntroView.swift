@@ -148,6 +148,16 @@ struct CalmNowIntroView: View {
                     .padding(.horizontal, 24)
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -220,17 +230,26 @@ struct CalmNowIntroView: View {
     }
 
     private var breathingCircle: some View {
-        Circle()
-            .fill(
-                LinearGradient(
-                    colors: [Theme.accent.opacity(0.9), Theme.accent2.opacity(0.9)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Theme.accent.opacity(0.9), Theme.accent2.opacity(0.9)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-            )
-            .frame(width: 120, height: 120)
-            .scaleEffect(scale)
-            .shadow(color: Theme.accent.opacity(0.22), radius: 18, x: 0, y: 8)
+
+            Image("SteadfastCROSS1024")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .clipShape(Circle())
+                .accessibilityHidden(true)
+        }
+        .frame(width: 120, height: 120)
+        .scaleEffect(scale)
+        .shadow(color: Theme.accent.opacity(0.22), radius: 18, x: 0, y: 8)
     }
 
     private func startBreathingLoop() {
