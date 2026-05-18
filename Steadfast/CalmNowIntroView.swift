@@ -101,6 +101,16 @@ struct CalmNowIntroView: View {
                     .padding(.horizontal, 24)
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -164,7 +174,6 @@ struct CalmNowIntroView: View {
 
     private func skipIntro() {
         introTask?.cancel()
-        stopIntroCountdown()
         messageOpacity = 1
         withAnimation(.easeInOut(duration: 0.3)) {
             showOptions = true
@@ -172,10 +181,7 @@ struct CalmNowIntroView: View {
     }
 
     private var introFooter: some View {
-        VStack(spacing: 10) {
-            countdownPill
-            skipIntroButton
-        }
+        skipIntroButton
     }
 
     private var skipIntroButton: some View {
@@ -189,20 +195,6 @@ struct CalmNowIntroView: View {
         .accessibilityLabel("Skip Intro")
     }
 
-    private var countdownPill: some View {
-        Text("Intro ends in \(remainingIntroSeconds) sec")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Theme.inkSecondary)
-            .monospacedDigit()
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(Theme.surface.opacity(0.85), in: Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(Theme.accent.opacity(0.18), lineWidth: 1)
-            )
-            .accessibilityLabel("Intro ends in \(remainingIntroSeconds) seconds")
-    }
 
     private var breathingCircle: some View {
         Circle()
