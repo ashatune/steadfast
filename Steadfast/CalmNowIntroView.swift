@@ -85,6 +85,10 @@ struct CalmNowIntroView: View {
                         .padding(.bottom, 24)
                     }
                     .padding(.horizontal, 24)
+                    .overlay(alignment: .bottom) {
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
                     .transition(.opacity)
                 }
             }
@@ -154,6 +158,13 @@ struct CalmNowIntroView: View {
         messageOpacity = 1
         withAnimation(.easeInOut(duration: 0.3)) {
             showOptions = true
+        }
+    }
+
+    private var introFooter: some View {
+        VStack(spacing: 10) {
+            countdownPill
+            skipIntroButton
         }
     }
 
