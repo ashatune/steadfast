@@ -117,7 +117,8 @@ final class StreakManager: ObservableObject {
 
     func streakText(prefix: String = "🙏") -> String {
         let dayWord = currentStreak == 1 ? "day" : "days"
-        return "\(prefix) \(currentStreak) \(dayWord) streak"
+        let streakLabel = "\(currentStreak) \(dayWord) streak"
+        return prefix.isEmpty ? streakLabel : "\(prefix) \(streakLabel)"
     }
 
     func hasCompletion(on date: Date) -> Bool {
