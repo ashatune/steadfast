@@ -68,6 +68,16 @@ struct CalmNowIntroView: View {
                     .padding(.horizontal, 24)
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -112,6 +122,29 @@ struct CalmNowIntroView: View {
         } else {
             dismiss()
         }
+    }
+
+    private func skipIntro() {
+        introTask?.cancel()
+        messageOpacity = 1
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showOptions = true
+        }
+    }
+
+    private var introFooter: some View {
+        skipIntroButton
+    }
+
+    private var skipIntroButton: some View {
+        Button("Skip Intro") {
+            skipIntro()
+        }
+        .font(.caption.weight(.semibold))
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .tint(Theme.accent)
+        .accessibilityLabel("Skip Intro")
     }
 
     private var breathingCircle: some View {
@@ -186,6 +219,13 @@ struct CalmNowIntroView: View {
         }
     }
 
+    private func startIntroCountdown() {
+        // Countdown was removed from UI; keep no-op helper for compatibility with stale call sites.
+    }
+
+    private func stopIntroCountdown() {
+        // Countdown was removed from UI; keep no-op helper for compatibility with stale call sites.
+    }
 
     private func startBackgroundMusic() {
         do {
@@ -218,8 +258,6 @@ struct CalmNowIntroView: View {
         backgroundMusicPlayer = nil
     }
 
-
-
     private func audioURL(named fileName: String) -> URL? {
         let ns = fileName as NSString
         let base = ns.deletingPathExtension
@@ -230,5 +268,4 @@ struct CalmNowIntroView: View {
         if let url = Bundle.main.url(forResource: base, withExtension: ext, subdirectory: "Audio") { return url }
         return nil
     }
-
 }
