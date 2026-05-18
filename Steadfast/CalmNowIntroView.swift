@@ -128,6 +128,16 @@ struct CalmNowIntroView: View {
                     .padding(.horizontal, 24)
                     .transition(.opacity)
                 }
+
+                if !showOptions {
+                    VStack {
+                        Spacer()
+                        introFooter
+                            .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -271,6 +281,14 @@ struct CalmNowIntroView: View {
                 }
             }
         }
+    }
+
+    private func startIntroCountdown() {
+        // Countdown was removed from UI; keep no-op helper for compatibility with stale call sites.
+    }
+
+    private func stopIntroCountdown() {
+        // Countdown was removed from UI; keep no-op helper for compatibility with stale call sites.
     }
 
     private func startBackgroundMusic() {
