@@ -83,6 +83,19 @@ struct CalmNowIntroView: View {
                     .foregroundStyle(Theme.accent)
                     .accessibilityLabel("Back")
                 }
+
+                if !showOptions {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Skip Intro") {
+                            skipIntro()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Skip Intro")
+                    }
+                }
             }
         }
         .onAppear {
@@ -111,6 +124,14 @@ struct CalmNowIntroView: View {
             startIntroSequence()
         } else {
             dismiss()
+        }
+    }
+
+    private func skipIntro() {
+        introTask?.cancel()
+        messageOpacity = 1
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showOptions = true
         }
     }
 
