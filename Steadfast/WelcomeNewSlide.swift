@@ -12,7 +12,12 @@ struct WelcomeUserSlide: View {
                 BreathingIconCircle(
                     size: 124,
                     iconName: "SteadfastCROSS1024",
-                    scale: breathScale,
+                    animated: true,
+                    minScale: 0.84,
+                    maxScale: 1.16,
+                    breathDuration: 4.0,
+                    minOpacity: 0.24,
+                    maxOpacity: 0.44,
                     iconScale: 0.64,
                     iconShape: RoundedRectangle(cornerRadius: 20, style: .continuous)
                 )

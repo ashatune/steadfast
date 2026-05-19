@@ -142,7 +142,8 @@ struct SOSExerciseView: View {
         BreathingIconCircle(
             size: size,
             iconName: "SteadfastCROSS1024",
-            scale: scale,
+            animated: false,
+            externalScale: scale,
             iconScale: 0.45,
             iconShape: nil
         )
