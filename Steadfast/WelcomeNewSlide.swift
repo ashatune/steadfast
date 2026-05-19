@@ -2,18 +2,20 @@ import SwiftUI
 
 struct WelcomeUserSlide: View {
     @AppStorage("displayName") private var displayName = ""
+    @State private var breathScale: CGFloat = 0.95
 
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
                 Spacer(minLength: 24)
 
-                Image("SteadfastCROSS1024")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 88, height: 88)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                BreathingIconCircle(
+                    size: 124,
+                    iconName: "SteadfastCROSS1024",
+                    scale: breathScale,
+                    iconScale: 0.64,
+                    iconShape: RoundedRectangle(cornerRadius: 20, style: .continuous)
+                )
 
                 Text("Welcome to Steadfast, \(firstName)!")
                     .font(.title2.weight(.bold))
@@ -36,6 +38,11 @@ struct WelcomeUserSlide: View {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 3.8).repeatForever(autoreverses: true)) {
+                breathScale = 1.05
+            }
+        }
     }
 
     private var firstName: String {
