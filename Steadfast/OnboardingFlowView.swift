@@ -246,7 +246,7 @@ struct OnboardingFlowView: View {
                     WelcomeUserSlide()
                         .tag(Page.welcomeUser)
 
-                    PersonalizationChoiceSlide(
+                    OnboardingPersonalizationChoiceSlide(
                         title: "What brings you to Steadfast right now?",
                         options: [
                             "Anxiety or overwhelm",
@@ -264,20 +264,20 @@ struct OnboardingFlowView: View {
                         responses: whyResponses
                     )
                     .tag(Page.personalizationWhy)
-                    PersonalizationResponseSlide(message: responseText(for: personalizationReason, in: whyResponses))
+                    OnboardingPersonalizationResponseSlide(message: responseText(for: personalizationReason, in: whyResponses))
                         .tag(Page.personalizationWhyResponse)
 
-                    PersonalizationChoiceSlide(
+                    OnboardingPersonalizationChoiceSlide(
                         title: "Have you practiced mindfulness or meditation before?",
                         options: ["Not really", "A little", "Yes, regularly", "Not sure"],
                         selection: $personalizationExperience,
                         responses: experienceResponses
                     )
                     .tag(Page.personalizationExperience)
-                    PersonalizationResponseSlide(message: responseText(for: personalizationExperience, in: experienceResponses))
+                    OnboardingPersonalizationResponseSlide(message: responseText(for: personalizationExperience, in: experienceResponses))
                         .tag(Page.personalizationExperienceResponse)
 
-                    PersonalizationChoiceSlide(
+                    OnboardingPersonalizationChoiceSlide(
                         title: "What would you like more of in your daily life?",
                         options: [
                             "Peace", "Consistency", "Better sleep", "Feeling closer to God", "Less panic or overwhelm", "Emotional resilience", "Focus and clarity", "Rest", "Hope", "Not sure / other"
@@ -286,10 +286,10 @@ struct OnboardingFlowView: View {
                         responses: focusResponses
                     )
                     .tag(Page.personalizationFocus)
-                    PersonalizationResponseSlide(message: responseText(for: personalizationFocus, in: focusResponses))
+                    OnboardingPersonalizationResponseSlide(message: responseText(for: personalizationFocus, in: focusResponses))
                         .tag(Page.personalizationFocusResponse)
 
-                    PersonalizationReassuranceSlide()
+                    OnboardingPersonalizationReassuranceSlide()
                         .tag(Page.personalizationReassurance)
 
                     MorningReminderSlide(
@@ -464,7 +464,7 @@ struct OnboardingFlowView: View {
     }
 }
 
-fileprivate struct PersonalizationChoiceSlide: View {
+fileprivate struct OnboardingPersonalizationChoiceSlide: View {
     let title: String
     let options: [String]
     @Binding var selection: String
@@ -517,7 +517,7 @@ fileprivate struct PersonalizationChoiceSlide: View {
     }
 }
 
-fileprivate struct PersonalizationResponseSlide: View {
+fileprivate struct OnboardingPersonalizationResponseSlide: View {
     let message: String
 
     var body: some View {
@@ -534,89 +534,7 @@ fileprivate struct PersonalizationResponseSlide: View {
     }
 }
 
-fileprivate struct PersonalizationReassuranceSlide: View {
-    var body: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Text("You don’t have to do this perfectly.")
-                .font(.title2.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            Text("Some days may feel peaceful. Some may feel overwhelming. Both are okay. Steadfast is here to help you create small moments of calm, presence, and connection with God wherever you are today.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 24)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-fileprivate struct PersonalizationChoiceSlide: View {
-    let title: String
-    let options: [String]
-    @Binding var selection: String
-    let responses: [String: String]
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                Spacer(minLength: 20)
-                Text(title)
-                    .font(.title2.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                VStack(spacing: 10) {
-                    ForEach(options, id: \.self) { option in
-                        Button {
-                            selection = option
-                        } label: {
-                            HStack(spacing: 12) {
-                                Text(option)
-                                    .foregroundStyle(.primary)
-                                    .multilineTextAlignment(.leading)
-                                Spacer()
-                                Image(systemName: selection == option ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selection == option ? Theme.accent : .secondary)
-                            }
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(selection == option ? Theme.surface : Color(.secondarySystemBackground))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(selection == option ? Theme.accent.opacity(0.5) : Theme.line.opacity(0.35), lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal)
-
-                if let response = responses[selection], !selection.isEmpty {
-                    Text(response)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .padding(.horizontal)
-                        .transition(.opacity)
-                }
-
-                Spacer(minLength: 20)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-        }
-        .scrollIndicators(.hidden)
-    }
-}
-
-fileprivate struct PersonalizationReassuranceSlide: View {
+fileprivate struct OnboardingPersonalizationReassuranceSlide: View {
     var body: some View {
         VStack(spacing: 14) {
             Spacer()
