@@ -10,6 +10,7 @@ struct OnboardSlideBranded: View {
     let subtitle: String
     let icon: String
     var iconShape: IconShape = .circle
+    @State private var breathScale: CGFloat = 0.95
 
     var body: some View {
         ScrollView {
@@ -49,5 +50,10 @@ struct OnboardSlideBranded: View {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 3.8).repeatForever(autoreverses: true)) {
+                breathScale = 1.05
+            }
+        }
     }
 }
