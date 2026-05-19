@@ -478,6 +478,7 @@ fileprivate struct OnboardingPersonalizationChoiceSlide: View {
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
+                    .modifier(GentleFloatingModifier())
 
                 VStack(spacing: 10) {
                     ForEach(options, id: \.self) { option in
@@ -528,9 +529,23 @@ fileprivate struct OnboardingPersonalizationResponseSlide: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 26)
+                .modifier(GentleFloatingModifier(offset: -6, duration: 3.2))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+fileprivate struct GentleFloatingModifier: ViewModifier {
+    var offset: CGFloat = -7
+    var duration: Double = 3.0
+    @State private var isFloating = false
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: isFloating ? offset : 0)
+            .animation(.easeInOut(duration: duration).repeatForever(autoreverses: true), value: isFloating)
+            .onAppear { isFloating = true }
     }
 }
 
