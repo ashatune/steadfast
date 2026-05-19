@@ -9,24 +9,24 @@ struct OnboardingCloudBackground: View {
             ZStack {
                 LinearGradient(
                     colors: [
-                        Color.white,
-                        Theme.accent.opacity(0.06),
-                        Theme.accent2.opacity(0.07),
-                        Color.white
+                        Theme.accent.opacity(0.15),
+                        Theme.accent2.opacity(0.16),
+                        Color.white.opacity(0.92),
+                        Theme.accent.opacity(0.10)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
 
-                cloud(width: geo.size.width * 0.78, height: 180, opacity: 0.18, blur: 28)
+                cloud(width: geo.size.width * 0.78, height: 180, opacity: 0.24, blur: 26)
                     .offset(x: animateClouds ? -geo.size.width * 0.16 : -geo.size.width * 0.22,
                             y: animateClouds ? -geo.size.height * 0.20 : -geo.size.height * 0.24)
 
-                cloud(width: geo.size.width * 0.72, height: 170, opacity: 0.15, blur: 24)
+                cloud(width: geo.size.width * 0.72, height: 170, opacity: 0.20, blur: 22)
                     .offset(x: animateClouds ? geo.size.width * 0.18 : geo.size.width * 0.12,
                             y: animateClouds ? -geo.size.height * 0.02 : geo.size.height * 0.02)
 
-                cloud(width: geo.size.width * 0.82, height: 190, opacity: 0.13, blur: 30)
+                cloud(width: geo.size.width * 0.82, height: 190, opacity: 0.18, blur: 28)
                     .offset(x: animateClouds ? -geo.size.width * 0.02 : geo.size.width * 0.05,
                             y: animateClouds ? geo.size.height * 0.24 : geo.size.height * 0.28)
             }

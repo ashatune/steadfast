@@ -216,8 +216,15 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(spacing: 0) {
-                TabView(selection: $viewModel.page) {
+            ZStack {
+                OnboardingCloudBackground()
+                    .ignoresSafeArea()
+
+                Color.white.opacity(0.18)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    TabView(selection: $viewModel.page) {
                     OnboardSlideBranded(
                         title: "Welcome to Steadfast",
                         subtitle: "A calm, Bible-centered companion.\nFind peace in God’s Word, anytime.",
@@ -326,21 +333,17 @@ struct OnboardingFlowView: View {
                 .indexViewStyle(.page(backgroundDisplayMode: .interactive))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if viewModel.page != .done && viewModel.page != .nameConsent {
-                    onboardingControls
-                        .padding(.horizontal, 24)
-                        .padding(.top, 12)
-                        .padding(.bottom, max(proxy.safeAreaInsets.bottom, 18))
+                    if viewModel.page != .done && viewModel.page != .nameConsent {
+                        onboardingControls
+                            .padding(.horizontal, 24)
+                            .padding(.top, 12)
+                            .padding(.bottom, max(proxy.safeAreaInsets.bottom, 18))
+                    }
                 }
+                .padding(.top, max(proxy.safeAreaInsets.top, 8))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .background(Color.clear)
             }
-            .padding(.top, max(proxy.safeAreaInsets.top, 8))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(
-                ZStack {
-                    OnboardingCloudBackground()
-                    Color.white.opacity(0.78).ignoresSafeArea()
-                }
-            )
         }
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(isPresented: $viewModel.showBeginMeditation) {
