@@ -164,7 +164,7 @@ fileprivate struct AppleWatchOnboardingSlide: View {
 
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
-        case intro1, intro2, intro3, nameConsent, welcomeUser, morningReminder, widgetReminder, appleWatchInfo, beginMeditation, quickPractice, done
+        case intro1, intro2, intro3, nameConsent, welcomeUser, personalizationWhy, personalizationExperience, personalizationFocus, personalizationReassurance, morningReminder, widgetReminder, appleWatchInfo, beginMeditation, quickPractice, done
     }
 
     @StateObject private var viewModel = OnboardingViewModel()
@@ -173,6 +173,9 @@ struct OnboardingFlowView: View {
     @AppStorage("hasAcceptedTerms") private var hasAcceptedTerms = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("didCompleteOnboardingMeditation") private var didCompleteOnboardingMeditation = false
+    @AppStorage("onboarding_personalization_reason") private var personalizationReason = ""
+    @AppStorage("onboarding_personalization_experience") private var personalizationExperience = ""
+    @AppStorage("onboarding_personalization_focus") private var personalizationFocus = ""
     @State private var shouldSkipMeditation = false
 
     private let defaultVerse = Verse(
@@ -212,6 +215,73 @@ struct OnboardingFlowView: View {
 
                     WelcomeUserSlide()
                         .tag(Page.welcomeUser)
+
+                    PersonalizationChoiceSlide(
+                        title: "What brings you to Steadfast right now?",
+                        options: [
+                            "Anxiety or overwhelm",
+                            "Trouble slowing down",
+                            "Wanting to spend more time with God",
+                            "Stress or burnout",
+                            "Difficulty sleeping",
+                            "Racing thoughts",
+                            "Learning scripture",
+                            "Emotional grounding",
+                            "Building healthier habits",
+                            "Not sure / other"
+                        ],
+                        selection: $personalizationReason,
+                        responses: [
+                            "Anxiety or overwhelm": "Many people come to Steadfast during overwhelming seasons. Steadfast includes calming guided exercises, grounding techniques, breathwork, and scripture-centered reflections to help you slow down moment by moment.",
+                            "Trouble slowing down": "It can be hard to pause when life moves fast. Steadfast offers gentle practices to help your body settle and your heart reconnect with God in the present moment.",
+                            "Wanting to spend more time with God": "Even a few intentional minutes can make a difference. Steadfast helps you build gentle daily rhythms with scripture, reflection, prayer, and guided stillness.",
+                            "Stress or burnout": "When life feels heavy, small moments of stillness matter. Steadfast can support you with calming routines that help you breathe, reset, and rest in God’s presence.",
+                            "Difficulty sleeping": "Evening calm can begin with a few quiet minutes. Steadfast offers peaceful wind-down practices and scripture reflections to help you settle your mind and body.",
+                            "Racing thoughts": "If your thoughts feel nonstop, you’re not alone. Steadfast guides you through simple breath-and-scripture moments to help you feel grounded and present with God.",
+                            "Learning scripture": "Steadfast helps you stay close to God’s Word through short, repeatable scripture-centered practices you can return to throughout your day.",
+                            "Emotional grounding": "Steadfast is designed to help you slow down and feel steady in emotionally intense moments, with faith-centered tools for presence and calm.",
+                            "Building healthier habits": "Lasting change often starts small. Steadfast supports gentle daily rhythms that help you create steady habits rooted in peace and connection with God.",
+                            "Not sure / other": "That’s completely okay. You don’t need to have everything figured out before you begin. Steadfast is here to help you slow down, breathe, and reconnect with God one moment at a time."
+                        ]
+                    )
+                    .tag(Page.personalizationWhy)
+
+                    PersonalizationChoiceSlide(
+                        title: "Have you practiced mindfulness or meditation before?",
+                        options: ["Not really", "A little", "Yes, regularly", "Not sure"],
+                        selection: $personalizationExperience,
+                        responses: [
+                            "Not really": "You’re in the right place. In Steadfast, mindfulness simply means slowing down, becoming present, calming your nervous system, and creating space to reconnect with God.",
+                            "A little": "That’s a great starting point. Steadfast keeps mindfulness simple and faith-centered: slow breathing, present awareness, and space to reconnect with God.",
+                            "Yes, regularly": "That rhythm can be a gift. Steadfast builds on it with Christ-centered practices that help you stay present, calm your body, and reconnect with God.",
+                            "Not sure": "No pressure at all. In Steadfast, mindfulness means gently slowing down, noticing the present moment, calming your nervous system, and reconnecting with God."
+                        ]
+                    )
+                    .tag(Page.personalizationExperience)
+
+                    PersonalizationChoiceSlide(
+                        title: "What would you like more of in your daily life?",
+                        options: [
+                            "Peace", "Consistency", "Better sleep", "Feeling closer to God", "Less panic or overwhelm", "Emotional resilience", "Focus and clarity", "Rest", "Hope", "Not sure / other"
+                        ],
+                        selection: $personalizationFocus,
+                        responses: [
+                            "Peace": "We’ll help you build small moments of calm you can return to each day.",
+                            "Consistency": "Steadfast is built for gentle daily rhythms, even when life is busy.",
+                            "Better sleep": "You can use short evening practices to help your mind and body settle.",
+                            "Feeling closer to God": "Steadfast creates space for scripture, prayer, and quiet presence with God.",
+                            "Less panic or overwhelm": "When emotions rise, Steadfast can help you ground, breathe, and slow down.",
+                            "Emotional resilience": "Over time, steady small practices can support a more grounded heart and mind.",
+                            "Focus and clarity": "Short resets throughout the day can help you feel centered and clear.",
+                            "Rest": "You deserve moments to pause. Steadfast helps you make room for stillness.",
+                            "Hope": "Even brief moments with God’s Word can renew hope in hard seasons.",
+                            "Not sure / other": "That’s okay. You can start simple and discover what supports you most as you go."
+                        ]
+                    )
+                    .tag(Page.personalizationFocus)
+
+                    PersonalizationReassuranceSlide()
+                        .tag(Page.personalizationReassurance)
 
                     MorningReminderSlide(
                         enable: $viewModel.enableMorningReminder,
@@ -312,6 +382,8 @@ struct OnboardingFlowView: View {
         case .intro3:          return "Continue"
         case .nameConsent:     return "Next"
         case .welcomeUser:     return "Continue"
+        case .personalizationWhy, .personalizationExperience, .personalizationFocus: return "Continue"
+        case .personalizationReassurance: return "Continue"
         case .morningReminder: return viewModel.enableMorningReminder ? "Enable & Continue" : "Skip"
         case .widgetReminder:  return "Continue"
         case .appleWatchInfo:  return "Continue"
@@ -325,6 +397,9 @@ struct OnboardingFlowView: View {
         if viewModel.page == .nameConsent {
             return displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !hasAcceptedTerms
         }
+        if viewModel.page == .personalizationWhy { return personalizationReason.isEmpty }
+        if viewModel.page == .personalizationExperience { return personalizationExperience.isEmpty }
+        if viewModel.page == .personalizationFocus { return personalizationFocus.isEmpty }
         return false
     }
 
@@ -372,6 +447,88 @@ struct OnboardingFlowView: View {
         if let next = Page(rawValue: page.rawValue + 1), page != .done {
             viewModel.page = next
         }
+    }
+}
+
+fileprivate struct PersonalizationChoiceSlide: View {
+    let title: String
+    let options: [String]
+    @Binding var selection: String
+    let responses: [String: String]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Spacer(minLength: 20)
+                Text(title)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+
+                VStack(spacing: 10) {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            selection = option
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text(option)
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.leading)
+                                Spacer()
+                                Image(systemName: selection == option ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selection == option ? Theme.accent : .secondary)
+                            }
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(selection == option ? Theme.surface : Color(.secondarySystemBackground))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(selection == option ? Theme.accent.opacity(0.5) : Theme.line.opacity(0.35), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal)
+
+                if let response = responses[selection], !selection.isEmpty {
+                    Text(response)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .padding(.horizontal)
+                        .transition(.opacity)
+                }
+
+                Spacer(minLength: 20)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+        }
+        .scrollIndicators(.hidden)
+    }
+}
+
+fileprivate struct PersonalizationReassuranceSlide: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Spacer()
+            Text("You don’t have to do this perfectly.")
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            Text("Some days may feel peaceful. Some may feel overwhelming. Both are okay. Steadfast is here to help you create small moments of calm, presence, and connection with God wherever you are today.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 24)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
