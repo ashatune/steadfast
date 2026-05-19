@@ -552,6 +552,88 @@ fileprivate struct PersonalizationReassuranceSlide: View {
     }
 }
 
+fileprivate struct PersonalizationChoiceSlide: View {
+    let title: String
+    let options: [String]
+    @Binding var selection: String
+    let responses: [String: String]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Spacer(minLength: 20)
+                Text(title)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+
+                VStack(spacing: 10) {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            selection = option
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text(option)
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.leading)
+                                Spacer()
+                                Image(systemName: selection == option ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selection == option ? Theme.accent : .secondary)
+                            }
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(selection == option ? Theme.surface : Color(.secondarySystemBackground))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(selection == option ? Theme.accent.opacity(0.5) : Theme.line.opacity(0.35), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal)
+
+                if let response = responses[selection], !selection.isEmpty {
+                    Text(response)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .padding(.horizontal)
+                        .transition(.opacity)
+                }
+
+                Spacer(minLength: 20)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+        }
+        .scrollIndicators(.hidden)
+    }
+}
+
+fileprivate struct PersonalizationReassuranceSlide: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Spacer()
+            Text("You don’t have to do this perfectly.")
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            Text("Some days may feel peaceful. Some may feel overwhelming. Both are okay. Steadfast is here to help you create small moments of calm, presence, and connection with God wherever you are today.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 24)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 struct MorningReminderSlide: View {
     @Binding var enable: Bool
     @Binding var time: Date
