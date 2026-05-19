@@ -139,26 +139,13 @@ struct SOSExerciseView: View {
     }
 
     private func breathingCircle(size: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [Theme.accent.opacity(0.9), Theme.accent2.opacity(0.9)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            Image("SteadfastCROSS1024")
-                .resizable()
-                .scaledToFit()
-                .frame(width: size * 0.45, height: size * 0.45)
-                .clipShape(Circle())
-                .accessibilityHidden(true)
-        }
-        .frame(width: size, height: size)
-        .scaleEffect(scale)
-        .shadow(color: Theme.accent.opacity(0.22), radius: 18, x: 0, y: 8)
+        BreathingIconCircle(
+            size: size,
+            iconName: "SteadfastCROSS1024",
+            scale: scale,
+            iconScale: 0.45,
+            iconShape: nil
+        )
     }
 
     private func startBreathingLoop() {

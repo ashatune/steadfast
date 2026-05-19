@@ -10,28 +10,20 @@ struct OnboardSlideBranded: View {
     let subtitle: String
     let icon: String
     var iconShape: IconShape = .circle
+    @State private var breathScale: CGFloat = 0.95
 
     var body: some View {
         ScrollView {
             VStack(spacing: 22) {
                 Spacer(minLength: 24)
 
-                Group {
-                    if iconShape == .roundedSquare {
-                        Image(icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 86, height: 86)
-                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    } else {
-                        Image(icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 96, height: 96)
-                            .clipShape(Circle())
-                    }
-                }
-                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                BreathingIconCircle(
+                    size: iconShape == .roundedSquare ? 122 : 132,
+                    iconName: icon,
+                    scale: breathScale,
+                    iconScale: iconShape == .roundedSquare ? 0.66 : 0.62,
+                    iconShape: iconShape == .roundedSquare ? RoundedRectangle(cornerRadius: 20, style: .continuous) : nil
+                )
 
                 Text(title)
                     .font(.title.weight(.semibold))
@@ -53,5 +45,10 @@ struct OnboardSlideBranded: View {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 3.8).repeatForever(autoreverses: true)) {
+                breathScale = 1.05
+            }
+        }
     }
 }
