@@ -19,14 +19,31 @@ struct BreathingIconCircle: View {
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [Theme.accent.opacity(0.14), Theme.accent2.opacity(0.12)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        gradient: Gradient(colors: [
+                            Theme.accent,
+                            Theme.accent2
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
                 )
                 .overlay(
                     Circle()
-                        .stroke(Theme.accent.opacity(0.18), lineWidth: 1)
+                        .fill(
+                            RadialGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.15),
+                                    Color.clear
+                                ]),
+                                center: .center,
+                                startRadius: 2,
+                                endRadius: size * 0.6
+                            )
+                        )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Theme.accent.opacity(0.34), lineWidth: 1.25)
                 )
                 .opacity(circleOpacity)
                 .scaleEffect(circleScale)
@@ -35,7 +52,7 @@ struct BreathingIconCircle: View {
                 .frame(width: size * iconScale, height: size * iconScale)
         }
         .frame(width: size, height: size)
-        .shadow(color: Theme.accent.opacity(0.12), radius: 14, x: 0, y: 8)
+        .shadow(color: Theme.accent.opacity(0.24), radius: 18, x: 0, y: 8)
         .onAppear {
             guard animated, externalScale == nil else { return }
             withAnimation(.easeInOut(duration: breathDuration).repeatForever(autoreverses: true)) {
