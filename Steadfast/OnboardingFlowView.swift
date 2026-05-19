@@ -335,7 +335,12 @@ struct OnboardingFlowView: View {
             }
             .padding(.top, max(proxy.safeAreaInsets.top, 8))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(
+                ZStack {
+                    OnboardingCloudBackground()
+                    Color.white.opacity(0.78).ignoresSafeArea()
+                }
+            )
         }
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(isPresented: $viewModel.showBeginMeditation) {
