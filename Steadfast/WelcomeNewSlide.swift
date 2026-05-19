@@ -8,7 +8,7 @@ struct WelcomeUserSlide: View {
             VStack(spacing: 18) {
                 Spacer(minLength: 24)
 
-                Image("icon")
+                Image("SteadfastCROSS1024")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 88, height: 88)
