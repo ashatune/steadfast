@@ -13,8 +13,11 @@ struct HomeView: View {
     @StateObject private var devotionalVM = DailyDevotionalViewModel()
     @State private var showDevotionalDetail = false
     @State private var devotionalDeepLinkPending = false
+    @State private var expandedRhythmCard: ExpandedRhythmCard?
+    @State private var rhythmNodeCenters: [Int: CGFloat] = [:]
 
     enum TopTab { case home, reframe }
+    private enum ExpandedRhythmCard { case devotional, anchor }
     @State private var topTab: TopTab = .home
 
     // Reframe feature state (in-memory while testing)
@@ -142,27 +145,9 @@ struct HomeView: View {
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 8)
 
-                FlowStepCard(
-                    stepNumber: 1,
-                    label: "Devotional",
-                    isComplete: streakManager.hasDevotionalCompletion(on: now),
-                    showsConnector: true
-                ) {
-                    devotionalSection
-                }
+                rhythmCardsSection
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
-
-                FlowStepCard(
-                    stepNumber: 2,
-                    label: "Anchor Exercise",
-                    isComplete: streakManager.hasAnchorCompletion(on: now),
-                    showsConnector: false
-                ) {
-                    VerseOfDayStrip(verse: anchorOfDay)
-                }
-                    .padding(.horizontal, sidePadding)
-                    .padding(.top, 8)
 
                 // Daily Rhythm
                 DailyRhythmView()
@@ -213,7 +198,6 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 1))
             }
         }
-        .buttonStyle(.plain)
         .frame(minWidth: 64)
     }
 
@@ -233,29 +217,131 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
-    private var devotionalSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "sunrise.fill")
-                    .foregroundStyle(Theme.accent)
-                Text("Daily Devotional")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-                Spacer()
-            }
+    private var rhythmCardsSection: some View {
+        ZStack(alignment: .leading) {
+            rhythmTimelineLine
 
-            Group {
-                if let devotional = devotionalVM.devotional {
-                    NavigationLink(destination: DailyDevotionalDetailView(devotional: devotional)) {
-                        DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                } else {
-                    DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                        .frame(maxWidth: .infinity)
+            VStack(spacing: 8) {
+                RhythmTimelineRow(stepNumber: 1) {
+                    devotionalRhythmCard
+                }
+
+                RhythmTimelineRow(stepNumber: 2) {
+                    anchorRhythmCard
                 }
             }
+        }
+        .coordinateSpace(name: "rhythmTimeline")
+        .onPreferenceChange(RhythmNodeCenterPreferenceKey.self) { centers in
+            rhythmNodeCenters = centers
+        }
+    }
+
+    @ViewBuilder
+    private var rhythmTimelineLine: some View {
+        if let firstCenter = rhythmNodeCenters[1], let secondCenter = rhythmNodeCenters[2] {
+            Rectangle()
+                .fill(Theme.line.opacity(0.65))
+                .frame(width: 1.5, height: max(0, secondCenter - firstCenter))
+                .position(x: RhythmTimelineMetrics.nodeCenterX, y: (firstCenter + secondCenter) / 2)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func rhythmExpansionBinding(for card: ExpandedRhythmCard) -> Binding<Bool> {
+        Binding(
+            get: { expandedRhythmCard == card },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedRhythmCard = card
+                } else if expandedRhythmCard == card {
+                    expandedRhythmCard = nil
+                }
+            }
+        )
+    }
+
+    private var devotionalRhythmCard: some View {
+        CollapsibleRhythmCard(
+            isExpanded: rhythmExpansionBinding(for: .devotional),
+            isComplete: streakManager.hasDevotionalCompletion(on: now),
+            accessibilityLabel: "Daily Devotional"
+        ) {
+            Text("Daily Devotional")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Theme.ink)
+        } expandedContent: {
+            VStack(alignment: .leading, spacing: 8) {
+                if devotionalVM.isLoading {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(Theme.accent)
+                        Text("Loading today’s devotional…")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.inkSecondary)
+                    }
+                } else if let devotional = devotionalVM.devotional {
+                    Text(devotional.title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(devotional.verseReference)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+
+                    Button {
+                        showDevotionalDetail = true
+                    } label: {
+                        RhythmCTAButtonLabel("Read")
+                    }
+                    .padding(.top, 4)
+                } else {
+                    Text("No devotional available for today.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.inkSecondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var anchorRhythmCard: some View {
+        CollapsibleRhythmCard(
+            isExpanded: rhythmExpansionBinding(for: .anchor),
+            isComplete: streakManager.hasAnchorCompletion(on: now),
+            accessibilityLabel: "Anchor of the Day"
+        ) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Anchor of the Day")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+
+                if expandedRhythmCard != .anchor {
+                    Text(anchorOfDay.ref)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+            }
+        } expandedContent: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(anchorOfDay.ref)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+
+                Text("Breathe with today’s verse.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.inkSecondary)
+
+                Button {
+                    showAnchorFlow = true
+                } label: {
+                    RhythmCTAButtonLabel("Start anchor verse")
+                }
+                .padding(.top, 4)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -337,6 +423,8 @@ struct HomeView: View {
 
 }
 
+// MARK: - File-scope helper views
+
 private struct LibraryShortcutCard: View {
     let action: () -> Void
 
@@ -357,45 +445,161 @@ private struct LibraryShortcutCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
         }
     }
 }
 
-struct FlowStepCard<Content: View>: View {
-    let stepNumber: Int
-    let label: String
-    let isComplete: Bool
-    var showsConnector: Bool = true
-    @ViewBuilder var content: () -> Content
+private enum RhythmTimelineMetrics {
+    static let columnWidth: CGFloat = 32
+    static let nodeSize: CGFloat = 26
+    static let nodeCenterX = columnWidth / 2
+}
+
+private struct RhythmNodeCenterPreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+private struct RhythmTimelineRow<Content: View>: View {
+    private let stepNumber: Int
+    private let content: () -> Content
+
+    init(stepNumber: Int, @ViewBuilder content: @escaping () -> Content) {
+        self.stepNumber = stepNumber
+        self.content = content
+    }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(spacing: 6) {
-                indicator
-
-                if showsConnector {
-                    Rectangle()
-                        .fill(Theme.line.opacity(0.9))
-                        .frame(width: 1.5)
-                        .frame(maxHeight: .infinity)
-                        .padding(.vertical, 2)
-                }
-            }
-            .frame(width: 32)
+        HStack(alignment: .center, spacing: 10) {
+            RhythmStepNode(stepNumber: stepNumber)
+                .frame(width: RhythmTimelineMetrics.columnWidth)
 
             content()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Step \(stepNumber): \(label)")
     }
+}
 
-    private var indicator: some View {
+private struct RhythmStepNode: View {
+    let stepNumber: Int
+
+    var body: some View {
         ZStack {
             Circle()
-                .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface)
+                .fill(Theme.bg)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Circle()
+                .stroke(Theme.line.opacity(0.8), lineWidth: 1)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Text("\(stepNumber)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.inkSecondary)
+        }
+        .frame(width: RhythmTimelineMetrics.columnWidth, height: RhythmTimelineMetrics.nodeSize)
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: RhythmNodeCenterPreferenceKey.self,
+                    value: [stepNumber: proxy.frame(in: .named("rhythmTimeline")).midY]
+                )
+            }
+        )
+        .accessibilityHidden(true)
+    }
+}
+
+private struct RhythmCTAButtonLabel: View {
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Theme.accent.opacity(0.92))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+    }
+}
+
+private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: View>: View {
+    @Binding private var isExpanded: Bool
+    private let isComplete: Bool
+    private let accessibilityLabel: String
+    private let collapsedBody: () -> CollapsedContent
+    private let expandedBody: () -> ExpandedContent
+
+    init(
+        isExpanded: Binding<Bool>,
+        isComplete: Bool,
+        accessibilityLabel: String,
+        @ViewBuilder collapsedContent: @escaping () -> CollapsedContent,
+        @ViewBuilder expandedContent: @escaping () -> ExpandedContent
+    ) {
+        _isExpanded = isExpanded
+        self.isComplete = isComplete
+        self.accessibilityLabel = accessibilityLabel
+        collapsedBody = collapsedContent
+        expandedBody = expandedContent
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: isExpanded ? 12 : 0) {
+            HStack(alignment: .center, spacing: 12) {
+                collapsedBody()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                completionIndicator
+            }
+
+            if isExpanded {
+                expandedBody()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Theme.surface.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.line.opacity(0.55), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                isExpanded.toggle()
+            }
+        }
+        .animation(.spring(response: 0.32, dampingFraction: 0.86), value: isExpanded)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(isExpanded ? "Tap to collapse" : "Tap to expand")
+    }
+
+    private var completionIndicator: some View {
+        ZStack {
+            Circle()
+                .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface.opacity(0.8))
                 .frame(width: 28, height: 28)
+
             Circle()
                 .stroke(isComplete ? Theme.accent.opacity(0.45) : Theme.line, lineWidth: 1)
                 .frame(width: 28, height: 28)
@@ -404,11 +608,8 @@ struct FlowStepCard<Content: View>: View {
                 Image(systemName: "checkmark")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.accent)
-            } else {
-                Text("\(stepNumber)")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.inkSecondary)
             }
         }
+        .accessibilityHidden(true)
     }
 }
