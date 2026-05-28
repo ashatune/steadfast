@@ -596,6 +596,23 @@ struct MorningReminderSlide: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
 
+                Text("People are more likely to experience the benefits of mindfulness when they build a consistent daily practice.")
+                    .font(.callout.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Theme.inkSecondary)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.white.opacity(0.56))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Theme.accent.opacity(0.18), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 8)
+                    .modifier(GentleFloatingModifier(offset: -6, duration: 3.2))
+
                 VStack(spacing: 12) {
                     Toggle(isOn: $enable) {
                         Text("Enable Morning Reminder")
