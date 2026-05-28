@@ -305,6 +305,8 @@ struct HomeView: View {
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
                 }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
