@@ -303,6 +303,8 @@ struct HomeView: View {
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
                 }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -472,8 +474,26 @@ private struct RhythmTimelineRow<Content: View>: View {
             RhythmStepNode(stepNumber: stepNumber)
                 .frame(width: RhythmTimelineMetrics.columnWidth)
 
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if isExpanded {
+                expandedContent()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Theme.surface.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.line.opacity(0.55), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                isExpanded.toggle()
+            }
         }
     }
 }
