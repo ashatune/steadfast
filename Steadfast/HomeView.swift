@@ -296,9 +296,8 @@ struct HomeView: View {
                         DailyDevotionalDetailView(devotional: devotional)
                     } label: {
                         Text("Read")
-                            .rhythmCTAButtonStyle()
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(RhythmCTAButtonStyle())
                     .padding(.top, 4)
                 } else {
                     Text("No devotional available for today.")
@@ -349,9 +348,8 @@ struct HomeView: View {
                     )
                 } label: {
                     Text("Start anchor verse")
-                        .rhythmCTAButtonStyle()
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(RhythmCTAButtonStyle())
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -520,20 +518,22 @@ private struct RhythmStepNode: View {
     }
 }
 
-private extension View {
-    func rhythmCTAButtonStyle() -> some View {
-        font(.subheadline.weight(.semibold))
+private struct RhythmCTAButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Theme.accent.opacity(0.92))
+                    .fill(Theme.accent.opacity(configuration.isPressed ? 0.78 : 0.92))
             )
             .overlay(
                 Capsule(style: .continuous)
                     .stroke(Color.white.opacity(0.18), lineWidth: 1)
             )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
     }
 }
 
