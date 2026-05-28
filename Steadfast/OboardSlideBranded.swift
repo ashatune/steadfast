@@ -16,22 +16,18 @@ struct OnboardSlideBranded: View {
             VStack(spacing: 22) {
                 Spacer(minLength: 24)
 
-                Group {
-                    if iconShape == .roundedSquare {
-                        Image(icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 86, height: 86)
-                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    } else {
-                        Image(icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 96, height: 96)
-                            .clipShape(Circle())
-                    }
-                }
-                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                BreathingIconCircle(
+                    size: iconShape == .roundedSquare ? 122 : 132,
+                    iconName: icon,
+                    animated: true,
+                    minScale: 0.84,
+                    maxScale: 1.16,
+                    breathDuration: 4.0,
+                    minOpacity: 0.24,
+                    maxOpacity: 0.44,
+                    iconScale: iconShape == .roundedSquare ? 0.66 : 0.62,
+                    iconShape: iconShape == .roundedSquare ? RoundedRectangle(cornerRadius: 20, style: .continuous) : nil
+                )
 
                 Text(title)
                     .font(.title.weight(.semibold))
