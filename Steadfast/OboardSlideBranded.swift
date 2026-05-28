@@ -33,12 +33,12 @@ struct OnboardSlideBranded: View {
                 Text(title)
                     .font(.title.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
 
                 Text(subtitle)
                     .font(.body)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal, 8)
 
                 Spacer(minLength: 24)

@@ -20,12 +20,12 @@ fileprivate struct WidgetReminderSlide: View {
                 Text("Add Steadfast to your Home Screen")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
                     .padding(.horizontal, 10)
 
                 Text("Keep your daily anchor within sight.\nLong-press your Home Screen, tap the ➕ button, and search for “Steadfast”.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal)
 
                 Image(self.imageName)
@@ -66,12 +66,12 @@ fileprivate struct BeginMeditationSlide: View {
                 Text("Begin Your First Meditation")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
                     .padding(.horizontal, 10)
 
                 Text("Take a quiet moment to settle in. We’ll guide you with Scripture and breath.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal)
 
                 Spacer(minLength: 24)
@@ -100,7 +100,7 @@ fileprivate struct AppleWatchOnboardingSlide: View {
     }
 
     private var symbolColor: Color {
-        usesAppleWatchSymbol ? .secondary : .primary
+        usesAppleWatchSymbol ? OnboardingPalette.secondaryText : OnboardingPalette.primaryText
     }
 
     var body: some View {
@@ -110,7 +110,7 @@ fileprivate struct AppleWatchOnboardingSlide: View {
 
                 ZStack {
                     Circle()
-                        .fill(Color(.systemGray6))
+                        .fill(OnboardingPalette.controlFill)
                         .frame(width: 88, height: 88)
 
                     Image(systemName: symbolName)
@@ -123,12 +123,12 @@ fileprivate struct AppleWatchOnboardingSlide: View {
                 Text("Take Steadfast with you")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
                     .padding(.horizontal, 10)
 
                 Text("Steadfast is also available on Apple Watch, so you can stay grounded wherever you are.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal)
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -140,14 +140,15 @@ fileprivate struct AppleWatchOnboardingSlide: View {
                     Text("3. Find Steadfast and tap Install")
                     Text("4. Open Steadfast on your Apple Watch")
                 }
+                .foregroundStyle(OnboardingPalette.primaryText)
                 .frame(maxWidth: 360, alignment: .leading)
                 .padding(16)
-                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(OnboardingPalette.controlFill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .padding(.horizontal)
 
                 Text("Once it’s installed, you can access Steadfast right from your wrist.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal)
 
                 Spacer(minLength: 24)
@@ -220,7 +221,7 @@ struct OnboardingFlowView: View {
                 OnboardingCloudBackground()
                     .ignoresSafeArea()
 
-                Color.white.opacity(0.18)
+                OnboardingPalette.backgroundVeil
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -485,6 +486,7 @@ fileprivate struct OnboardingPersonalizationChoiceSlide: View {
                 Text(title)
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(OnboardingPalette.primaryText)
                     .padding(.horizontal)
                     .modifier(GentleFloatingModifier())
 
@@ -495,21 +497,21 @@ fileprivate struct OnboardingPersonalizationChoiceSlide: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Text(option)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(OnboardingPalette.primaryText)
                                     .multilineTextAlignment(.leading)
                                 Spacer()
                                 Image(systemName: selection == option ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selection == option ? Theme.accent : .secondary)
+                                    .foregroundStyle(selection == option ? Theme.accent : OnboardingPalette.secondaryText)
                             }
                             .padding(.vertical, 14)
                             .padding(.horizontal, 14)
                             .background(
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(selection == option ? Theme.surface : Color(.secondarySystemBackground))
+                                    .fill(selection == option ? OnboardingPalette.selectedCardFill : OnboardingPalette.cardFill)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(selection == option ? Theme.accent.opacity(0.5) : Theme.line.opacity(0.35), lineWidth: 1)
+                                    .stroke(selection == option ? Theme.accent.opacity(0.5) : OnboardingPalette.subtleStroke, lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
@@ -535,7 +537,7 @@ fileprivate struct OnboardingPersonalizationResponseSlide: View {
             Text(message)
                 .font(.title3.weight(.regular))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(OnboardingPalette.secondaryText)
                 .padding(.horizontal, 26)
                 .modifier(GentleFloatingModifier(offset: -6, duration: 3.2))
             Spacer()
@@ -564,10 +566,11 @@ fileprivate struct OnboardingPersonalizationReassuranceSlide: View {
             Text("You don’t have to do this perfectly.")
                 .font(.title2.weight(.semibold))
                 .multilineTextAlignment(.center)
+                .foregroundStyle(OnboardingPalette.primaryText)
                 .padding(.horizontal)
             Text("Some days may feel peaceful. Some may feel overwhelming. Both are okay. Steadfast is here to help you create small moments of calm, presence, and connection with God wherever you are today.")
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(OnboardingPalette.secondaryText)
                 .padding(.horizontal, 24)
             Spacer()
         }
@@ -588,27 +591,27 @@ struct MorningReminderSlide: View {
                 Text("Set a Morning Reminder?")
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
                     .padding(.horizontal)
 
                 Text("We can nudge you once each morning to pause for a verse and a calming breath.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal, 12)
 
                 Text("People are more likely to experience the benefits of mindfulness when they build a consistent daily practice.")
                     .font(.callout.weight(.medium))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.inkSecondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.vertical, 12)
                     .padding(.horizontal, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color.white.opacity(0.56))
+                            .fill(OnboardingPalette.cardFill)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Theme.accent.opacity(0.18), lineWidth: 1)
+                            .stroke(Theme.accent.opacity(0.24), lineWidth: 1)
                     )
                     .padding(.horizontal, 8)
                     .modifier(GentleFloatingModifier(offset: -6, duration: 3.2))
@@ -617,7 +620,7 @@ struct MorningReminderSlide: View {
                     Toggle(isOn: $enable) {
                         Text("Enable Morning Reminder")
                             .font(.headline)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(OnboardingPalette.primaryText)
                     }
                     .tint(Theme.accent)
                     .padding(.top, 6)
@@ -631,17 +634,17 @@ struct MorningReminderSlide: View {
                                     .font(.subheadline.weight(.semibold))
                                 Text(time.formatted(date: .omitted, time: .shortened))
                                     .font(.body)
-                                    .foregroundStyle(enable ? .primary : .secondary)
+                                    .foregroundStyle(enable ? OnboardingPalette.primaryText : OnboardingPalette.secondaryText)
                             }
                             Spacer()
                             Image(systemName: "clock")
-                                .foregroundColor(enable ? Theme.accent : Theme.line)
+                                .foregroundColor(enable ? Theme.accent : OnboardingPalette.secondaryText)
                         }
                         .padding(.vertical, 10)
                         .padding(.horizontal, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line.opacity(0.45)))
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(OnboardingPalette.controlFill))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(OnboardingPalette.subtleStroke))
                     }
                     .disabled(!enable)
                     .opacity(enable ? 1 : 0.55)
@@ -650,7 +653,7 @@ struct MorningReminderSlide: View {
                 Text(enable ? "We’ll send one reminder at the time you choose."
                             : "You can always turn this on later in Settings.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.top, 6)
                     .padding(.horizontal, 8)
 
@@ -681,7 +684,7 @@ struct MorningReminderSlide: View {
 
                 Text("Pick a time that best fits your routine.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
             }
             .padding(.top, 12)
             .presentationDetents([.fraction(0.35), .medium])
@@ -765,7 +768,7 @@ struct OnboardingSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(OnboardingPalette.secondaryText)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
@@ -774,7 +777,7 @@ struct OnboardingSecondaryButtonStyle: ButtonStyle {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+                    .stroke(OnboardingPalette.subtleStroke, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.8 : 1)
     }

@@ -257,7 +257,7 @@ struct AnchorBreathView: View {
 
         // intro phase before breathing starts
         phase = .intro
-        phaseRemaining = 2
+        phaseRemaining = launchSource == .onboarding ? 3 : 2
         scale = 0.95
 
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in

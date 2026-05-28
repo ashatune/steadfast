@@ -8,7 +8,6 @@ struct QuickPracticeSlideBranded: View {
     @State private var promptIndex = 0
     @State private var showPrompt = false
 
-    private let promptVisible: TimeInterval = 3.0
     private let fade: TimeInterval = 0.6
 
     private let prompts: [String] = [
@@ -30,7 +29,7 @@ struct QuickPracticeSlideBranded: View {
                     Text(prompts[promptIndex])
                         .font(.title3)
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(OnboardingPalette.primaryText)
                         .padding(.horizontal, 20)
                         .transition(.opacity)
                         .animation(.easeInOut(duration: fade), value: showPrompt)
@@ -67,7 +66,7 @@ struct QuickPracticeSlideBranded: View {
         showPrompt = true
 
         func step() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + promptVisible) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + promptDuration(for: prompts[promptIndex])) {
                 withAnimation(.easeInOut(duration: fade)) { showPrompt = false }
                 DispatchQueue.main.asyncAfter(deadline: .now() + fade) {
                     promptIndex += 1
@@ -86,5 +85,17 @@ struct QuickPracticeSlideBranded: View {
         }
 
         step()
+    }
+
+    private func promptDuration(for prompt: String) -> TimeInterval {
+        let wordCount = prompt.split { $0.isWhitespace || $0.isNewline }.count
+        switch wordCount {
+        case 0...7:
+            return 2.8
+        case 8...13:
+            return 3.4
+        default:
+            return 4.0
+        }
     }
 }

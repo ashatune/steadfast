@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingCloudBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var animateClouds = false
     @State private var animateMidCloud = false
     @State private var animateLowerCloud = false
@@ -10,12 +11,7 @@ struct OnboardingCloudBackground: View {
         GeometryReader { geo in
             ZStack {
                 LinearGradient(
-                    colors: [
-                        Theme.accent.opacity(0.15),
-                        Theme.accent2.opacity(0.16),
-                        Color.white.opacity(0.92),
-                        Theme.accent.opacity(0.10)
-                    ],
+                    colors: backgroundColors,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -52,12 +48,41 @@ struct OnboardingCloudBackground: View {
         Capsule()
             .fill(
                 LinearGradient(
-                    colors: [Theme.accent.opacity(opacity), Theme.accent2.opacity(opacity * 0.92)],
+                    colors: cloudColors(opacity: opacity),
                     startPoint: .leading,
                     endPoint: .trailing
                 )
             )
             .frame(width: width, height: height)
             .blur(radius: blur)
+    }
+
+    private var backgroundColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color(hex: 0x120A2A),
+                Color(hex: 0x21124B),
+                Color(hex: 0x122A4A),
+                Color(hex: 0x2B155B)
+            ]
+        }
+
+        return [
+            Theme.accent.opacity(0.15),
+            Theme.accent2.opacity(0.16),
+            Color.white.opacity(0.92),
+            Theme.accent.opacity(0.10)
+        ]
+    }
+
+    private func cloudColors(opacity: Double) -> [Color] {
+        if colorScheme == .dark {
+            return [
+                Color(hex: 0xBFA7FF).opacity(opacity * 1.15),
+                Color(hex: 0x6DE7FF).opacity(opacity * 0.78)
+            ]
+        }
+
+        return [Theme.accent.opacity(opacity), Theme.accent2.opacity(opacity * 0.92)]
     }
 }

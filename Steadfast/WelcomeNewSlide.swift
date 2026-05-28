@@ -25,13 +25,13 @@ struct WelcomeUserSlide: View {
                 Text("Welcome to Steadfast, \(firstName)!")
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
                     .padding(.horizontal, 16)
 
                 Text("We’re so glad you’re here. This is the beginning of your mindfulness journey, with God at the center.")
                     .multilineTextAlignment(.center)
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
                     .padding(.horizontal, 22)
 
                 Spacer(minLength: 24)
