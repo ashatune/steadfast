@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WelcomeUserSlide: View {
     @AppStorage("displayName") private var displayName = ""
+    @State private var breathScale: CGFloat = 0.95
 
     var body: some View {
         ScrollView {
@@ -42,6 +43,11 @@ struct WelcomeUserSlide: View {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 3.8).repeatForever(autoreverses: true)) {
+                breathScale = 1.05
+            }
+        }
     }
 
     private var firstName: String {
