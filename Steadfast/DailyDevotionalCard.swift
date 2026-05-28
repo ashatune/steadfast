@@ -152,7 +152,8 @@ struct DailyDevotionalDetailView: View {
                 Divider()
 
                 Text(devotional.body)
-                    .font(.body)
+                    .font(.system(size: 18, weight: .regular, design: .default))
+                    .lineSpacing(7)
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
