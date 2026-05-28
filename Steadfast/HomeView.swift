@@ -327,7 +327,7 @@ struct HomeView: View {
         } expandedContent: {
             VStack(alignment: .leading, spacing: 8) {
                 Text(anchorOfDay.ref)
-                    .font(.title3.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.ink)
 
                 Text("Breathe with today’s verse.")

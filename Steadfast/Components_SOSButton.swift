@@ -67,6 +67,14 @@ struct SOSButton: View {
                     }
                 }
                 .frame(width: size * iconScale, height: size * iconScale)
+
+                Text("Calm Now")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.white.opacity(0.82))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .shadow(color: Color.black.opacity(0.12), radius: 1, x: 0, y: 1)
+                    .offset(y: size * 0.34)
             }
             // Give the scaling room so edges don’t get cropped by the label’s bounds
             .frame(width: size + 2*growPad, height: size + 2*growPad)
