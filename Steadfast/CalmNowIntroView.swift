@@ -229,11 +229,14 @@ struct CalmNowIntroView: View {
     }
 
     private var skipIntroButton: some View {
-        Button("Skip Intro") {
+        Button {
             skipIntro()
+        } label: {
+            Text("Skip Intro")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.white.opacity(0.96))
         }
-        .font(.caption.weight(.semibold))
-        .buttonStyle(.bordered)
+        .buttonStyle(.borderedProminent)
         .controlSize(.small)
         .tint(Theme.accent)
         .accessibilityLabel("Skip Intro")
