@@ -13,10 +13,11 @@ struct HomeView: View {
     @StateObject private var devotionalVM = DailyDevotionalViewModel()
     @State private var showDevotionalDetail = false
     @State private var devotionalDeepLinkPending = false
-    @State private var isDevotionalCardExpanded = false
-    @State private var isAnchorCardExpanded = false
+    @State private var expandedRhythmCard: ExpandedRhythmCard?
+    @State private var rhythmNodeCenters: [Int: CGFloat] = [:]
 
     enum TopTab { case home, reframe }
+    private enum ExpandedRhythmCard { case devotional, anchor }
     @State private var topTab: TopTab = .home
 
     // Reframe feature state (in-memory while testing)
@@ -144,13 +145,9 @@ struct HomeView: View {
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 8)
 
-                devotionalRhythmCard
+                rhythmCardsSection
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
-
-                anchorRhythmCard
-                    .padding(.horizontal, sidePadding)
-                    .padding(.top, 8)
 
                 // Daily Rhythm
                 DailyRhythmView()
@@ -221,9 +218,53 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
+    private var rhythmCardsSection: some View {
+        ZStack(alignment: .leading) {
+            rhythmTimelineLine
+
+            VStack(spacing: 8) {
+                RhythmTimelineRow(stepNumber: 1) {
+                    devotionalRhythmCard
+                }
+
+                RhythmTimelineRow(stepNumber: 2) {
+                    anchorRhythmCard
+                }
+            }
+        }
+        .coordinateSpace(name: "rhythmTimeline")
+        .onPreferenceChange(RhythmNodeCenterPreferenceKey.self) { centers in
+            rhythmNodeCenters = centers
+        }
+    }
+
+    @ViewBuilder
+    private var rhythmTimelineLine: some View {
+        if let firstCenter = rhythmNodeCenters[1], let secondCenter = rhythmNodeCenters[2] {
+            Rectangle()
+                .fill(Theme.line.opacity(0.65))
+                .frame(width: 1.5, height: max(0, secondCenter - firstCenter))
+                .position(x: RhythmTimelineMetrics.nodeCenterX, y: (firstCenter + secondCenter) / 2)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func rhythmExpansionBinding(for card: ExpandedRhythmCard) -> Binding<Bool> {
+        Binding(
+            get: { expandedRhythmCard == card },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedRhythmCard = card
+                } else if expandedRhythmCard == card {
+                    expandedRhythmCard = nil
+                }
+            }
+        )
+    }
+
     private var devotionalRhythmCard: some View {
         CollapsibleRhythmCard(
-            isExpanded: $isDevotionalCardExpanded,
+            isExpanded: rhythmExpansionBinding(for: .devotional),
             isComplete: streakManager.hasDevotionalCompletion(on: now),
             accessibilityLabel: "Daily Devotional"
         ) {
@@ -254,20 +295,18 @@ struct HomeView: View {
                     NavigationLink {
                         DailyDevotionalDetailView(devotional: devotional)
                     } label: {
-                        HStack(spacing: 6) {
-                            Text("Read devotional")
-                            Image(systemName: "arrow.right")
-                        }
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
+                        Text("Read")
+                            .rhythmCTAButtonStyle()
                     }
                     .buttonStyle(.plain)
-                    .padding(.top, 2)
+                    .padding(.top, 4)
                 } else {
                     Text("No devotional available for today.")
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
                 }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -275,7 +314,7 @@ struct HomeView: View {
 
     private var anchorRhythmCard: some View {
         CollapsibleRhythmCard(
-            isExpanded: $isAnchorCardExpanded,
+            isExpanded: rhythmExpansionBinding(for: .anchor),
             isComplete: streakManager.hasAnchorCompletion(on: now),
             accessibilityLabel: "Anchor of the Day"
         ) {
@@ -284,7 +323,7 @@ struct HomeView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Theme.ink)
 
-                if !isAnchorCardExpanded {
+                if expandedRhythmCard != .anchor {
                     Text(anchorOfDay.ref)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.accent)
@@ -309,15 +348,11 @@ struct HomeView: View {
                         exhaleSecs: 6
                     )
                 } label: {
-                    HStack(spacing: 6) {
-                        Text("Start anchor exercise")
-                        Image(systemName: "arrow.right")
-                    }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.accent)
+                    Text("Start anchor verse")
+                        .rhythmCTAButtonStyle()
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 2)
+                .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -423,6 +458,82 @@ private struct LibraryShortcutCard: View {
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+private enum RhythmTimelineMetrics {
+    static let columnWidth: CGFloat = 32
+    static let nodeSize: CGFloat = 26
+    static let nodeCenterX = columnWidth / 2
+}
+
+private struct RhythmNodeCenterPreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+private struct RhythmTimelineRow<Content: View>: View {
+    let stepNumber: Int
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            RhythmStepNode(stepNumber: stepNumber)
+                .frame(width: RhythmTimelineMetrics.columnWidth)
+
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct RhythmStepNode: View {
+    let stepNumber: Int
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Theme.bg)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Circle()
+                .stroke(Theme.line.opacity(0.8), lineWidth: 1)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Text("\(stepNumber)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.inkSecondary)
+        }
+        .frame(width: RhythmTimelineMetrics.columnWidth, height: RhythmTimelineMetrics.nodeSize)
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: RhythmNodeCenterPreferenceKey.self,
+                    value: [stepNumber: proxy.frame(in: .named("rhythmTimeline")).midY]
+                )
+            }
+        )
+        .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    func rhythmCTAButtonStyle() -> some View {
+        font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Theme.accent.opacity(0.92))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
     }
 }
 
