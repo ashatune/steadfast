@@ -282,13 +282,13 @@ struct HomeView: View {
                     }
                 } else if let devotional = devotionalVM.devotional {
                     Text(devotional.title)
-                        .font(.title3.weight(.semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(devotional.verseReference)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Theme.accent)
 
                     Button {
