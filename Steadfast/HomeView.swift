@@ -303,8 +303,6 @@ struct HomeView: View {
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -474,26 +472,22 @@ private struct RhythmTimelineRow<Content: View>: View {
             RhythmStepNode(stepNumber: stepNumber)
                 .frame(width: RhythmTimelineMetrics.columnWidth)
 
-            if isExpanded {
-                expandedContent()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Theme.surface.opacity(0.55))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Theme.line.opacity(0.55), lineWidth: 1)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .onTapGesture {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                isExpanded.toggle()
-            }
+private struct RhythmStepNode: View {
+    let stepNumber: Int
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Theme.bg)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Circle()
+                .stroke(Theme.line.opacity(0.8), lineWidth: 1)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Text("\(stepNumber)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.inkSecondary)
         }
     }
 }
@@ -546,23 +540,37 @@ private extension View {
 }
 
 private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: View>: View {
-    @Binding var isExpanded: Bool
-    let isComplete: Bool
-    let accessibilityLabel: String
-    @ViewBuilder var collapsedContent: () -> CollapsedContent
-    @ViewBuilder var expandedContent: () -> ExpandedContent
+    @Binding private var isExpanded: Bool
+    private let isComplete: Bool
+    private let accessibilityLabel: String
+    private let collapsedBody: () -> CollapsedContent
+    private let expandedBody: () -> ExpandedContent
+
+    init(
+        isExpanded: Binding<Bool>,
+        isComplete: Bool,
+        accessibilityLabel: String,
+        @ViewBuilder collapsedContent: @escaping () -> CollapsedContent,
+        @ViewBuilder expandedContent: @escaping () -> ExpandedContent
+    ) {
+        _isExpanded = isExpanded
+        self.isComplete = isComplete
+        self.accessibilityLabel = accessibilityLabel
+        collapsedBody = collapsedContent
+        expandedBody = expandedContent
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: isExpanded ? 12 : 0) {
             HStack(alignment: .center, spacing: 12) {
-                collapsedContent()
+                collapsedBody()
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 completionIndicator
             }
 
             if isExpanded {
-                expandedContent()
+                expandedBody()
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
