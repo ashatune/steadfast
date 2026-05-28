@@ -13,6 +13,8 @@ struct HomeView: View {
     @StateObject private var devotionalVM = DailyDevotionalViewModel()
     @State private var showDevotionalDetail = false
     @State private var devotionalDeepLinkPending = false
+    @State private var isDevotionalCardExpanded = false
+    @State private var isAnchorCardExpanded = false
 
     enum TopTab { case home, reframe }
     @State private var topTab: TopTab = .home
@@ -142,25 +144,11 @@ struct HomeView: View {
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 8)
 
-                FlowStepCard(
-                    stepNumber: 1,
-                    label: "Devotional",
-                    isComplete: streakManager.hasDevotionalCompletion(on: now),
-                    showsConnector: true
-                ) {
-                    devotionalSection
-                }
+                devotionalRhythmCard
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
-                FlowStepCard(
-                    stepNumber: 2,
-                    label: "Anchor Exercise",
-                    isComplete: streakManager.hasAnchorCompletion(on: now),
-                    showsConnector: false
-                ) {
-                    VerseOfDayStrip(verse: anchorOfDay)
-                }
+                anchorRhythmCard
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 8)
 
@@ -233,29 +221,105 @@ struct HomeView: View {
         return s.split(separator: " ").first.map(String.init)
     }
 
-    private var devotionalSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "sunrise.fill")
-                    .foregroundStyle(Theme.accent)
-                Text("Daily Devotional")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-                Spacer()
-            }
-
-            Group {
-                if let devotional = devotionalVM.devotional {
-                    NavigationLink(destination: DailyDevotionalDetailView(devotional: devotional)) {
-                        DailyDevotionalCard(devotional: devotional, isLoading: devotionalVM.isLoading)
-                            .frame(maxWidth: .infinity)
+    private var devotionalRhythmCard: some View {
+        CollapsibleRhythmCard(
+            isExpanded: $isDevotionalCardExpanded,
+            isComplete: streakManager.hasDevotionalCompletion(on: now),
+            accessibilityLabel: "Daily Devotional"
+        ) {
+            Text("Daily Devotional")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Theme.ink)
+        } expandedContent: {
+            VStack(alignment: .leading, spacing: 8) {
+                if devotionalVM.isLoading {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(Theme.accent)
+                        Text("Loading today’s devotional…")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.inkSecondary)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                } else if let devotional = devotionalVM.devotional {
+                    Text(devotional.title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(devotional.verseReference)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+
+                    NavigationLink {
+                        DailyDevotionalDetailView(devotional: devotional)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Read devotional")
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
                 } else {
-                    DailyDevotionalCard(devotional: nil, isLoading: devotionalVM.isLoading)
-                        .frame(maxWidth: .infinity)
+                    Text("No devotional available for today.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.inkSecondary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var anchorRhythmCard: some View {
+        CollapsibleRhythmCard(
+            isExpanded: $isAnchorCardExpanded,
+            isComplete: streakManager.hasAnchorCompletion(on: now),
+            accessibilityLabel: "Anchor of the Day"
+        ) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Anchor of the Day")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+
+                if !isAnchorCardExpanded {
+                    Text(anchorOfDay.ref)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+            }
+        } expandedContent: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(anchorOfDay.ref)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+
+                Text("Breathe with today’s verse.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.inkSecondary)
+
+                NavigationLink {
+                    AnchorBreathView(
+                        verse: anchorOfDay,
+                        totalDuration: 90,
+                        inhaleSecs: 4,
+                        holdSecs: 4,
+                        exhaleSecs: 6
+                    )
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Start anchor exercise")
+                        Image(systemName: "arrow.right")
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -362,40 +426,55 @@ private struct LibraryShortcutCard: View {
     }
 }
 
-struct FlowStepCard<Content: View>: View {
-    let stepNumber: Int
-    let label: String
+private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: View>: View {
+    @Binding var isExpanded: Bool
     let isComplete: Bool
-    var showsConnector: Bool = true
-    @ViewBuilder var content: () -> Content
+    let accessibilityLabel: String
+    @ViewBuilder var collapsedContent: () -> CollapsedContent
+    @ViewBuilder var expandedContent: () -> ExpandedContent
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(spacing: 6) {
-                indicator
+        VStack(alignment: .leading, spacing: isExpanded ? 12 : 0) {
+            HStack(alignment: .center, spacing: 12) {
+                collapsedContent()
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                if showsConnector {
-                    Rectangle()
-                        .fill(Theme.line.opacity(0.9))
-                        .frame(width: 1.5)
-                        .frame(maxHeight: .infinity)
-                        .padding(.vertical, 2)
-                }
+                completionIndicator
             }
-            .frame(width: 32)
 
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if isExpanded {
+                expandedContent()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Theme.surface.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.line.opacity(0.55), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                isExpanded.toggle()
+            }
+        }
+        .animation(.spring(response: 0.32, dampingFraction: 0.86), value: isExpanded)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Step \(stepNumber): \(label)")
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(isExpanded ? "Tap to collapse" : "Tap to expand")
     }
 
-    private var indicator: some View {
+    private var completionIndicator: some View {
         ZStack {
             Circle()
-                .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface)
+                .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface.opacity(0.8))
                 .frame(width: 28, height: 28)
+
             Circle()
                 .stroke(isComplete ? Theme.accent.opacity(0.45) : Theme.line, lineWidth: 1)
                 .frame(width: 28, height: 28)
@@ -404,11 +483,8 @@ struct FlowStepCard<Content: View>: View {
                 Image(systemName: "checkmark")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.accent)
-            } else {
-                Text("\(stepNumber)")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.inkSecondary)
             }
         }
+        .accessibilityHidden(true)
     }
 }
