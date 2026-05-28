@@ -3,6 +3,8 @@ import SwiftUI
 struct OnboardingCloudBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animateClouds = false
+    @State private var animateMidCloud = false
+    @State private var animateLowerCloud = false
 
     var body: some View {
         GeometryReader { geo in
@@ -19,22 +21,28 @@ struct OnboardingCloudBackground: View {
                 )
 
                 cloud(width: geo.size.width * 0.78, height: 180, opacity: 0.24, blur: 26)
-                    .offset(x: animateClouds ? -geo.size.width * 0.16 : -geo.size.width * 0.22,
-                            y: animateClouds ? -geo.size.height * 0.20 : -geo.size.height * 0.24)
+                    .offset(x: animateClouds ? -geo.size.width * 0.10 : -geo.size.width * 0.30,
+                            y: animateClouds ? -geo.size.height * 0.16 : -geo.size.height * 0.28)
 
                 cloud(width: geo.size.width * 0.72, height: 170, opacity: 0.20, blur: 22)
-                    .offset(x: animateClouds ? geo.size.width * 0.18 : geo.size.width * 0.12,
-                            y: animateClouds ? -geo.size.height * 0.02 : geo.size.height * 0.02)
+                    .offset(x: animateMidCloud ? geo.size.width * 0.26 : geo.size.width * 0.04,
+                            y: animateMidCloud ? -geo.size.height * 0.07 : geo.size.height * 0.05)
 
                 cloud(width: geo.size.width * 0.82, height: 190, opacity: 0.18, blur: 28)
-                    .offset(x: animateClouds ? -geo.size.width * 0.02 : geo.size.width * 0.05,
-                            y: animateClouds ? geo.size.height * 0.24 : geo.size.height * 0.28)
+                    .offset(x: animateLowerCloud ? -geo.size.width * 0.11 : geo.size.width * 0.11,
+                            y: animateLowerCloud ? geo.size.height * 0.20 : geo.size.height * 0.32)
             }
             .ignoresSafeArea()
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 18).repeatForever(autoreverses: true)) {
+                withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
                     animateClouds = true
+                }
+                withAnimation(.easeInOut(duration: 14).repeatForever(autoreverses: true)) {
+                    animateMidCloud = true
+                }
+                withAnimation(.easeInOut(duration: 11).repeatForever(autoreverses: true)) {
+                    animateLowerCloud = true
                 }
             }
         }
