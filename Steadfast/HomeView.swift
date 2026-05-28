@@ -472,8 +472,22 @@ private struct RhythmTimelineRow<Content: View>: View {
             RhythmStepNode(stepNumber: stepNumber)
                 .frame(width: RhythmTimelineMetrics.columnWidth)
 
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
+private struct RhythmStepNode: View {
+    let stepNumber: Int
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Theme.bg)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Circle()
+                .stroke(Theme.line.opacity(0.8), lineWidth: 1)
+                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
+
+            Text("\(stepNumber)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.inkSecondary)
         }
     }
 }
