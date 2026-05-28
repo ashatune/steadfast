@@ -24,11 +24,11 @@ struct DoneSlideBranded: View {
                 Text("You’re all set!")
                     .font(.title3)
                     .bold()
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OnboardingPalette.primaryText)
 
                 Text("Thanks for doing your first exercise.\nWelcome to Steadfast.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
 
                 Button {
                     onEnter()
