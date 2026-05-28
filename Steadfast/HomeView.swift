@@ -198,7 +198,6 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 1))
             }
         }
-        .buttonStyle(.plain)
         .frame(minWidth: 64)
     }
 
@@ -292,12 +291,12 @@ struct HomeView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.accent)
 
-                    NavigationLink {
-                        DailyDevotionalDetailView(devotional: devotional)
+                    Button {
+                        showDevotionalDetail = true
                     } label: {
                         Text("Read")
+                            .rhythmCTALabelStyle()
                     }
-                    .buttonStyle(RhythmCTAButtonStyle())
                     .padding(.top, 4)
                 } else {
                     Text("No devotional available for today.")
@@ -338,18 +337,12 @@ struct HomeView: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.inkSecondary)
 
-                NavigationLink {
-                    AnchorBreathView(
-                        verse: anchorOfDay,
-                        totalDuration: 90,
-                        inhaleSecs: 4,
-                        holdSecs: 4,
-                        exhaleSecs: 6
-                    )
+                Button {
+                    showAnchorFlow = true
                 } label: {
                     Text("Start anchor verse")
+                        .rhythmCTALabelStyle()
                 }
-                .buttonStyle(RhythmCTAButtonStyle())
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -454,7 +447,6 @@ private struct LibraryShortcutCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
         }
     }
 }
@@ -482,8 +474,26 @@ private struct RhythmTimelineRow<Content: View>: View {
             RhythmStepNode(stepNumber: stepNumber)
                 .frame(width: RhythmTimelineMetrics.columnWidth)
 
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if isExpanded {
+                expandedContent()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Theme.surface.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.line.opacity(0.55), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                isExpanded.toggle()
+            }
         }
     }
 }
@@ -518,22 +528,20 @@ private struct RhythmStepNode: View {
     }
 }
 
-private struct RhythmCTAButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline.weight(.semibold))
+private extension View {
+    func rhythmCTALabelStyle() -> some View {
+        font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Theme.accent.opacity(configuration.isPressed ? 0.78 : 0.92))
+                    .fill(Theme.accent.opacity(0.92))
             )
             .overlay(
                 Capsule(style: .continuous)
                     .stroke(Color.white.opacity(0.18), lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
     }
 }
 
