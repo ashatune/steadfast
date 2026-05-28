@@ -5,7 +5,7 @@ struct SOSButton: View {
     var imageName: String = "SteadfastCROSS1024"    // asset name
     var imageIsTemplate: Bool = false    // true: tintable PDF, false: full-color PNG/JPG
     var size: CGFloat = 160              // button diameter
-    var iconScale: CGFloat = 0.55        // icon relative size
+    var iconScale: CGFloat = 0.50        // icon relative size
     var accessibilityLabelText: String = "Open Reset Calm"
 
     @State private var pulse = false
@@ -21,7 +21,6 @@ struct SOSButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // The only thing that scales
                 Circle()
                     .fill(
                         LinearGradient(
@@ -45,29 +44,38 @@ struct SOSButton: View {
                                 )
                             )
                     )
-                    .frame(width: size, height: size) // base disc size
-                    .padding(growPad)
-                    .scaleEffect(pulse ? maxScale : minScale, anchor: .center)
-                    .animation(.easeInOut(duration: period).repeatForever(autoreverses: true),
-                               value: pulse)
-                    .drawingGroup() // keep to avoid “sliding” gradient
 
-                // Centered icon (does not scale)
-                Group {
-                    if imageIsTemplate {
-                        Image(imageName)
-                            .renderingMode(.template)
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.white)
-                    } else {
-                        Image(imageName)
-                            .resizable()
-                            .scaledToFit()
+                // Keep the logo centered in the circle with the label tucked underneath it.
+                ZStack {
+                    Group {
+                        if imageIsTemplate {
+                            Image(imageName)
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundStyle(.white)
+                        } else {
+                            Image(imageName)
+                                .resizable()
+                                .scaledToFit()
+                        }
                     }
+                    .frame(width: size * iconScale, height: size * iconScale)
+
+                    Text("Calm Now")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color.white.opacity(0.82))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .shadow(color: Color.black.opacity(0.12), radius: 1, x: 0, y: 1)
+                        .offset(y: size * 0.34)
                 }
-                .frame(width: size * iconScale, height: size * iconScale)
             }
+            .frame(width: size, height: size)
+            .scaleEffect(pulse ? maxScale : minScale, anchor: .center)
+            .animation(.easeInOut(duration: period).repeatForever(autoreverses: true),
+                       value: pulse)
+            .drawingGroup() // keep to avoid “sliding” gradient
             // Give the scaling room so edges don’t get cropped by the label’s bounds
             .frame(width: size + 2*growPad, height: size + 2*growPad)
             .contentShape(Circle().inset(by: -growPad))
