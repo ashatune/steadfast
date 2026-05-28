@@ -294,8 +294,7 @@ struct HomeView: View {
                     Button {
                         showDevotionalDetail = true
                     } label: {
-                        Text("Read")
-                            .rhythmCTALabelStyle()
+                        RhythmCTAButtonLabel("Read")
                     }
                     .padding(.top, 4)
                 } else {
@@ -338,8 +337,7 @@ struct HomeView: View {
                 Button {
                     showAnchorFlow = true
                 } label: {
-                    Text("Start anchor verse")
-                        .rhythmCTALabelStyle()
+                    RhythmCTAButtonLabel("Start anchor verse")
                 }
                 .padding(.top, 4)
             }
@@ -425,6 +423,8 @@ struct HomeView: View {
 
 }
 
+// MARK: - File-scope helper views
+
 private struct LibraryShortcutCard: View {
     let action: () -> Void
 
@@ -464,30 +464,21 @@ private struct RhythmNodeCenterPreferenceKey: PreferenceKey {
 }
 
 private struct RhythmTimelineRow<Content: View>: View {
-    let stepNumber: Int
-    @ViewBuilder var content: () -> Content
+    private let stepNumber: Int
+    private let content: () -> Content
+
+    init(stepNumber: Int, @ViewBuilder content: @escaping () -> Content) {
+        self.stepNumber = stepNumber
+        self.content = content
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
             RhythmStepNode(stepNumber: stepNumber)
                 .frame(width: RhythmTimelineMetrics.columnWidth)
 
-private struct RhythmStepNode: View {
-    let stepNumber: Int
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Theme.bg)
-                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
-
-            Circle()
-                .stroke(Theme.line.opacity(0.8), lineWidth: 1)
-                .frame(width: RhythmTimelineMetrics.nodeSize, height: RhythmTimelineMetrics.nodeSize)
-
-            Text("\(stepNumber)")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Theme.inkSecondary)
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -522,9 +513,16 @@ private struct RhythmStepNode: View {
     }
 }
 
-private extension View {
-    func rhythmCTALabelStyle() -> some View {
-        font(.subheadline.weight(.semibold))
+private struct RhythmCTAButtonLabel: View {
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
