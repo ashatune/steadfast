@@ -15,8 +15,8 @@ struct SOSButton: View {
     private let maxScale: CGFloat = 1.06
     private let period: Double = 1.8
     
-    // Extra room so the scaled edge never gets clipped
-    private var growPad: CGFloat { ((maxScale - 1.0) * size) / 2.0 + 1.0 }
+    // Extra room so the scaled edge never gets clipped at the largest breath.
+    private var growPad: CGFloat { ((maxScale - 1.0) * size) / 2.0 + 8.0 }
 
     var body: some View {
         Button(action: action) {
@@ -75,8 +75,8 @@ struct SOSButton: View {
             .scaleEffect(pulse ? maxScale : minScale, anchor: .center)
             .animation(.easeInOut(duration: period).repeatForever(autoreverses: true),
                        value: pulse)
-            .drawingGroup() // keep to avoid “sliding” gradient
-            // Give the scaling room so edges don’t get cropped by the label’s bounds
+            // Give the scaled circle breathing room so it never rasterizes against a tight rectangular edge.
+            .padding(growPad)
             .frame(width: size + 2*growPad, height: size + 2*growPad)
             .contentShape(Circle().inset(by: -growPad))
         }
