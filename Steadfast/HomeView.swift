@@ -554,6 +554,127 @@ private struct LibraryShortcutCard: View {
         .accessibilityLabel("Explore Verse Library. Find scripture for what you’re feeling")
         .accessibilityHint("Opens the verse library")
     }
+
+    @MainActor
+    private func shareDevotionalVerse() {
+        shareImage = DevotionalVerseStoryRenderer.renderImage(
+            devotional: devotional,
+            backgroundName: backgroundName
+        )
+        showShareSheet = shareImage != nil
+    }
+}
+
+private struct DevotionalVerseStoryContent: View {
+    let devotional: DailyDevotional
+    let backgroundName: String
+    var logoSize: CGFloat
+    var showsChromeSafePadding: Bool
+
+    var body: some View {
+        ZStack {
+            DevotionalVerseStoryBackground(imageName: backgroundName)
+
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.18),
+                    .black.opacity(0.08),
+                    .black.opacity(0.36)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 22) {
+                Spacer(minLength: showsChromeSafePadding ? 96 : 72)
+
+                VStack(spacing: 18) {
+                    Text("“\(devotional.verseText)”")
+                        .font(.system(size: 30, weight: .semibold, design: .serif))
+                        .lineSpacing(8)
+                        .lineLimit(10)
+                        .minimumScaleFactor(0.72)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.36), radius: 10, x: 0, y: 5)
+
+                    Text(devotional.verseReference)
+                        .font(.system(size: 17, weight: .semibold, design: .serif))
+                        .tracking(1.2)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .padding(.horizontal, 30)
+                .frame(maxWidth: .infinity)
+
+                Spacer()
+
+                Image("SteadfastCROSS1024")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: logoSize, height: logoSize)
+                    .opacity(0.92)
+                    .shadow(color: .black.opacity(0.26), radius: 8, x: 0, y: 4)
+                    .padding(.bottom, showsChromeSafePadding ? 116 : 56)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+    }
+}
+
+private struct DevotionalVerseStoryBackground: View {
+    let imageName: String
+
+    var body: some View {
+        GeometryReader { geo in
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+        }
+        .ignoresSafeArea()
+    }
+}
+
+private enum DevotionalVerseStoryAssets {
+    private static let story1Name = "SteadfastStory1"
+    private static let story2Name = "SteadfastStory2"
+
+    static func backgroundName(for date: Date) -> String {
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
+        return day.isMultiple(of: 2) ? story1Name : story2Name
+    }
+}
+
+private enum DevotionalVerseStoryRenderer {
+    @MainActor
+    static func renderImage(devotional: DailyDevotional, backgroundName: String) -> UIImage? {
+        let view = DevotionalVerseStoryContent(
+            devotional: devotional,
+            backgroundName: backgroundName,
+            logoSize: 112,
+            showsChromeSafePadding: false
+        )
+        .frame(width: 1080, height: 1920)
+
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1
+        return renderer.uiImage
+    }
+}
+
+private struct DevotionalVerseShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 private struct DevotionalVerseStoryView: View {
