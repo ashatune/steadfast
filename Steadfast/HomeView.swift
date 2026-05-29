@@ -673,7 +673,20 @@ private struct DevotionalVerseStoryView: View {
             withAnimation(.easeInOut(duration: 0.2)) {
                 showSavedConfirmation = false
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: 154)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(.white.opacity(0.18), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.14), radius: 12, x: 0, y: 6)
+            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Explore Verse Library. Find scripture for what you’re feeling")
+        .accessibilityHint("Opens the verse library")
     }
 
     @MainActor
