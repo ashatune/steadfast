@@ -347,12 +347,12 @@ struct HomeView: View {
 
     private var rhythmHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Today’s rhythm")
+            Text("Devotional")
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.ink)
 
             if streakManager.hasDevotionalCompletion(on: now), streakManager.hasAnchorCompletion(on: now) {
-                Text("You’ve completed your rhythm for today")
+                Text("You’ve completed today’s devotional and anchor")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(Theme.inkSecondary)
             }
@@ -429,23 +429,59 @@ private struct LibraryShortcutCard: View {
     let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Looking for something specific?")
-                .font(.footnote)
-                .foregroundStyle(Theme.inkSecondary)
+        Button(action: action) {
+            ZStack(alignment: .bottomLeading) {
+                Image("BibleCard")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 154)
 
-            Button(action: action) {
-                HStack(spacing: 8) {
-                    Text("Explore Verse Library")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
-                    Image(systemName: "arrow.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
+                LinearGradient(
+                    colors: [
+                        .black.opacity(0.08),
+                        .black.opacity(0.32),
+                        .black.opacity(0.68)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                HStack(alignment: .bottom, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Explore Verse Library")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.white)
+
+                        Text("Find scripture for what you’re feeling")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.92))
+                    }
+                    .multilineTextAlignment(.leading)
+
+                    Spacer(minLength: 12)
+
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.95))
+                        .shadow(color: .black.opacity(0.22), radius: 4, x: 0, y: 2)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: 154)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(.white.opacity(0.18), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.14), radius: 12, x: 0, y: 6)
+            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Explore Verse Library. Find scripture for what you’re feeling")
+        .accessibilityHint("Opens the verse library")
     }
 }
 
