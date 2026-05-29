@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#143146"/>
+      <stop offset="0.52" stop-color="#4F5689"/>
+      <stop offset="1" stop-color="#5B5486"/>
+    </linearGradient>
+    <radialGradient id="morning" cx="22%" cy="24%" r="62%">
+      <stop offset="0" stop-color="#7DD3FC" stop-opacity="0.54"/>
+      <stop offset="0.42" stop-color="#7DD3FC" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#7DD3FC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="violet" cx="76%" cy="68%" r="52%">
+      <stop offset="0" stop-color="#E1C5FF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#E1C5FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+  <rect width="1080" height="1920" fill="url(#morning)"/>
+  <rect width="1080" height="1920" fill="url(#violet)"/>
+  <path d="M-50 1380 C145 1250 270 1320 450 1210 C640 1095 790 1130 1140 920 L1140 1920 L-50 1920 Z" fill="#CBEFFF" opacity="0.14"/>
+  <path d="M-80 1575 C190 1415 365 1510 565 1372 C770 1230 955 1280 1160 1140 L1160 1920 L-80 1920 Z" fill="#FFFFFF" opacity="0.08"/>
+  <g fill="#FFFFFF" opacity="0.42">
+    <circle cx="156" cy="330" r="2.5"/><circle cx="276" cy="548" r="2"/><circle cx="502" cy="290" r="3"/>
+    <circle cx="704" cy="470" r="2"/><circle cx="914" cy="376" r="2.5"/><circle cx="852" cy="710" r="2"/>
+    <circle cx="198" cy="842" r="2"/><circle cx="432" cy="725" r="2.5"/><circle cx="642" cy="910" r="2"/>
+  </g>
+</svg>
