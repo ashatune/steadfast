@@ -1,23 +1,16 @@
 {
-  "images" : [
+  "images": [
     {
-      "filename" : "SteadfastStory2 1.png",
-      "idiom" : "universal",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "SteadfastStory2.png",
-      "idiom" : "universal",
-      "scale" : "2x"
-    },
-    {
-      "filename" : "SteadfastStory2 2.png",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename": "SteadfastStory2.svg",
+      "idiom": "universal",
+      "scale": "1x"
     }
   ],
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "preserves-vector-representation": true
   }
 }
