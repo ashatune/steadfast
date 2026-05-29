@@ -578,6 +578,7 @@ private struct DevotionalVerseStoryView: View {
                     showsChromeSafePadding: true
                 )
                 .frame(width: geo.size.width, height: geo.size.height)
+                .ignoresSafeArea()
 
                 VStack {
                     HStack(spacing: 12) {
@@ -673,20 +674,7 @@ private struct DevotionalVerseStoryView: View {
             withAnimation(.easeInOut(duration: 0.2)) {
                 showSavedConfirmation = false
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 154)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(.white.opacity(0.18), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.14), radius: 12, x: 0, y: 6)
-            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Explore Verse Library. Find scripture for what you’re feeling")
-        .accessibilityHint("Opens the verse library")
     }
 
     @MainActor
@@ -706,66 +694,81 @@ private struct DevotionalVerseStoryContent: View {
     var showsChromeSafePadding: Bool
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Image(backgroundName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
+        ZStack {
+            DevotionalVerseStoryBackground(imageName: backgroundName)
 
-                LinearGradient(
-                    colors: [
-                        .black.opacity(0.18),
-                        .black.opacity(0.08),
-                        .black.opacity(0.36)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.18),
+                    .black.opacity(0.08),
+                    .black.opacity(0.36)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-                VStack(spacing: 22) {
-                    Spacer(minLength: showsChromeSafePadding ? 96 : 72)
+            VStack(spacing: 22) {
+                Spacer(minLength: showsChromeSafePadding ? 96 : 72)
 
-                    VStack(spacing: 18) {
-                        Text("“\(devotional.verseText)”")
-                            .font(.system(size: 30, weight: .semibold, design: .serif))
-                            .lineSpacing(8)
-                            .lineLimit(10)
-                            .minimumScaleFactor(0.72)
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .shadow(color: .black.opacity(0.36), radius: 10, x: 0, y: 5)
+                VStack(spacing: 18) {
+                    Text("“\(devotional.verseText)”")
+                        .font(.system(size: 30, weight: .semibold, design: .serif))
+                        .lineSpacing(8)
+                        .lineLimit(10)
+                        .minimumScaleFactor(0.72)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.36), radius: 10, x: 0, y: 5)
 
-                        Text(devotional.verseReference)
-                            .font(.system(size: 17, weight: .semibold, design: .serif))
-                            .tracking(1.2)
-                            .foregroundStyle(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
-                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-                    .padding(.horizontal, 30)
-                    .frame(maxWidth: .infinity)
-
-                    Spacer()
-
-                    Image("SteadfastCROSS1024")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: logoSize, height: logoSize)
-                        .opacity(0.92)
-                        .shadow(color: .black.opacity(0.26), radius: 8, x: 0, y: 4)
-                        .padding(.bottom, showsChromeSafePadding ? 116 : 56)
+                    Text(devotional.verseReference)
+                        .font(.system(size: 17, weight: .semibold, design: .serif))
+                        .tracking(1.2)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
+                .padding(.horizontal, 30)
+                .frame(maxWidth: .infinity)
+
+                Spacer()
+
+                Image("SteadfastCROSS1024")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: logoSize, height: logoSize)
+                    .opacity(0.92)
+                    .shadow(color: .black.opacity(0.26), radius: 8, x: 0, y: 4)
+                    .padding(.bottom, showsChromeSafePadding ? 116 : 56)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+    }
+}
+
+private struct DevotionalVerseStoryBackground: View {
+    let imageName: String
+
+    var body: some View {
+        GeometryReader { geo in
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+        }
+        .ignoresSafeArea()
     }
 }
 
 private enum DevotionalVerseStoryAssets {
+    private static let story1Name = "SteadfastStory1"
+    private static let story2Name = "SteadfastStory2"
+
     static func backgroundName(for date: Date) -> String {
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
-        return day.isMultiple(of: 2) ? "SteadfastStory1" : "SteadfastStory2"
+        return day.isMultiple(of: 2) ? story1Name : story2Name
     }
 }
 
