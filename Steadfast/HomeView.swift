@@ -4,6 +4,7 @@ import UIKit
 
 struct HomeView: View {
     @AppStorage("displayName") private var storedDisplayName = ""
+    @AppStorage("home.devotionalVerseCompletedDay") private var devotionalVerseCompletedDay = ""
 
     @EnvironmentObject var vm: AppViewModel
     @EnvironmentObject private var streakManager: StreakManager
@@ -17,6 +18,10 @@ struct HomeView: View {
     @State private var devotionalDeepLinkPending = false
     @State private var expandedRhythmCard: ExpandedRhythmCard?
     @State private var rhythmNodeCenters: [Int: CGFloat] = [:]
+    @State private var didOpenDevotionalDetail = false
+    @State private var previousDevotionalCompletion = false
+    @State private var previousAnchorCompletion = false
+    @State private var didInitializeCompletionState = false
 
     enum TopTab { case home, reframe }
     private enum ExpandedRhythmCard { case devotionalVerse, devotional, anchor }
@@ -89,7 +94,12 @@ struct HomeView: View {
             .presentationCornerRadius(24)
             .presentationDragIndicator(.visible)
         }
-        .fullScreenCover(isPresented: $showDevotionalVerseStory) {
+        .fullScreenCover(
+            isPresented: $showDevotionalVerseStory,
+            onDismiss: {
+                completeDevotionalVerseCard(advanceToNext: true)
+            }
+        ) {
             if let devotional = devotionalVM.devotional {
                 DevotionalVerseStoryView(devotional: devotional) {
                     showDevotionalVerseStory = false
@@ -177,6 +187,7 @@ struct HomeView: View {
             vm.syncProfileNameFromDefaults()
             print("🏠 Home screen reached; triggering devotional fetch")
             devotionalVM.refresh()
+            syncCompletionBaselines()
         }
         .onChange(of: storedDisplayName) { _ in
             vm.syncProfileNameFromDefaults()
@@ -188,6 +199,23 @@ struct HomeView: View {
                 devotionalDeepLinkPending = false
                 vm.pendingDeepLink = nil
             }
+        }
+        .onChange(of: showDevotionalDetail) { isPresented in
+            if isPresented {
+                didOpenDevotionalDetail = true
+            } else if didOpenDevotionalDetail {
+                didOpenDevotionalDetail = false
+                completeDevotionalCard(advanceToNext: true)
+            }
+        }
+        .onReceive(streakManager.$devotionalCompletionDays) { _ in
+            handleDevotionalCompletionChange()
+        }
+        .onReceive(streakManager.$anchorCompletionDays) { _ in
+            handleAnchorCompletionChange()
+        }
+        .onChange(of: now) { _ in
+            syncCompletionBaselines()
         }
     }
 
@@ -228,6 +256,93 @@ struct HomeView: View {
         guard !s.isEmpty else { return nil }
         return s.split(separator: " ").first.map(String.init)
     }
+
+    private var todayCompletionKey: String {
+        Self.devotionalVerseCompletionFormatter.string(from: now)
+    }
+
+    private var hasDevotionalVerseCompletion: Bool {
+        devotionalVerseCompletedDay == todayCompletionKey
+    }
+
+    private func completeDevotionalVerseCard(advanceToNext: Bool) {
+        let wasComplete = hasDevotionalVerseCompletion
+        if !wasComplete {
+            devotionalVerseCompletedDay = todayCompletionKey
+            playCompletionFeedback()
+        }
+
+        guard advanceToNext else { return }
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            expandedRhythmCard = .devotional
+        }
+    }
+
+    private func completeDevotionalCard(advanceToNext: Bool) {
+        let wasComplete = streakManager.hasDevotionalCompletion(on: now)
+        if !wasComplete {
+            streakManager.markDevotionalCompleted(on: now)
+            StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+            playCompletionFeedback()
+        }
+        previousDevotionalCompletion = true
+
+        guard advanceToNext else { return }
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            expandedRhythmCard = .anchor
+        }
+    }
+
+    private func handleDevotionalCompletionChange() {
+        let isComplete = streakManager.hasDevotionalCompletion(on: now)
+        guard didInitializeCompletionState else {
+            previousDevotionalCompletion = isComplete
+            return
+        }
+
+        if isComplete, !previousDevotionalCompletion {
+            playCompletionFeedback()
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                expandedRhythmCard = .anchor
+            }
+        }
+        previousDevotionalCompletion = isComplete
+    }
+
+    private func handleAnchorCompletionChange() {
+        let isComplete = streakManager.hasAnchorCompletion(on: now)
+        guard didInitializeCompletionState else {
+            previousAnchorCompletion = isComplete
+            return
+        }
+
+        if isComplete, !previousAnchorCompletion {
+            playCompletionFeedback()
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                expandedRhythmCard = nil
+            }
+        }
+        previousAnchorCompletion = isComplete
+    }
+
+    private func syncCompletionBaselines() {
+        previousDevotionalCompletion = streakManager.hasDevotionalCompletion(on: now)
+        previousAnchorCompletion = streakManager.hasAnchorCompletion(on: now)
+        didInitializeCompletionState = true
+    }
+
+    private func playCompletionFeedback() {
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
+    private static let devotionalVerseCompletionFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .autoupdatingCurrent
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 
     private var rhythmCardsSection: some View {
         ZStack(alignment: .leading) {
@@ -280,8 +395,7 @@ struct HomeView: View {
     private var devotionalVerseRhythmCard: some View {
         CollapsibleRhythmCard(
             isExpanded: rhythmExpansionBinding(for: .devotionalVerse),
-            isComplete: false,
-            showsCompletionIndicator: false,
+            isComplete: hasDevotionalVerseCompletion,
             accessibilityLabel: "Today’s Devotional Verse"
         ) {
             VStack(alignment: .leading, spacing: 4) {
@@ -408,7 +522,7 @@ struct HomeView: View {
                 Button {
                     showAnchorFlow = true
                 } label: {
-                    RhythmCTAButtonLabel("Start anchor verse")
+                    RhythmCTAButtonLabel("Begin exercise")
                 }
                 .padding(.top, 4)
             }
@@ -422,8 +536,10 @@ struct HomeView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.ink)
 
-            if streakManager.hasDevotionalCompletion(on: now), streakManager.hasAnchorCompletion(on: now) {
-                Text("You’ve completed today’s devotional and anchor")
+            if hasDevotionalVerseCompletion,
+               streakManager.hasDevotionalCompletion(on: now),
+               streakManager.hasAnchorCompletion(on: now) {
+                Text("You’ve completed today’s devotional steps")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(Theme.inkSecondary)
             }
@@ -927,6 +1043,7 @@ private struct RhythmCTAButtonLabel: View {
 
 private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: View>: View {
     @Binding private var isExpanded: Bool
+    @State private var animateCompletion = false
     private let isComplete: Bool
     private let showsCompletionIndicator: Bool
     private let accessibilityLabel: String
@@ -982,6 +1099,17 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
             }
         }
         .animation(.spring(response: 0.32, dampingFraction: 0.86), value: isExpanded)
+        .onChange(of: isComplete) { completed in
+            guard completed else { return }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.62)) {
+                animateCompletion = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    animateCompletion = false
+                }
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(isExpanded ? "Tap to collapse" : "Tap to expand")
@@ -989,6 +1117,14 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
 
     private var completionIndicator: some View {
         ZStack {
+            if isComplete, animateCompletion {
+                Circle()
+                    .stroke(Theme.accent.opacity(0.28), lineWidth: 2)
+                    .frame(width: 38, height: 38)
+                    .scaleEffect(animateCompletion ? 1.08 : 0.72)
+                    .opacity(animateCompletion ? 0 : 1)
+            }
+
             Circle()
                 .fill(isComplete ? Theme.accent.opacity(0.14) : Theme.surface.opacity(0.8))
                 .frame(width: 28, height: 28)
@@ -1001,8 +1137,10 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
                 Image(systemName: "checkmark")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.accent)
+                    .scaleEffect(animateCompletion ? 1.12 : 1)
             }
         }
+        .scaleEffect(animateCompletion ? 1.04 : 1)
         .accessibilityHidden(true)
     }
 }
