@@ -138,7 +138,10 @@ private struct FallingPrayerHandsView: View {
             ZStack {
                 ForEach(particles) { particle in
                     Text("🙏")
-                        .font(.system(size: particle.size))
+                        // Keep the particle as a plain Unicode emoji and use the
+                        // default system font so iOS can resolve it through
+                        // Apple Color Emoji instead of an app/design font.
+                        .font(.system(size: particle.size, weight: .regular, design: .default))
                         .opacity(particle.opacity)
                         .position(x: particle.x * geo.size.width,
                                   y: animate ? geo.size.height + 60 : -80)
