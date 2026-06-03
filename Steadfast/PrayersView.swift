@@ -11,34 +11,29 @@ struct PrayersView: View {
     let meditations: [PrayerMeditation] = [
         PrayerMeditation(
             title: "Morning Body Scan",
-            video: .local(name: "MorningBodyScan1Vid", ext: "mp4"),
             audio: .local(name: "MorningMeditationComplete1", ext: "mp3"),
             coverName: "MorningCover1"
         ),
         PrayerMeditation(
             title: "Evening Rest",
-            video: .local(name: "EveningWindownVid1", ext: "mp4"),
             audio: .local(name: "eveningwindown1complete", ext: "mp3"),
             coverName: "EveningCover1"
         ),
         // 🆕 Panic relief
         PrayerMeditation(
             title: "Panic Attack Relief",
-            video: .local(name: "PanicVid", ext: "mp4"),
             audio: .local(name: "PanicMeditation", ext: "mp3"),
             coverName: "PanicCover1" // add an asset with this name, or change to one you have
         ),
         // 🆕 Healing meditation
         PrayerMeditation(
             title: "Healing & Renewal",
-            video: .local(name: "HealingMeditationVid", ext: "mp4"),
             audio: .local(name: "healingMeditation", ext: "mp3"), // note the lowercase 'h' as you provided
             coverName: "HealingCover1"
         ),
         // 🆕 The Lord's Prayer
         PrayerMeditation(
             title: "The Lord’s Prayer",
-            video: .local(name: "LordsPrayerVid", ext: "mp4"),
             audio: .local(name: "TheLordsPrayer", ext: "mp3"),
             coverName: "LordsPrayerCover1"
         )

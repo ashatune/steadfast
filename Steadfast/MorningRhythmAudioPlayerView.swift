@@ -372,7 +372,7 @@ struct RhythmAudioPlayerView: View {
     let audioFileName: String
     let audioFileExtension: String
     let backgroundImageName: String
-    let rhythmType: DailyRhythmType
+    let rhythmType: DailyRhythmType?
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
@@ -386,7 +386,7 @@ struct RhythmAudioPlayerView: View {
         audioFileName: String,
         audioFileExtension: String,
         backgroundImageName: String,
-        rhythmType: DailyRhythmType
+        rhythmType: DailyRhythmType? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -510,26 +510,28 @@ struct RhythmAudioPlayerView: View {
                             .foregroundStyle(.white.opacity(0.9))
                     }
 
-                    Button {
-                        if hasProcessedCompletion {
-                            closePlayerAndDismiss()
-                        } else {
-                            completeRhythmAndMaybeDismiss(shouldDismiss: true)
+                    if rhythmType != nil {
+                        Button {
+                            if hasProcessedCompletion {
+                                closePlayerAndDismiss()
+                            } else {
+                                completeRhythmAndMaybeDismiss(shouldDismiss: true)
+                            }
+                        } label: {
+                            Text(hasProcessedCompletion ? "Done" : "Mark Complete")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
                         }
-                    } label: {
-                        Text(hasProcessedCompletion ? "Done" : "Mark Complete")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.white.opacity(0.88))
+                        .foregroundStyle(.black)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.white.opacity(0.88))
-                    .foregroundStyle(.black)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
             }
 
-            if let milestone = streakManager.pendingMilestone {
+            if rhythmType != nil, let milestone = streakManager.pendingMilestone {
                 StreakMilestoneCelebrationView(milestone: milestone) {
                     streakManager.clearPendingMilestone()
                     if dismissAfterOverlay {
@@ -541,11 +543,16 @@ struct RhythmAudioPlayerView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
-            hasProcessedCompletion = rhythmType.isCompleted(in: streakManager)
-            dismissAfterOverlay = false
-            viewModel.onPlaybackEnded = {
-                completeRhythmAndMaybeDismiss(shouldDismiss: false)
+            if let rhythmType {
+                hasProcessedCompletion = rhythmType.isCompleted(in: streakManager)
+                viewModel.onPlaybackEnded = {
+                    completeRhythmAndMaybeDismiss(shouldDismiss: false)
+                }
+            } else {
+                hasProcessedCompletion = false
+                viewModel.onPlaybackEnded = nil
             }
+            dismissAfterOverlay = false
             viewModel.configureIfNeeded()
         }
     }
@@ -578,6 +585,8 @@ struct RhythmAudioPlayerView: View {
 
         hasProcessedCompletion = true
         dismissAfterOverlay = shouldDismiss
+
+        guard let rhythmType else { return }
 
         rhythmType.markCompleted(in: streakManager)
         StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
