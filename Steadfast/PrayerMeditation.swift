@@ -14,7 +14,7 @@ enum PrayerMeditationType: String, Equatable {
 struct PrayerMeditation: Identifiable, Equatable {
     let id: UUID
     let title: String
-    let video: MediaSource
+    let video: MediaSource?
     let audio: MediaSource
     let subtitle: String?
     let coverName: String?
@@ -23,7 +23,7 @@ struct PrayerMeditation: Identifiable, Equatable {
     init(
         id: UUID = UUID(),
         title: String,
-        video: MediaSource,
+        video: MediaSource? = nil,
         audio: MediaSource,
         subtitle: String? = nil,
         coverName: String? = nil,
