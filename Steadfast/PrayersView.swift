@@ -8,24 +8,6 @@ struct PrayersView: View {
     private let cardAspectRatio: CGFloat = 1.18
 
     private let meditations = PrayerMeditationLibrary.all
-    private let quickStartVerse = Verse(
-        ref: "Quick Start Meditation",
-        text: "Be still, and know that I am God.",
-        breathIn: 4,
-        breathOut: 6,
-        inhaleCue: "Breathe in peace",
-        exhaleCue: "Release what you are holding"
-    )
-    private let quickStartIntroPrompts = [
-        "Welcome.",
-        "Thank you for showing up for yourself today.",
-        "Wherever you are, find a comfortable position.",
-        "If it is safe to do so, gently close or dim your eyes.",
-        "Try to think about God and your breath.",
-        "If other thoughts come, that is okay.",
-        "Just bring your awareness back to your breath.",
-        "Let’s begin."
-    ]
 
     @State private var showQuickStartDurations = false
     @State private var selectedQuickStartDuration: MeditationDurationOption?
@@ -88,17 +70,8 @@ struct PrayersView: View {
             }
             .background(
                 NavigationLink("", isActive: $showQuickStartSession) {
-                    AnchorBreathView(
-                        verse: quickStartVerse,
-                        totalDuration: selectedQuickStartDuration?.seconds ?? MeditationDurationOption.default.seconds,
-                        inhaleSecs: 4,
-                        holdSecs: 2,
-                        exhaleSecs: 6,
-                        bgm: .local(name: "oceanWaves", ext: "mp3"),
-                        showBibleLink: false,
-                        recordsAnchorCompletion: false,
-                        headerImageName: "SteadfastCROSS1024",
-                        introPrompts: quickStartIntroPrompts
+                    QuickStartMeditationSessionView(
+                        duration: selectedQuickStartDuration ?? MeditationDurationOption.default
                     )
                 }
                 .hidden()

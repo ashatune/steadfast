@@ -12,6 +12,7 @@ enum Feeling: String, CaseIterable, Identifiable {
 private enum SOSStage {
     case autoground
     case choice
+    case pathQuickMeditation
     case pathQuickCalm
     case pathPrayer
     case pathEncouragement
@@ -112,6 +113,7 @@ struct SOSFlow: View {
                 title: "You did the right thing.",
                 subtitle: "Let’s find peace together.",
                 options: [
+                    .init(id: "quickMeditation", label: "Quick Meditation", icon: "figure.mind.and.body", action: { stage = .pathQuickMeditation }),
                     .init(id: "quick",  label: "Quick Calm",    icon: "wind",                  action: { stage = .pathQuickCalm }),
                     .init(id: "prayer", label: "Talk to God",   icon: "hands.sparkles.fill",   action: { stage = .pathPrayer }),
                     .init(id: "enc",    label: "Encouragement", icon: "heart.text.square.fill", action: { stage = .pathEncouragement })
@@ -119,6 +121,11 @@ struct SOSFlow: View {
                 footerNote: "Stay as long as you need.",
                 speak: speakFn
             )
+
+        case .pathQuickMeditation:
+            QuickStartMeditationFlow(autoPresentDurations: true) {
+                stage = .choice
+            }
 
         case .pathQuickCalm:
             QuickCalmFlow(onDone: { stage = .finale }, speak: speakFn)
