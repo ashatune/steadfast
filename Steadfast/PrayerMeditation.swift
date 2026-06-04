@@ -18,6 +18,7 @@ struct PrayerMeditation: Identifiable, Equatable {
     let audio: MediaSource
     let subtitle: String?
     let coverName: String?
+    let displayDuration: String?
     let playbackBackgroundName: String
     let type: PrayerMeditationType
     
@@ -28,6 +29,7 @@ struct PrayerMeditation: Identifiable, Equatable {
         audio: MediaSource,
         subtitle: String? = nil,
         coverName: String? = nil,
+        displayDuration: String? = nil,
         playbackBackgroundName: String,
         type: PrayerMeditationType = .video
     ) {
@@ -37,6 +39,7 @@ struct PrayerMeditation: Identifiable, Equatable {
         self.audio = audio
         self.subtitle = subtitle
         self.coverName = coverName
+        self.displayDuration = displayDuration
         self.playbackBackgroundName = playbackBackgroundName
         self.type = type
     }
