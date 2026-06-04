@@ -29,30 +29,24 @@ struct QuickStartMeditationCard: View {
             HStack(spacing: 10) {
                 Text("Quick Start Meditation")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .lineLimit(1)
 
                 Image(systemName: "chevron.right")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.black)
             }
             .padding(.horizontal, 18)
             .frame(maxWidth: .infinity)
             .frame(height: 58)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Theme.accent, Theme.accent2.opacity(0.86)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .shadow(color: Theme.accent.opacity(0.22), radius: 10, x: 0, y: 5)
+                    .fill(Color.white)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                    .stroke(Color.black, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
