@@ -28,7 +28,7 @@ struct QuickStartMeditationCard: View {
         Button(action: action) {
             Text("Quick Start Meditation")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(Color(red: 0.18, green: 0.08, blue: 0.34))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 18)
