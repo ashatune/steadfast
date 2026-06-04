@@ -176,6 +176,10 @@ struct HomeView: View {
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 14)
 
+                HomeMeditationsCarouselView()
+                    .padding(.horizontal, sidePadding)
+                    .padding(.top, 14)
+
                 libraryFooterSection
             }
         }

@@ -44,3 +44,43 @@ struct PrayerMeditation: Identifiable, Equatable {
         self.type = type
     }
 }
+
+enum PrayerMeditationLibrary {
+    static let all: [PrayerMeditation] = [
+        PrayerMeditation(
+            title: "Morning Body Scan",
+            audio: .local(name: "MorningMeditationComplete1", ext: "mp3"),
+            coverName: "MorningCover1",
+            displayDuration: "2:57",
+            playbackBackgroundName: "morningRhythmImage"
+        ),
+        PrayerMeditation(
+            title: "Evening Rest",
+            audio: .local(name: "eveningwindown1complete", ext: "mp3"),
+            coverName: "EveningCover1",
+            displayDuration: "3:18",
+            playbackBackgroundName: "eveningRhythmImage"
+        ),
+        PrayerMeditation(
+            title: "Panic Attack Relief",
+            audio: .local(name: "PanicMeditation", ext: "mp3"),
+            coverName: "explorePanic",
+            displayDuration: "8:00",
+            playbackBackgroundName: "steadfastFiverrSplashScreen"
+        ),
+        PrayerMeditation(
+            title: "Healing and Renewal",
+            audio: .local(name: "healingMeditation", ext: "mp3"),
+            coverName: "exploreHealing",
+            displayDuration: "4:00",
+            playbackBackgroundName: "steadfastFiverrSplashScreen"
+        ),
+        PrayerMeditation(
+            title: "Lord’s Prayer",
+            audio: .local(name: "TheLordsPrayer", ext: "mp3"),
+            coverName: "exploreLordsPrayer",
+            displayDuration: "4:45",
+            playbackBackgroundName: "steadfastFiverrSplashScreen"
+        )
+    ]
+}
