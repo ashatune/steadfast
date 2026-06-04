@@ -16,6 +16,16 @@ struct PrayersView: View {
         inhaleCue: "Breathe in peace",
         exhaleCue: "Release what you are holding"
     )
+    private let quickStartIntroPrompts = [
+        "Welcome.",
+        "Thank you for showing up for yourself today.",
+        "Wherever you are, find a comfortable position.",
+        "If it is safe to do so, gently close or dim your eyes.",
+        "Try to think about God and your breath.",
+        "If other thoughts come, that is okay.",
+        "Just bring your awareness back to your breath.",
+        "Let’s begin."
+    ]
 
     @State private var showQuickStartDurations = false
     @State private var selectedQuickStartDuration: MeditationDurationOption?
@@ -81,7 +91,8 @@ struct PrayersView: View {
                         exhaleSecs: 6,
                         bgm: .local(name: "oceanWaves", ext: "mp3"),
                         showBibleLink: false,
-                        recordsAnchorCompletion: false
+                        recordsAnchorCompletion: false,
+                        introPrompts: quickStartIntroPrompts
                     )
                 }
                 .hidden()

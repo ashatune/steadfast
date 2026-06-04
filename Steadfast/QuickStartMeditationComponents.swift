@@ -26,70 +26,37 @@ struct QuickStartMeditationCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .frame(width: 58, height: 58)
-
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                colors: [Theme.accent2, Theme.accent, Theme.accent2],
-                                center: .center
-                            ),
-                            lineWidth: 2
-                        )
-                        .frame(width: 58, height: 58)
-
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(Theme.accent)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Quick Start Meditation")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Theme.cardTitle)
-
-                    Text("Choose a duration, then begin a calm breathing session.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink.opacity(0.72))
-                        .multilineTextAlignment(.leading)
-                }
-
-                Spacer(minLength: 8)
+            HStack(spacing: 10) {
+                Text("Quick Start Meditation")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Theme.cardTitle)
+                    .lineLimit(1)
 
                 Image(systemName: "chevron.right")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(Theme.accent)
-                    .padding(10)
-                    .background(Theme.accent.opacity(0.10), in: Circle())
             }
-            .padding(18)
+            .padding(.horizontal, 18)
             .frame(maxWidth: .infinity)
+            .frame(height: 58)
             .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Theme.surface)
-                    .shadow(color: Theme.accent.opacity(0.16), radius: 22, x: 0, y: 12)
+                    .shadow(color: Theme.line.opacity(0.16), radius: 7, x: 0, y: 3)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(
-                        LinearGradient(
-                            colors: [Theme.accent.opacity(0.34), Theme.accent2.opacity(0.18), Color.white.opacity(0.12)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Theme.accent.opacity(0.22), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: 360)
+        .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityLabel("Quick Start Meditation")
         .accessibilityHint("Opens duration options before starting a breathing meditation")
     }
 }
+
 
 struct MeditationDurationPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
