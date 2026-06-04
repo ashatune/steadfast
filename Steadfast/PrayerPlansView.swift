@@ -2,13 +2,18 @@ import SwiftUI
 
 struct PrayerPlansView: View {
     @EnvironmentObject var vm: AppViewModel
+    @State private var durationPlan: PrayerPlan? = nil
+    @State private var exercisePlan: PrayerPlan? = nil
+    @State private var selectedDuration: MeditationDurationOption?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 12) {
                     ForEach(vm.library.prayerPlans) { plan in
-                        NavigationLink { PrayerPlanDetail(plan: plan) } label: {
+                        Button {
+                            durationPlan = plan
+                        } label: {
                             PrayerPlanCard(plan: plan)
                         }
                         .buttonStyle(.plain)
@@ -20,6 +25,24 @@ struct PrayerPlansView: View {
             .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Prayer Plans")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(item: $exercisePlan) { plan in
+                PrayerPlanDetail(plan: plan, breathingDuration: selectedDuration)
+            }
+            .sheet(item: $durationPlan) { plan in
+                MeditationDurationPickerSheet(
+                    title: plan.title,
+                    prompt: "How long would you like timed breathing steps to last?",
+                    selectedDuration: selectedDuration ?? MeditationDurationOption.default
+                ) { duration in
+                    selectedDuration = duration
+                    durationPlan = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        exercisePlan = plan
+                    }
+                }
+                .presentationDetents([.height(430), .medium])
+                .presentationDragIndicator(.visible)
+            }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
