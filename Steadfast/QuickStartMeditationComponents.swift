@@ -21,6 +21,133 @@ struct MeditationDurationOption: Identifiable, Equatable {
     static let `default` = MeditationDurationOption(minutes: 5)
 }
 
+enum QuickStartMeditation {
+    static let verse = Verse(
+        ref: "Quick Start Meditation",
+        text: "Be still, and know that I am God.",
+        breathIn: 4,
+        breathOut: 6,
+        inhaleCue: "Breathe in peace",
+        exhaleCue: "Release what you are holding"
+    )
+
+    static let introPrompts = [
+        "Welcome.",
+        "Thank you for showing up for yourself today.",
+        "Wherever you are, find a comfortable position.",
+        "If it is safe to do so, gently close or dim your eyes.",
+        "Try to think about God and your breath.",
+        "If other thoughts come, that is okay.",
+        "Just bring your awareness back to your breath.",
+        "Let’s begin."
+    ]
+}
+
+struct QuickStartMeditationSessionView: View {
+    let duration: MeditationDurationOption
+
+    var body: some View {
+        AnchorBreathView(
+            verse: QuickStartMeditation.verse,
+            totalDuration: duration.seconds,
+            inhaleSecs: 4,
+            holdSecs: 2,
+            exhaleSecs: 6,
+            bgm: .local(name: "oceanWaves", ext: "mp3"),
+            showBibleLink: false,
+            recordsAnchorCompletion: false,
+            headerImageName: "SteadfastCROSS1024",
+            introPrompts: QuickStartMeditation.introPrompts
+        )
+    }
+}
+
+struct QuickStartMeditationFlow: View {
+    var autoPresentDurations = false
+    var onExit: (() -> Void)? = nil
+
+    @State private var showDurations = false
+    @State private var selectedDuration: MeditationDurationOption?
+    @State private var showSession = false
+    @State private var didAutoPresentDurations = false
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Image("SteadfastCROSS1024")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .opacity(0.86)
+                .accessibilityLabel("Steadfast")
+
+            Text("Quick Meditation")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Theme.cardTitle)
+                .multilineTextAlignment(.center)
+
+            Text("Choose a length, settle into the intro prompts, then breathe with the same guided Quick Start practice.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.inkSecondary)
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+
+            Button {
+                showDurations = true
+            } label: {
+                HStack {
+                    Text("Choose Duration")
+                    Image(systemName: "arrow.right")
+                }
+                .font(.headline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            if let onExit {
+                Button("Back to SOS options", action: onExit)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            NavigationLink("", isActive: $showSession) {
+                QuickStartMeditationSessionView(
+                    duration: selectedDuration ?? MeditationDurationOption.default
+                )
+            }
+            .hidden()
+        )
+        .sheet(isPresented: $showDurations) {
+            MeditationDurationPickerSheet(
+                selectedDuration: selectedDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedDuration = duration
+                showDurations = false
+                SoundManager.shared.fade(to: 0.0, duration: 0.25, stopAfter: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    showSession = true
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
+        }
+        .onAppear {
+            guard autoPresentDurations, !didAutoPresentDurations else { return }
+            didAutoPresentDurations = true
+            DispatchQueue.main.async {
+                showDurations = true
+            }
+        }
+    }
+}
+
+
 struct QuickStartMeditationCard: View {
     var action: () -> Void
 
