@@ -66,7 +66,7 @@ private struct ExploreMoreMeditationsNavigationCard: View {
             VStack(spacing: 6) {
                 Text("Explore more meditations")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.sectionTitle)
+                    .foregroundStyle(Theme.cardTitle)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.88)

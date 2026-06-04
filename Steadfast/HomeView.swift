@@ -405,7 +405,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Today’s Devotional Verse")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(Theme.sectionTitle)
+                    .foregroundStyle(Theme.cardTitle)
 
                 if let devotional = devotionalVM.devotional, expandedRhythmCard != .devotionalVerse {
                     Text(devotional.verseReference)
@@ -458,7 +458,7 @@ struct HomeView: View {
         ) {
             Text("Daily Devotional")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(Theme.sectionTitle)
+                .foregroundStyle(Theme.cardTitle)
         } expandedContent: {
             VStack(alignment: .leading, spacing: 8) {
                 if devotionalVM.isLoading {
@@ -472,7 +472,7 @@ struct HomeView: View {
                 } else if let devotional = devotionalVM.devotional {
                     Text(devotional.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.sectionTitle)
+                        .foregroundStyle(Theme.cardTitle)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -505,7 +505,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Anchor of the Day")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(Theme.sectionTitle)
+                    .foregroundStyle(Theme.cardTitle)
 
                 if expandedRhythmCard != .anchor {
                     Text(anchorOfDay.ref)

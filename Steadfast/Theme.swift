@@ -8,6 +8,7 @@ enum Theme {
     static let accent = Color("Accent")
     static let accent2 = Color("Accent2")
     static let sectionTitle = Color("SectionTitle")
+    static let cardTitle = ink
     static let support = Color("Support")
     static let line = Color("Line")
 }

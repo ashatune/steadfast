@@ -171,7 +171,7 @@ private struct AutoGroundView: View {
         VStack(spacing: 18) {
             Text("Let’s start by breathing…")
                 .font(.title3).bold()
-                .foregroundStyle(Theme.sectionTitle)
+                .foregroundStyle(Theme.cardTitle)
                 .multilineTextAlignment(.center)
 
             Text("You’re safe. Breathe with me.")
@@ -301,7 +301,7 @@ private struct MinimalChoiceView: View {
         VStack(spacing: 14) {
             Text(title)
                 .font(.title3).bold()
-                .foregroundStyle(Theme.sectionTitle)
+                .foregroundStyle(Theme.cardTitle)
                 .multilineTextAlignment(.center)
                 .opacity(isFadingOut ? 0 : 1)
                 .animation(.easeInOut(duration: 0.3), value: isFadingOut)
@@ -416,7 +416,7 @@ private struct QuickCalmFlow: View {
                         Spacer()
                         Text("Let’s breathe together.")
                             .font(.title3).bold()
-                            .foregroundStyle(Theme.sectionTitle)
+                            .foregroundStyle(Theme.cardTitle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                         Text("Breathe In… Breathe Out… you’re doing great.")
@@ -537,7 +537,7 @@ private struct GuidedPrayerFlow: View {
                         Spacer()
                         Text("Let’s breathe…")
                             .font(.title3).bold()
-                            .foregroundStyle(Theme.sectionTitle)
+                            .foregroundStyle(Theme.cardTitle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                         Text("Breathe In… Breathe Out… you’re doing well.")
@@ -837,7 +837,7 @@ private struct PromptView: View {
             Spacer()
             Text(title)
                 .font(.title3).bold()
-                .foregroundStyle(Theme.sectionTitle)
+                .foregroundStyle(Theme.cardTitle)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             if let subtitle {
@@ -860,7 +860,7 @@ private struct ScriptureHeader: View {
     let text: String
     var body: some View {
         VStack(spacing: 6) {
-            Text(text).font(.title3).foregroundStyle(Theme.sectionTitle).multilineTextAlignment(.center)
+            Text(text).font(.title3).foregroundStyle(Theme.cardTitle).multilineTextAlignment(.center)
             Text(ref).font(.footnote).foregroundStyle(Theme.inkSecondary)
         }
         .padding(.bottom, 6)
@@ -996,7 +996,7 @@ private struct SafetySupportView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("You’re not alone.").font(.title3).bold().foregroundStyle(Theme.sectionTitle)
+            Text("You’re not alone.").font(.title3).bold().foregroundStyle(Theme.cardTitle)
             Text("If you feel at risk of harming yourself, please seek immediate help.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Theme.inkSecondary)
@@ -1115,7 +1115,7 @@ private struct SOSDone: View {
 
             Text("Nice—one small step taken.")
                 .font(.title3).bold()
-                .foregroundStyle(Theme.sectionTitle)
+                .foregroundStyle(Theme.cardTitle)
 
             if let extraLine {
                 Text(extraLine)

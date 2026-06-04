@@ -46,7 +46,7 @@ struct MeditationCard: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(meditation.title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.sectionTitle)
+                .foregroundStyle(Theme.cardTitle)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
 

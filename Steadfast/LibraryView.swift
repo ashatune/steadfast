@@ -88,7 +88,7 @@ struct LibraryPackCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(pack.title)
                     .font(.headline)
-                    .foregroundStyle(Theme.sectionTitle)
+                    .foregroundStyle(Theme.cardTitle)
                 Text(pack.description)
                     .font(.caption)
                     .foregroundStyle(Theme.inkSecondary)
@@ -120,7 +120,7 @@ struct LargeActionCard: View {
                 .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline).foregroundStyle(Theme.sectionTitle)
+                Text(title).font(.headline).foregroundStyle(Theme.cardTitle)
                 Text(subtitle).font(.caption).foregroundStyle(Theme.inkSecondary)
             }
 

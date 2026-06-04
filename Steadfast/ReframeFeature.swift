@@ -201,7 +201,7 @@ private struct ReframeRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.title.isEmpty ? "Reframe" : entry.title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.sectionTitle)
+                    .foregroundStyle(Theme.cardTitle)
                     .lineLimit(1)
 
                 Text(entry.date.formatted(date: .abbreviated, time: .shortened))
@@ -254,7 +254,7 @@ struct ReframeDetailView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(entry.title.isEmpty ? "Reframe" : entry.title)
                         .font(.title3.bold())
-                        .foregroundStyle(Theme.sectionTitle)
+                        .foregroundStyle(Theme.cardTitle)
 
                     Text(entry.date.formatted(date: .abbreviated, time: .shortened))
                         .font(.subheadline)
