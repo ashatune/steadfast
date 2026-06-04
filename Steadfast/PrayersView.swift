@@ -8,6 +8,18 @@ struct PrayersView: View {
     private let cardAspectRatio: CGFloat = 1.18
 
     private let meditations = PrayerMeditationLibrary.all
+    private let quickStartVerse = Verse(
+        ref: "Quick Start Meditation",
+        text: "Be still, and know that I am God.",
+        breathIn: 4,
+        breathOut: 6,
+        inhaleCue: "Breathe in peace",
+        exhaleCue: "Release what you are holding"
+    )
+
+    @State private var showQuickStartDurations = false
+    @State private var selectedQuickStartDuration: MeditationDurationOption?
+    @State private var showQuickStartSession = false
 
     var body: some View {
         GeometryReader { geo in
@@ -29,6 +41,11 @@ struct PrayersView: View {
                     ],
                     spacing: vSpacing
                 ) {
+                    QuickStartMeditationCard {
+                        showQuickStartDurations = true
+                    }
+                    .gridCellColumns(columns)
+
                     // 1) Real meditations (tappable)
                     ForEach(meditations) { m in
                         NavigationLink {
@@ -54,6 +71,34 @@ struct PrayersView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 24)
             }
+            .background(
+                NavigationLink("", isActive: $showQuickStartSession) {
+                    AnchorBreathView(
+                        verse: quickStartVerse,
+                        totalDuration: selectedQuickStartDuration?.seconds ?? MeditationDurationOption.default.seconds,
+                        inhaleSecs: 4,
+                        holdSecs: 2,
+                        exhaleSecs: 6,
+                        bgm: .local(name: "oceanWaves", ext: "mp3"),
+                        showBibleLink: false,
+                        recordsAnchorCompletion: false
+                    )
+                }
+                .hidden()
+            )
+        }
+        .sheet(isPresented: $showQuickStartDurations) {
+            MeditationDurationPickerSheet(
+                selectedDuration: selectedQuickStartDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedQuickStartDuration = duration
+                showQuickStartDurations = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    showQuickStartSession = true
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
         }
         .navigationTitle("Prayerful Meditations")
         .navigationBarTitleDisplayMode(.large)

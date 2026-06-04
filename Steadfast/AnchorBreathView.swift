@@ -22,6 +22,7 @@ struct AnchorBreathView: View {
     
     var showInlineMuteButton: Bool = false    // NEW
     var startMuted: Bool = false              // NEW
+    var recordsAnchorCompletion: Bool = true
 
 
     @Environment(\.dismiss) private var dismiss
@@ -426,7 +427,7 @@ struct AnchorBreathView: View {
         isPaused = false
         overlayHideTask?.cancel(); overlayHideTask = nil
         showCenterPlaybackOverlay = false
-        if !hasRecordedCompletion {
+        if recordsAnchorCompletion && !hasRecordedCompletion {
             hasRecordedCompletion = true
             streakManager.markAnchorCompleted()
             StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
