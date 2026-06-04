@@ -1,233 +1,65 @@
 // PrayerMeditationView.swift
 import SwiftUI
-import AVKit
 
 struct PrayerMeditationView: View {
     let meditation: PrayerMeditation
 
-    @State private var videoPlayer: AVPlayer?
-    @State private var audioPlayer: AVPlayer?
-    @State private var videoItem: AVPlayerItem?
-
-    private let rewindInterval: Double = 15
-    private let autoHideDelay: TimeInterval = 4
-
-    @State private var isPlaying = false
-    @State private var rateObserver: NSKeyValueObservation?
-    @State private var controlsVisible = true
-    @State private var hideControlsWorkItem: DispatchWorkItem?
-
+    @ViewBuilder
     var body: some View {
-        ZStack(alignment: .bottom) {
-            if let player = videoPlayer {
-                MeditationVideoPlayerContainer(player: player)
-                    .ignoresSafeArea()
-            } else {
-                Color.black.ignoresSafeArea()
-            }
-
-            // Optional: a tiny status chip; remove if you don't want it
-            if !isPlaying {
-                Image(systemName: "play.fill")
-                    .padding(10)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .offset(y: 140)
-            }
-
-            if meditation.type == .video, let audioPlayer {
-                VStack {
-                    Spacer()
-                    MeditationAudioPlayerView(
-                        player: audioPlayer,
-                        isPlaying: $isPlaying,
-                        rewindInterval: rewindInterval,
-                        onTogglePlay: togglePlayback,
-                        onRewind: rewind,
-                        onSeek: seek,
-                        onUserInteraction: resetAutoHideControls
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
-                    .opacity(controlsVisible ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.25), value: controlsVisible)
-                    .allowsHitTesting(controlsVisible)
-                }
-            }
+        switch meditation.audio {
+        case .local(let name, let ext):
+            RhythmAudioPlayerView(
+                title: meditation.title,
+                subtitle: meditation.subtitle,
+                audioFileName: name,
+                audioFileExtension: ext,
+                backgroundImageName: meditation.playbackBackgroundName
+            )
+        case .remote:
+            UnsupportedPrayerMeditationAudioView(
+                title: meditation.title,
+                backgroundImageName: meditation.playbackBackgroundName
+            )
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            guard meditation.type == .video else { return }
-            withAnimation(.easeInOut) { controlsVisible = true }
-            resetAutoHideControls()
-        }
-        .onAppear {
-            setupAudioSession()
-            configurePlayers()
-            startPlayback()
-            observeVideoRateForSync()
-            loopVideo()
-            resetAutoHideControls()
-        }
-        .onDisappear { teardown() }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    teardown()
-                    dismiss()
-                } label: { Image(systemName: "chevron.left").font(.headline) }
-            }
-        }
-    }
-
-    @Environment(\.dismiss) private var dismiss
-
-    // MARK: - Setup
-
-    private func url(for source: MediaSource) -> URL? {
-        switch source {
-        case .local(let name, let ext): return Bundle.main.url(forResource: name, withExtension: ext)
-        case .remote(let u): return u
-        }
-    }
-
-    private func configurePlayers() {
-        if let v = url(for: meditation.video) {
-            let item = AVPlayerItem(url: v)
-            videoItem = item
-            let vp = AVPlayer(playerItem: item)
-            vp.actionAtItemEnd = .none
-            vp.isMuted = true
-            videoPlayer = vp
-        }
-        if let a = url(for: meditation.audio) {
-            audioPlayer = AVPlayer(url: a)
-        }
-    }
-
-    private func startPlayback() {
-        videoPlayer?.play()
-        audioPlayer?.play()
-        isPlaying = true
-    }
-
-    private func togglePlayback() {
-        if isPlaying {
-            videoPlayer?.pause()
-            audioPlayer?.pause()
-        } else {
-            videoPlayer?.play()
-            audioPlayer?.play()
-        }
-        isPlaying.toggle()
-    }
-
-    private func rewind(by interval: Double) {
-        let currentSeconds = audioPlayer?.currentTime().seconds ?? 0
-        let newTime = max(currentSeconds - interval, 0)
-        let target = CMTime(seconds: newTime, preferredTimescale: 600)
-        audioPlayer?.seek(to: target)
-        videoPlayer?.seek(to: target)
-        if isPlaying {
-            videoPlayer?.play()
-            audioPlayer?.play()
-        }
-    }
-
-    private func seek(to seconds: Double) {
-        let safeSeconds = max(seconds, 0)
-        let target = CMTime(seconds: safeSeconds, preferredTimescale: 600)
-        audioPlayer?.seek(to: target)
-        videoPlayer?.seek(to: target)
-        if isPlaying {
-            videoPlayer?.play()
-            audioPlayer?.play()
-        }
-    }
-
-    private func loopVideo() {
-        guard let item = videoItem else { return }
-        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { _ in
-            videoPlayer?.seek(to: .zero)
-            videoPlayer?.play()
-        }
-    }
-
-    private func observeVideoRateForSync() {
-        rateObserver = videoPlayer?.observe(\.rate, options: [.new]) { player, _ in
-            DispatchQueue.main.async {
-                let playing = player.rate > 0
-                isPlaying = playing
-                if playing {
-                    audioPlayer?.play()
-                } else {
-                    audioPlayer?.pause()
-                }
-            }
-        }
-    }
-
-    private func setupAudioSession() {
-        AudioSessionManager.shared.configureForBackgroundPlayback()
-    }
-
-    private func teardown() {
-        NotificationCenter.default.removeObserver(self)
-        rateObserver?.invalidate()
-        rateObserver = nil
-        audioPlayer?.pause()
-        videoPlayer?.pause()
-        audioPlayer = nil
-        videoPlayer = nil
-        videoItem = nil
-        AudioSessionManager.shared.deactivate()
-        hideControlsWorkItem?.cancel()
-    }
-
-    private func resetAutoHideControls() {
-        guard meditation.type == .video else { return }
-        controlsVisible = true
-        hideControlsWorkItem?.cancel()
-
-        let workItem = DispatchWorkItem {
-            withAnimation(.easeInOut) {
-                controlsVisible = false
-            }
-        }
-        hideControlsWorkItem = workItem
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + autoHideDelay, execute: workItem)
     }
 }
 
-private struct MeditationVideoPlayerContainer: UIViewRepresentable {
-    let player: AVPlayer
+private struct UnsupportedPrayerMeditationAudioView: View {
+    let title: String
+    let backgroundImageName: String
 
-    func makeUIView(context: Context) -> PlayerView {
-        PlayerView(player: player)
-    }
+    var body: some View {
+        ZStack {
+            Image(backgroundImageName)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+                .ignoresSafeArea()
 
-    func updateUIView(_ uiView: PlayerView, context: Context) {
-        uiView.update(player: player)
-    }
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.40),
+                    .black.opacity(0.25),
+                    .black.opacity(0.55)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-    final class PlayerView: UIView {
-        override static var layerClass: AnyClass { AVPlayerLayer.self }
+            VStack(spacing: 12) {
+                Text(title)
+                    .font(.largeTitle.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
 
-        private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
-
-        init(player: AVPlayer) {
-            super.init(frame: .zero)
-            playerLayer.player = player
-            playerLayer.videoGravity = .resizeAspectFill
+                Text("Unable to load audio right now.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+            .padding(24)
         }
-
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        func update(player: AVPlayer) {
-            playerLayer.player = player
-        }
+        .toolbar(.hidden, for: .navigationBar)
     }
 }

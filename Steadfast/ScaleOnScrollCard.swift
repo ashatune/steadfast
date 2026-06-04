@@ -8,9 +8,7 @@ struct ScaleOnScrollCard<Content: View>: View {
     // tune these to taste
     private let minScale: CGFloat = 0.94
     private let maxScale: CGFloat = 1.08
-    private let falloff: CGFloat  = 800   // bigger = gentler scaling
-
-    @State private var isPressed = false
+    private let falloff: CGFloat = 800 // bigger = gentler scaling
 
     var body: some View {
         GeometryReader { proxy in
@@ -24,16 +22,11 @@ struct ScaleOnScrollCard<Content: View>: View {
 
             content()
                 .frame(width: baseSize.width, height: baseSize.height)
-                .scaleEffect(isPressed ? computed * 0.97 : computed) // tiny press bounce
+                .scaleEffect(computed)
                 .animation(.spring(response: 0.35, dampingFraction: 0.85), value: computed)
-                .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isPressed)
-                // Track a quick press without breaking NavigationLink
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in if !isPressed { isPressed = true } }
-                        .onEnded { _ in isPressed = false }
-                )
+                .contentShape(Rectangle())
         }
         .frame(width: baseSize.width, height: baseSize.height)
+        .contentShape(Rectangle())
     }
 }
