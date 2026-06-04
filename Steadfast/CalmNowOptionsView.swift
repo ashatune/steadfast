@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CalmNowOptionsView: View {
     enum Destination: Hashable {
+        case quickMeditation
         case panicReset
         case godIsWithYou
         case bodyCalmScan
@@ -28,6 +29,7 @@ struct CalmNowOptionsView: View {
                 }
 
                 VStack(spacing: 16) {
+                    optionNavButton(title: "Quick Meditation", destination: .quickMeditation)
                     optionNavButton(title: "Panic Reset", destination: .panicReset)
                     optionNavButton(title: "God Is With You", destination: .godIsWithYou)
                     optionNavButton(title: "Body Calm Scan", destination: .bodyCalmScan)
@@ -40,6 +42,10 @@ struct CalmNowOptionsView: View {
         }
         .navigationDestination(item: $destination) { destination in
             switch destination {
+            case .quickMeditation:
+                QuickStartMeditationFlow(autoPresentDurations: true) {
+                    self.destination = nil
+                }
             case .panicReset:
                 PanicResetView()
             case .godIsWithYou:
