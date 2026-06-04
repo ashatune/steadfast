@@ -6,55 +6,68 @@ struct MeditationCard: View {
     let baseSize: CGSize
 
     private let radius: CGFloat = 14
+    private let footerHeightRatio: CGFloat = 0.34
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Group {
-                if let name = meditation.coverName {
-                    Image(name)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    LinearGradient(
-                        colors: [.purple.opacity(0.35), .blue.opacity(0.35)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                }
-            }
-            .frame(width: baseSize.width, height: baseSize.height)
-            .clipped()
+        VStack(spacing: 0) {
+            coverView
+                .frame(width: baseSize.width, height: baseSize.height * (1 - footerHeightRatio))
+                .clipped()
 
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.45)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(meditation.title)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .shadow(radius: 2)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-
-                if let sub = meditation.subtitle {
-                    Text(sub)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .lineLimit(1)
-                }
-            }
-            .padding(12)
+            footerView
+                .frame(width: baseSize.width, height: baseSize.height * footerHeightRatio)
         }
         .frame(width: baseSize.width, height: baseSize.height)
+        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: radius).stroke(.white.opacity(0.18)))
+        .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(.white.opacity(0.18)))
         .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
-        .contentShape(RoundedRectangle(cornerRadius: radius))
+        .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(meditation.title))
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var coverView: some View {
+        if let name = meditation.coverName {
+            Image(name)
+                .resizable()
+                .scaledToFill()
+        } else {
+            LinearGradient(
+                colors: [.purple.opacity(0.35), .blue.opacity(0.35)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private var footerView: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(meditation.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.black.opacity(0.82))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+
+            if let duration = meditation.displayDuration {
+                Text(duration)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.black.opacity(0.28))
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.white)
+    }
+
+    private var accessibilityLabel: Text {
+        if let duration = meditation.displayDuration {
+            Text("\(meditation.title), \(duration)")
+        } else {
+            Text(meditation.title)
+        }
     }
 }

@@ -5,7 +5,7 @@ struct PrayersView: View {
     private let hSpacing: CGFloat = 16
     private let vSpacing: CGFloat = 16
     private let horizontalPadding: CGFloat = 16
-    private let cardAspectRatio: CGFloat = 1.62
+    private let cardAspectRatio: CGFloat = 1.18
 
     // ✅ Add your three new meditations here (exact filenames)
     let meditations: [PrayerMeditation] = [
@@ -13,33 +13,38 @@ struct PrayersView: View {
             title: "Morning Body Scan",
             audio: .local(name: "MorningMeditationComplete1", ext: "mp3"),
             coverName: "MorningCover1",
+            displayDuration: "2:57",
             playbackBackgroundName: "morningRhythmImage"
         ),
         PrayerMeditation(
             title: "Evening Rest",
             audio: .local(name: "eveningwindown1complete", ext: "mp3"),
             coverName: "EveningCover1",
+            displayDuration: "3:18",
             playbackBackgroundName: "eveningRhythmImage"
         ),
         // 🆕 Panic relief
         PrayerMeditation(
             title: "Panic Attack Relief",
             audio: .local(name: "PanicMeditation", ext: "mp3"),
-            coverName: "PanicCover1", // add an asset with this name, or change to one you have
+            coverName: "explorePanic",
+            displayDuration: "8:00",
             playbackBackgroundName: "steadfastFiverrSplashScreen"
         ),
         // 🆕 Healing meditation
         PrayerMeditation(
-            title: "Healing & Renewal",
-            audio: .local(name: "healingMeditation", ext: "mp3"), // note the lowercase 'h' as you provided
-            coverName: "HealingCover1",
+            title: "Healing and Renewal",
+            audio: .local(name: "healingMeditation", ext: "mp3"),
+            coverName: "exploreHealing",
+            displayDuration: "4:00",
             playbackBackgroundName: "steadfastFiverrSplashScreen"
         ),
         // 🆕 The Lord's Prayer
         PrayerMeditation(
-            title: "The Lord’s Prayer",
+            title: "Lord’s Prayer",
             audio: .local(name: "TheLordsPrayer", ext: "mp3"),
-            coverName: "LordsPrayerCover1",
+            coverName: "exploreLordsPrayer",
+            displayDuration: "4:45",
             playbackBackgroundName: "steadfastFiverrSplashScreen"
         )
     ]
