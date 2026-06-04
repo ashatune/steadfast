@@ -3,8 +3,10 @@ import SwiftUI
 
 struct PrayerPlanDetail: View {
     let plan: PrayerPlan
+    var breathingDuration: MeditationDurationOption? = nil
+
     var body: some View {
-        PrayerPlanFlowView(plan: plan)
+        PrayerPlanFlowView(plan: plan, breathingDuration: breathingDuration)
     }
 }
 
@@ -13,6 +15,7 @@ struct PrayerPlanDetail: View {
 
 struct PrayerPlanFlowView: View {
     let plan: PrayerPlan
+    var breathingDuration: MeditationDurationOption? = nil
 
     // Intro frames
     struct IntroFrame: Identifiable { let id = UUID(); let text: String; let seconds: TimeInterval }
@@ -155,7 +158,12 @@ struct PrayerPlanFlowView: View {
         case .breath(let pattern, let seconds):
             VStack(spacing: 12) {
                 // ▼ no "4–7–8 / Box" title here
-                BreathingView(pattern: pattern, totalDuration: seconds, verses: [], showTitle: false)
+                BreathingView(
+                    pattern: pattern,
+                    totalDuration: breathingDuration?.seconds ?? seconds,
+                    verses: [],
+                    showTitle: false
+                )
                 Text("Breathe at a gentle pace.")
                     .font(.footnote).foregroundStyle(Theme.inkSecondary)
             }

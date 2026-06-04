@@ -2,7 +2,9 @@ import SwiftUI
 
 struct VersePackDetail: View {
     let pack: VersePack
-    @State private var selected: Verse? = nil
+    @State private var durationVerse: Verse? = nil
+    @State private var exerciseVerse: Verse? = nil
+    @State private var selectedDuration: MeditationDurationOption?
 
     var body: some View {
         ScrollView {
@@ -12,7 +14,7 @@ struct VersePackDetail: View {
                     .font(.headline)
                     .foregroundStyle(Theme.inkSecondary)
 
-                Text("Select a verse to begin a meditation exercise.")
+                Text("Select a verse to choose a duration before beginning a meditation exercise.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
@@ -37,7 +39,7 @@ struct VersePackDetail: View {
                 // Verse cards
                 LazyVStack(spacing: 10) {
                     ForEach(pack.verses, id: \.self) { v in
-                        Button { selected = v } label: {
+                        Button { durationVerse = v } label: {
                             VerseCard(verse: v) // your themed card (surface + stroke)
                         }
                     }
@@ -51,9 +53,29 @@ struct VersePackDetail: View {
         .foregroundStyle(Theme.ink)
         .navigationTitle(pack.title)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selected) { v in
+        .sheet(item: $durationVerse) { v in
+            MeditationDurationPickerSheet(
+                title: pack.title,
+                prompt: "How long would you like to breathe with this anchor?",
+                selectedDuration: selectedDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedDuration = duration
+                durationVerse = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    exerciseVerse = v
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $exerciseVerse) { v in
             NavigationStack {
-                AnchorBreathView(verse: v, totalDuration: 90, inhaleSecs: 4, exhaleSecs: 6)
+                AnchorBreathView(
+                    verse: v,
+                    totalDuration: selectedDuration?.seconds ?? MeditationDurationOption.default.seconds,
+                    inhaleSecs: 4,
+                    exhaleSecs: 6
+                )
             }
         }
     }

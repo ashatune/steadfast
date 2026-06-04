@@ -178,12 +178,18 @@ struct MeditationDurationPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDuration: MeditationDurationOption
 
+    var title: String
+    var prompt: String
     var onStart: (MeditationDurationOption) -> Void
 
     init(
+        title: String = "Quick Start Meditation",
+        prompt: String = "How long would you like to breathe?",
         selectedDuration: MeditationDurationOption = .default,
         onStart: @escaping (MeditationDurationOption) -> Void
     ) {
+        self.title = title
+        self.prompt = prompt
         _selectedDuration = State(initialValue: selectedDuration)
         self.onStart = onStart
     }
@@ -192,11 +198,11 @@ struct MeditationDurationPickerSheet: View {
         VStack(spacing: 22) {
             ZStack(alignment: .topTrailing) {
                 VStack(spacing: 8) {
-                    Text("Quick Start Meditation")
+                    Text(title)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(Theme.cardTitle)
 
-                    Text("How long would you like to breathe?")
+                    Text(prompt)
                         .font(.subheadline)
                         .foregroundStyle(Theme.ink.opacity(0.70))
                         .multilineTextAlignment(.center)
