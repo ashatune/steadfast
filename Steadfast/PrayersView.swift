@@ -118,6 +118,6 @@ struct PrayersView: View {
             .presentationDragIndicator(.visible)
         }
         .navigationTitle("Prayerful Meditations")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

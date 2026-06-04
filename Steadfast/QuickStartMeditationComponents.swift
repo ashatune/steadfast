@@ -26,28 +26,18 @@ struct QuickStartMeditationCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
-                Text("Quick Start Meditation")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.black)
-                    .lineLimit(1)
-
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.black)
-            }
-            .padding(.horizontal, 18)
-            .frame(maxWidth: .infinity)
-            .frame(height: 58)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.black, lineWidth: 1)
-            )
+            Text("Quick Start Meditation")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Theme.accent)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 18)
+                .frame(height: 58)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.white)
+                        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                )
         }
         .buttonStyle(.plain)
         .frame(maxWidth: 360)
