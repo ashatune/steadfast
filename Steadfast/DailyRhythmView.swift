@@ -23,16 +23,10 @@ struct DailyRhythmView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ExploreMoreMeditationsCardView(
-                        baseSize: CGSize(width: cardWidth, height: cardHeight),
-                        onTap: { vm.selectedTab = .meditate }
-                    )
-
                     ForEach(slots) { slot in
                         ScalingDailyCard(
                             slot: slot,
                             isCompleted: completionState(for: slot),
-                            showsCompletionIndicator: slot.title != "Explore",
                             baseSize: CGSize(width: cardWidth, height: cardHeight),
                             onTap: action(for: slot)
                         )
@@ -130,26 +124,6 @@ struct DailyRhythmView: View {
     }
     
     
-    struct ExploreMoreMeditationsCardView: View {
-        let baseSize: CGSize
-        var onTap: (() -> Void)? = nil
-
-        private var exploreSlot: DailySlot {
-            .init(
-                title: "Explore",
-                subtitle: "..guided meditations",
-                systemImage: "hands.sparkles.fill",
-                imageName: "explorecard",
-                titleLineLimit: 2,
-                titleMinimumScaleFactor: 0.85
-            )
-        }
-
-        var body: some View {
-            ScalingDailyCard(slot: exploreSlot, isCompleted: false, showsCompletionIndicator: false, baseSize: baseSize, onTap: onTap)
-        }
-    }
-
     struct ScalingDailyCard: View {
         let slot: DailySlot
         var isCompleted: Bool = false
