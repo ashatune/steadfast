@@ -35,7 +35,7 @@ struct Reflection: Codable, Identifiable {
     var body: String
 }
 
-struct PrayerPlan: Codable, Identifiable {
+struct PrayerPlan: Codable, Identifiable, Hashable {
     var id: String
     var title: String
     var steps: [String]

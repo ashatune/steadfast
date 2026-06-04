@@ -128,6 +128,10 @@ struct DailyDevotionalDetailView: View {
     @State private var showMeditation = false
     @State private var showReturnTomorrow = false
     @State private var showAnchorFromPrompt = false
+    @State private var showMeditationDurationPicker = false
+    @State private var showAnchorPromptDurationPicker = false
+    @State private var selectedMeditationDuration: MeditationDurationOption?
+    @State private var selectedAnchorPromptDuration: MeditationDurationOption?
 
     private var anchorOfDay: Verse {
         DailyVerseProvider.shared.verse(for: Date(), calendar: Calendar.current)
@@ -160,7 +164,7 @@ struct DailyDevotionalDetailView: View {
 
                 VStack(spacing: 12) {
                     Button("Meditate on this verse") {
-                        showMeditation = true
+                        showMeditationDurationPicker = true
                     }
                     .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity)
@@ -197,6 +201,36 @@ struct DailyDevotionalDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showMeditationDurationPicker) {
+            MeditationDurationPickerSheet(
+                title: "Meditate on this verse",
+                prompt: "How long would you like to breathe with this devotional verse?",
+                selectedDuration: selectedMeditationDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedMeditationDuration = duration
+                showMeditationDurationPicker = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    showMeditation = true
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showAnchorPromptDurationPicker) {
+            MeditationDurationPickerSheet(
+                title: "Anchor of the Day",
+                prompt: "How long would you like to breathe with today’s verse?",
+                selectedDuration: selectedAnchorPromptDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedAnchorPromptDuration = duration
+                showAnchorPromptDurationPicker = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    showAnchorFromPrompt = true
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
+        }
         .background(
             Group {
                 NavigationLink(
@@ -205,7 +239,7 @@ struct DailyDevotionalDetailView: View {
                     destination: {
                         AnchorBreathView(
                             verse: Verse(ref: devotional.verseReference, text: devotional.verseText),
-                            totalDuration: 60,
+                            totalDuration: selectedMeditationDuration?.seconds ?? MeditationDurationOption.default.seconds,
                             inhaleSecs: 4,
                             holdSecs: 4,
                             exhaleSecs: 6
@@ -217,7 +251,7 @@ struct DailyDevotionalDetailView: View {
                 NavigationLink("", isActive: $showAnchorFromPrompt) {
                     AnchorBreathView(
                         verse: anchorOfDay,
-                        totalDuration: 90,
+                        totalDuration: selectedAnchorPromptDuration?.seconds ?? MeditationDurationOption.default.seconds,
                         inhaleSecs: 4,
                         holdSecs: 4,
                         exhaleSecs: 6
@@ -245,7 +279,7 @@ struct DailyDevotionalDetailView: View {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showReturnTomorrow = false
                             }
-                            showAnchorFromPrompt = true
+                            showAnchorPromptDurationPicker = true
                         }
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))

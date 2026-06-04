@@ -9,6 +9,8 @@ struct HomeView: View {
     @EnvironmentObject var vm: AppViewModel
     @EnvironmentObject private var streakManager: StreakManager
     @State private var showAnchorFlow = false
+    @State private var showAnchorDurationPicker = false
+    @State private var selectedAnchorDuration: MeditationDurationOption?
     @EnvironmentObject var flags: FeatureFlags
     @State private var showProfileSheet = false
     @State private var now = Date()
@@ -94,6 +96,21 @@ struct HomeView: View {
             .presentationCornerRadius(24)
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showAnchorDurationPicker) {
+            MeditationDurationPickerSheet(
+                title: "Anchor of the Day",
+                prompt: "How long would you like to breathe with today’s verse?",
+                selectedDuration: selectedAnchorDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedAnchorDuration = duration
+                showAnchorDurationPicker = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    showAnchorFlow = true
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
+        }
         .fullScreenCover(
             isPresented: $showDevotionalVerseStory,
             onDismiss: {
@@ -115,7 +132,7 @@ struct HomeView: View {
         .onChange(of: vm.pendingDeepLink) { dest in
             guard let dest = dest else { return }
             if dest == .anchor {
-                showAnchorFlow = true
+                showAnchorDurationPicker = true
                 vm.pendingDeepLink = nil
             } else if dest == .devotional {
                 devotionalDeepLinkPending = true
@@ -127,7 +144,7 @@ struct HomeView: View {
         NavigationLink("", isActive: $showAnchorFlow) {
             AnchorBreathView(
                 verse: anchorOfDay,
-                totalDuration: 90,
+                totalDuration: selectedAnchorDuration?.seconds ?? MeditationDurationOption.default.seconds,
                 inhaleSecs: 4,
                 holdSecs: 4,
                 exhaleSecs: 6
@@ -524,7 +541,7 @@ struct HomeView: View {
                     .foregroundStyle(Theme.inkSecondary)
 
                 Button {
-                    showAnchorFlow = true
+                    showAnchorDurationPicker = true
                 } label: {
                     RhythmCTAButtonLabel("Begin exercise")
                 }
