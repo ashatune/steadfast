@@ -24,7 +24,7 @@ struct ReturnTomorrowView: View {
 
                 Text("You showed up for yourself today 🤍")
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.sectionTitle)
                     .multilineTextAlignment(.center)
 
                 Text("Come back tomorrow for your next moment of peace.")

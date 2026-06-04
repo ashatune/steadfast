@@ -96,7 +96,7 @@ struct MorningFlowView: View {
                         if showGreeting {
                             Text("Good morning")
                                 .font(.title).bold()
-                                .foregroundColor(ink)
+                                .foregroundColor(Theme.sectionTitle)
                                 .transition(.opacity)
                         }
                     }
@@ -119,7 +119,7 @@ struct MorningFlowView: View {
                             Text("HE cares about you.")
                                 .font(.title3)
                                 .multilineTextAlignment(.center)
-                                .foregroundColor(ink)
+                                .foregroundColor(Theme.sectionTitle)
                                 .padding(.horizontal)
                                 .transition(.opacity)
                         }
@@ -130,7 +130,7 @@ struct MorningFlowView: View {
                         if showPrayIntro {
                             Text("Let us pray")
                                 .font(.title3).bold()
-                                .foregroundColor(ink)
+                                .foregroundColor(Theme.sectionTitle)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                                 .transition(.opacity)

@@ -78,13 +78,13 @@ struct MiddayFlowView: View {
             Group {
                 switch stage {
                 case .welcome:
-                    CenterStage { if showWelcome { Text("Welcome to your midday reset").font(.title3).bold().foregroundColor(ink).multilineTextAlignment(.center) } }
+                    CenterStage { if showWelcome { Text("Welcome to your midday reset").font(.title3).bold().foregroundColor(Theme.sectionTitle).multilineTextAlignment(.center) } }
 
                 case .he:
-                    CenterStage { if showHe { Text("He is with you.").font(.title3).foregroundColor(ink).multilineTextAlignment(.center) } }
+                    CenterStage { if showHe { Text("He is with you.").font(.title3).foregroundColor(Theme.sectionTitle).multilineTextAlignment(.center) } }
 
                 case .beginIntro:
-                    CenterStage { if showBegin { Text("Let’s begin…").font(.title3).bold().foregroundColor(ink).multilineTextAlignment(.center) } }
+                    CenterStage { if showBegin { Text("Let’s begin…").font(.title3).bold().foregroundColor(Theme.sectionTitle).multilineTextAlignment(.center) } }
 
                 case .gratitude:
                     CenterStage {
@@ -100,10 +100,10 @@ struct MiddayFlowView: View {
                     }
 
                 case .thankGod:
-                    CenterStage { if showThank { Text("Use this time to thank God.").font(.title3).foregroundColor(ink).multilineTextAlignment(.center) } }
+                    CenterStage { if showThank { Text("Use this time to thank God.").font(.title3).foregroundColor(Theme.sectionTitle).multilineTextAlignment(.center) } }
 
                 case .breathePrompt:
-                    CenterStage { if showBreathe { Text("Let’s breathe.").font(.title3).bold().foregroundColor(ink).multilineTextAlignment(.center) } }
+                    CenterStage { if showBreathe { Text("Let’s breathe.").font(.title3).bold().foregroundColor(Theme.sectionTitle).multilineTextAlignment(.center) } }
 
                 case .circle:
                     CenterStage {
@@ -115,7 +115,7 @@ struct MiddayFlowView: View {
                                     .scaleEffect(scale)
                                     .opacity(showCircle ? 1 : 0)
                                 VStack(spacing: 6) {
-                                    Text(titleForPhase(phase)).font(.headline).foregroundColor(ink)
+                                    Text(titleForPhase(phase)).font(.headline).foregroundColor(Theme.sectionTitle)
                                     Text("\(phaseRemaining)s").font(.footnote).monospacedDigit().foregroundColor(inkSecondary)
                                 }
                             }
@@ -145,7 +145,7 @@ struct MiddayFlowView: View {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.largeTitle)
                                 .foregroundStyle(Theme.accent)
-                            Text("Nice reset.").font(.title3).bold().foregroundColor(ink)
+                            Text("Nice reset.").font(.title3).bold().foregroundColor(Theme.sectionTitle)
                             Text("Carry this steadiness into your next step.")
                                 .foregroundColor(inkSecondary)
                             Button("Close") { AppReviewManager.shared.registerMeaningfulEvent(); stopAll(); dismiss() }

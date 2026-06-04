@@ -125,7 +125,7 @@ struct SOSExerciseView: View {
         VStack(spacing: 8) {
             Text(title)
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.sectionTitle)
 
             Text(subtitle)
                 .font(.subheadline)

@@ -149,7 +149,7 @@ struct HomeView: View {
                 // Greeting
                 Text("\(greetingPrefix), \(greetingName)")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.sectionTitle)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 8)
                     .transition(.opacity)
@@ -229,7 +229,7 @@ struct HomeView: View {
             VStack(spacing: 4) {
                 Text(label)
                     .font(.subheadline.weight(isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? Theme.ink : Theme.inkSecondary)
+                    .foregroundStyle(isActive ? Theme.sectionTitle : Theme.inkSecondary)
                     .contentTransition(.identity)
                 ZStack(alignment: .leading) {
                     Rectangle().fill(Color.clear).frame(height: 2)
@@ -405,7 +405,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Today’s Devotional Verse")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.sectionTitle)
 
                 if let devotional = devotionalVM.devotional, expandedRhythmCard != .devotionalVerse {
                     Text(devotional.verseReference)
@@ -458,7 +458,7 @@ struct HomeView: View {
         ) {
             Text("Daily Devotional")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.sectionTitle)
         } expandedContent: {
             VStack(alignment: .leading, spacing: 8) {
                 if devotionalVM.isLoading {
@@ -472,7 +472,7 @@ struct HomeView: View {
                 } else if let devotional = devotionalVM.devotional {
                     Text(devotional.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -505,7 +505,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Anchor of the Day")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.sectionTitle)
 
                 if expandedRhythmCard != .anchor {
                     Text(anchorOfDay.ref)
@@ -538,7 +538,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Devotional")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.sectionTitle)
 
             if hasDevotionalVerseCompletion,
                streakManager.hasDevotionalCompletion(on: now),

@@ -15,15 +15,18 @@ struct ThoughtReframeView: View {
     
     var body: some View {
         Form {
-            Section("Trigger") { TextField("e.g., waiting for lab results", text: $trigger) }
-            Section("Automatic Thought") { TextField("What flashed through your mind?", text: $thought) }
-            Section("Feeling (0–100%)") { TextField("e.g., fear 80%", text: $feeling) }
-            Section("Evidence FOR / AGAINST") {
+            Section { TextField("e.g., waiting for lab results", text: $trigger) } header: { Text("Trigger").foregroundStyle(Theme.sectionTitle) }
+            Section { TextField("What flashed through your mind?", text: $thought) } header: { Text("Automatic Thought").foregroundStyle(Theme.sectionTitle) }
+            Section { TextField("e.g., fear 80%", text: $feeling) } header: { Text("Feeling (0–100%)").foregroundStyle(Theme.sectionTitle) }
+            Section {
                 TextField("For", text: $evidenceFor)
                 TextField("Against", text: $evidenceAgainst)
+            } header: {
+                Text("Evidence FOR / AGAINST")
+                    .foregroundStyle(Theme.sectionTitle)
             }
-            Section("Scripture Truth") { TextField("e.g., Psalm 73:26 — God is my strength", text: $scriptureTruth) }
-            Section("Reframed Thought") { Text(newThought).foregroundStyle(.secondary) }
+            Section { TextField("e.g., Psalm 73:26 — God is my strength", text: $scriptureTruth) } header: { Text("Scripture Truth").foregroundStyle(Theme.sectionTitle) }
+            Section { Text(newThought).foregroundStyle(.secondary) } header: { Text("Reframed Thought").foregroundStyle(Theme.sectionTitle) }
         }
         .navigationTitle("Thought Reframe")
     }
