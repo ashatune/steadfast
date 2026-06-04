@@ -16,6 +16,7 @@ struct ReviewPromptView: View {
         VStack(spacing: 16) {
             Text("Enjoying Steadfast?")
                 .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.cardTitle)
                 .multilineTextAlignment(.center)
 
             Text("If Steadfast has helped you feel calmer and stay anchored in God, would you take a moment to leave a review?")

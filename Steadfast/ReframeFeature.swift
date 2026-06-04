@@ -149,7 +149,7 @@ struct ReframeLandingView: View {
                     // History header
                     Text("Previous reframes")
                         .font(.headline)
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
                         .padding(.horizontal, 16)
 
                     if reframes.isEmpty {
@@ -201,7 +201,7 @@ private struct ReframeRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.title.isEmpty ? "Reframe" : entry.title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.cardTitle)
                     .lineLimit(1)
 
                 Text(entry.date.formatted(date: .abbreviated, time: .shortened))
@@ -240,7 +240,7 @@ struct ReframeDetailView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.sectionTitle)
             Text(text.isEmpty ? "—" : text)
                 .font(.body)
                 .foregroundStyle(.primary)
@@ -254,6 +254,7 @@ struct ReframeDetailView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(entry.title.isEmpty ? "Reframe" : entry.title)
                         .font(.title3.bold())
+                        .foregroundStyle(Theme.cardTitle)
 
                     Text(entry.date.formatted(date: .abbreviated, time: .shortened))
                         .font(.subheadline)
@@ -376,6 +377,7 @@ struct ReframeGuidedFlow: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("What’s on your mind?")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextEditor(text: $thought)
                 .frame(minHeight: 140)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
@@ -436,6 +438,7 @@ struct ReframeGuidedFlow: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("A verse for this moment")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             Group {
                 if verseRef.isEmpty {
                     HStack(spacing: 10) {
@@ -470,6 +473,7 @@ struct ReframeGuidedFlow: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Gently challenge it")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextEditor(text: $challenge)
                 .frame(minHeight: 140)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
@@ -483,6 +487,7 @@ struct ReframeGuidedFlow: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("A kinder, truer thought")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextEditor(text: $reframe)
                 .frame(minHeight: 140)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
@@ -521,6 +526,7 @@ private struct RGF_CaptureThoughtStep: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Step 1: What’s the thought on your mind?")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextEditor(text: $thought)
                 .frame(minHeight: 140)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
@@ -541,6 +547,7 @@ private struct RGF_DistortionStep: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Step 2: Recognize the pattern")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextField("e.g., Catastrophizing, All-or-nothing…", text: $distortion)
                 .textFieldStyle(.roundedBorder)
 
@@ -567,6 +574,7 @@ private struct RGF_ChallengeStep: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Step 3: Gently challenge it")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextEditor(text: $challenge)
                 .frame(minHeight: 140)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
@@ -583,6 +591,7 @@ private struct RGF_ReframeStep: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Step 4: A kinder, truer thought")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextEditor(text: $reframe)
                 .frame(minHeight: 140)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
@@ -596,6 +605,7 @@ private struct RGF_AnchorStep: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Step 5: Anchor")
                 .font(.headline)
+                .foregroundStyle(Theme.sectionTitle)
             TextField("Optional: verse, affirmation, or next small step", text: $anchor)
                 .textFieldStyle(.roundedBorder)
         }

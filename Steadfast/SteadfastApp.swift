@@ -52,6 +52,7 @@ struct SteadfastApp: App {
         _showSplash = State(initialValue: !UserDefaults.standard.bool(forKey: "hasShownSplash"))
 
         print("🚀 SteadfastApp init reached")
+        configureBrandedNavigationTitles()
         configureFirebaseIfNeeded()
     }
 
@@ -112,6 +113,12 @@ struct SteadfastApp: App {
                 appVM.handleDeepLink(url)
             }
         }
+    }
+
+    private func configureBrandedNavigationTitles() {
+        let titleColor = UIColor(named: "SectionTitle") ?? UIColor(red: 0.36, green: 0.37, blue: 0.88, alpha: 1.0)
+        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor: titleColor]
+        UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor: titleColor]
     }
 
     // MARK: - Gate evaluation

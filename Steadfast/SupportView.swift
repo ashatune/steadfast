@@ -19,7 +19,7 @@ struct SupportView: View {
 
                     Text("Support Steadfast")
                         .font(.title2.bold())
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
 
                     Text("""
                     Steadfast is independently created and cared for by the Steadfast Team.
@@ -37,7 +37,7 @@ struct SupportView: View {
                 VStack(spacing: 12) {
                     Text("Help Us Grow")
                         .font(.headline)
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
 
                     Text("Contributions are processed on our website by Steadfast.")
                         .font(.subheadline)
@@ -68,13 +68,13 @@ struct SupportView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("How is my support used?")
                         .font(.headline)
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
                     Text("Your contribution helps cover hosting, audio production, and ongoing feature development. Every bit of encouragement helps Steadfast continue to grow.")
                         .foregroundStyle(Theme.inkSecondary)
 
                     /*Text("Why not in-app purchases?")
                         .font(.headline)
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
                     Text("We’ll offer optional subscriptions for premium content via Apple’s in-app purchases soon. Until then, this page is a voluntary way to support development — no features are gated behind it.")
                         .foregroundStyle(Theme.inkSecondary)*/
                 }

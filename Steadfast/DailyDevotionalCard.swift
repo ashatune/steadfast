@@ -138,7 +138,7 @@ struct DailyDevotionalDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text(devotional.title)
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.cardTitle)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(devotional.verseReference)

@@ -60,6 +60,9 @@ struct SettingsView: View {
                             .disabled(!vm.notifEnabled || !vm.eveningEnabled)
                             .onChange(of: vm.eveningTime) { _ in apply() }
                     }
+                } header: {
+                    Text("Notifications")
+                        .foregroundStyle(Theme.sectionTitle)
                 } footer: {
                     if authStatus == .denied {
                         Text("Notifications are off in iOS Settings. Enable them in Settings > Notifications to receive reminders.")
@@ -94,6 +97,7 @@ struct SettingsView: View {
                     .disabled(!vm.voiceGuidanceEnabled)
                 } header: {
                     Text("Voice guidance")
+                        .foregroundStyle(Theme.sectionTitle)
                 }
 
                 // Onboarding controls (cleaned up)
@@ -115,6 +119,7 @@ struct SettingsView: View {
                     .buttonStyle(.bordered)
                 } header: {
                     Text("Onboarding")
+                        .foregroundStyle(Theme.sectionTitle)
                 } footer: {
                     Text("Re-running onboarding will show the intro slides and 30-second practice again on next open.")
                         .font(.footnote)
@@ -165,6 +170,7 @@ struct SettingsView: View {
                 }
             } header: {
                 Text("About & Contact")
+                    .foregroundStyle(Theme.sectionTitle)
             }
 
 #if DEBUG

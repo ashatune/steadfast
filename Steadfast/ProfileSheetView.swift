@@ -15,7 +15,7 @@ struct ProfileSheetView: View {
 
     var body: some View {
         Form {
-            Section("Your Info") {
+            Section {
                 TextField("First name", text: $firstName)
                     .textInputAutocapitalization(.words)
                     .submitLabel(.done)
@@ -28,6 +28,9 @@ struct ProfileSheetView: View {
                                in: dateRange,
                                displayedComponents: .date)
                 }
+            } header: {
+                Text("Your Info")
+                    .foregroundStyle(Theme.sectionTitle)
             }
 
 

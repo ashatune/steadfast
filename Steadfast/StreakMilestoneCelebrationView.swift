@@ -20,7 +20,7 @@ struct StreakMilestoneCelebrationView: View {
                 VStack(spacing: 12) {
                     Text("You’re building a beautiful rhythm 🙏")
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.cardTitle)
                         .multilineTextAlignment(.center)
 
                     Text(milestone == 1 ? "Day 1 complete 🙏" : "\(milestone) day streak")

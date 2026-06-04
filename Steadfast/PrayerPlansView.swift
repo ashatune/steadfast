@@ -37,7 +37,7 @@ struct PrayerPlanCard: View {
                 .frame(width: 28, height: 28)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(plan.title).font(.headline)
+                Text(plan.title).font(.headline).foregroundStyle(Theme.cardTitle)
                 Text("\(plan.steps.count) steps")
                     .font(.caption)
                     .foregroundStyle(Theme.inkSecondary)

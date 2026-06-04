@@ -18,7 +18,7 @@ struct MeditationCard: View {
                 .frame(width: baseSize.width, height: baseSize.height * footerHeightRatio)
         }
         .frame(width: baseSize.width, height: baseSize.height)
-        .background(Color.white)
+        .background(Theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(.white.opacity(0.18)))
         .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
@@ -46,21 +46,21 @@ struct MeditationCard: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(meditation.title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.black.opacity(0.82))
+                .foregroundStyle(Theme.cardTitle)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
 
             if let duration = meditation.displayDuration {
                 Text(duration)
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(Color.black.opacity(0.28))
+                    .foregroundStyle(Theme.inkSecondary)
                     .lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.white)
+        .background(Theme.surface)
     }
 
     private var accessibilityLabel: Text {

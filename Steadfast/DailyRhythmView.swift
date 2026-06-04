@@ -19,7 +19,7 @@ struct DailyRhythmView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Daily Rhythm").font(.title3).bold()
+            Text("Daily Rhythm").font(.title3).bold().foregroundStyle(Theme.sectionTitle)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {

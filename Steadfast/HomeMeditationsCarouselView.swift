@@ -12,6 +12,7 @@ struct HomeMeditationsCarouselView: View {
             Text("Meditations")
                 .font(.title3)
                 .bold()
+                .foregroundStyle(Theme.sectionTitle)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: cardSpacing) {
@@ -65,21 +66,21 @@ private struct ExploreMoreMeditationsNavigationCard: View {
             VStack(spacing: 6) {
                 Text("Explore more meditations")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.black.opacity(0.82))
+                    .foregroundStyle(Theme.cardTitle)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.88)
 
                 Text("See all")
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(Color.black.opacity(0.28))
+                    .foregroundStyle(Theme.inkSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.horizontal, 12)
             .padding(.bottom, 10)
         }
         .frame(width: baseSize.width, height: baseSize.height)
-        .background(Color.white)
+        .background(Theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(.white.opacity(0.18)))
         .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
