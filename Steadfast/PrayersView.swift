@@ -97,6 +97,7 @@ struct PrayersView: View {
                         bgm: .local(name: "oceanWaves", ext: "mp3"),
                         showBibleLink: false,
                         recordsAnchorCompletion: false,
+                        headerImageName: "SteadfastCROSS1024",
                         introPrompts: quickStartIntroPrompts
                     )
                 }

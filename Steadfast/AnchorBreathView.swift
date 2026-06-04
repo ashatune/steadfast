@@ -23,6 +23,7 @@ struct AnchorBreathView: View {
     var showInlineMuteButton: Bool = false    // NEW
     var startMuted: Bool = false              // NEW
     var recordsAnchorCompletion: Bool = true
+    var headerImageName: String? = nil
     var introPrompts: [String] = []
     var introPromptDuration: TimeInterval = 2.75
 
@@ -71,7 +72,7 @@ struct AnchorBreathView: View {
             } else {
                 // Main breathing UI
                 VStack(spacing: 20) {
-                    Text(verse.ref).font(.headline)
+                    headerView
 
                 Spacer(minLength: 0)
 
@@ -216,23 +217,36 @@ struct AnchorBreathView: View {
 
     // MARK: - Prompts
 
-    private var currentIntroPrompt: String {
-        guard introPrompts.indices.contains(currentIntroPromptIndex) else { return "Let's begin." }
-        return introPrompts[currentIntroPromptIndex]
+    @ViewBuilder
+    private var headerView: some View {
+        if let headerImageName {
+            Image(headerImageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 42, height: 42)
+                .opacity(0.82)
+                .accessibilityLabel("Steadfast")
+        } else {
+            Text(verse.ref).font(.headline)
+        }
     }
 
     private var introPromptView: some View {
         VStack(spacing: 24) {
             Spacer()
 
-            Text(currentIntroPrompt)
-                .id(currentIntroPromptIndex)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(Theme.cardTitle)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-                .padding(.horizontal, 28)
-                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            ZStack {
+                ForEach(introPrompts.indices, id: \.self) { index in
+                    Text(introPrompts[index])
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(Theme.cardTitle)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.horizontal, 28)
+                        .opacity(index == currentIntroPromptIndex ? 1 : 0)
+                }
+            }
+            .animation(.easeInOut(duration: 0.85), value: currentIntroPromptIndex)
 
             Spacer()
         }
@@ -320,12 +334,12 @@ struct AnchorBreathView: View {
 
         let task = DispatchWorkItem {
             if currentIntroPromptIndex < introPrompts.count - 1 {
-                withAnimation(.easeInOut(duration: 0.45)) {
+                withAnimation(.easeInOut(duration: 0.85)) {
                     currentIntroPromptIndex += 1
                 }
                 scheduleNextIntroPrompt()
             } else {
-                withAnimation(.easeInOut(duration: 0.45)) {
+                withAnimation(.easeInOut(duration: 0.85)) {
                     isShowingIntroPrompts = false
                 }
                 beginBreathingLoop(includeDefaultIntro: false)
