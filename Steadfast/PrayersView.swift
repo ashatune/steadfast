@@ -12,30 +12,35 @@ struct PrayersView: View {
         PrayerMeditation(
             title: "Morning Body Scan",
             audio: .local(name: "MorningMeditationComplete1", ext: "mp3"),
-            coverName: "MorningCover1"
+            coverName: "MorningCover1",
+            playbackBackgroundName: "morningRhythmImage"
         ),
         PrayerMeditation(
             title: "Evening Rest",
             audio: .local(name: "eveningwindown1complete", ext: "mp3"),
-            coverName: "EveningCover1"
+            coverName: "EveningCover1",
+            playbackBackgroundName: "eveningRhythmImage"
         ),
         // 🆕 Panic relief
         PrayerMeditation(
             title: "Panic Attack Relief",
             audio: .local(name: "PanicMeditation", ext: "mp3"),
-            coverName: "PanicCover1" // add an asset with this name, or change to one you have
+            coverName: "PanicCover1", // add an asset with this name, or change to one you have
+            playbackBackgroundName: "steadfastFiverrSplashScreen"
         ),
         // 🆕 Healing meditation
         PrayerMeditation(
             title: "Healing & Renewal",
             audio: .local(name: "healingMeditation", ext: "mp3"), // note the lowercase 'h' as you provided
-            coverName: "HealingCover1"
+            coverName: "HealingCover1",
+            playbackBackgroundName: "steadfastFiverrSplashScreen"
         ),
         // 🆕 The Lord's Prayer
         PrayerMeditation(
             title: "The Lord’s Prayer",
             audio: .local(name: "TheLordsPrayer", ext: "mp3"),
-            coverName: "LordsPrayerCover1"
+            coverName: "LordsPrayerCover1",
+            playbackBackgroundName: "steadfastFiverrSplashScreen"
         )
     ]
 

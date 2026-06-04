@@ -4,8 +4,6 @@ import SwiftUI
 struct PrayerMeditationView: View {
     let meditation: PrayerMeditation
 
-    private let placeholderBackgroundImageName = "morningRhythmImage"
-
     var body: some View {
         Group {
             if let audio = meditation.localAudioResource {
@@ -14,17 +12,18 @@ struct PrayerMeditationView: View {
                     subtitle: meditation.subtitle,
                     audioFileName: audio.name,
                     audioFileExtension: audio.ext,
-                    backgroundImageName: placeholderBackgroundImageName
+                    backgroundImageName: meditation.playbackBackgroundName
                 )
             } else {
                 unsupportedAudioView
             }
+            .padding(24)
         }
     }
 
     private var unsupportedAudioView: some View {
         ZStack {
-            Image(placeholderBackgroundImageName)
+            Image(meditation.playbackBackgroundName)
                 .resizable()
                 .scaledToFill()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
