@@ -38,7 +38,7 @@ struct LibraryView: View {
                     HStack(spacing: 8) {
                         Text("Verse Packs")
                             .font(.headline)
-                            .foregroundStyle(Theme.ink)
+                            .foregroundStyle(Theme.sectionTitle)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 12)
@@ -88,6 +88,7 @@ struct LibraryPackCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(pack.title)
                     .font(.headline)
+                    .foregroundStyle(Theme.sectionTitle)
                 Text(pack.description)
                     .font(.caption)
                     .foregroundStyle(Theme.inkSecondary)
@@ -119,7 +120,7 @@ struct LargeActionCard: View {
                 .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
+                Text(title).font(.headline).foregroundStyle(Theme.sectionTitle)
                 Text(subtitle).font(.caption).foregroundStyle(Theme.inkSecondary)
             }
 

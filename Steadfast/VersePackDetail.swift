@@ -30,7 +30,7 @@ struct VersePackDetail: View {
                 // Verses header
                 HStack(spacing: 6) {
                     Image(systemName: "leaf.fill").foregroundStyle(Theme.accent)
-                    Text("Verses").font(.headline).foregroundStyle(Theme.ink)
+                    Text("Verses").font(.headline).foregroundStyle(Theme.sectionTitle)
                 }
                 .padding(.top, 2)
 

@@ -9,6 +9,7 @@ struct VerseOfDayStrip: View {
             Text("Anchor of the Day")
                 .font(.title3)
                 .bold()
+                .foregroundStyle(Theme.sectionTitle)
 
             NavigationLink {
                 AnchorBreathView(verse: verse,

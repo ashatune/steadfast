@@ -35,7 +35,7 @@ struct PrayerPlanFlowView: View {
             // Header
             HStack(spacing: 8) {
                 Image(systemName: "hands.sparkles.fill").foregroundStyle(Theme.accent)
-                Text(plan.title).font(.title3).bold()
+                Text(plan.title).font(.title3).bold().foregroundStyle(Theme.sectionTitle)
                 Spacer()
                 if mode == .steps {
                     Text("\(stepIndex + 1)/\(totalSteps)")
@@ -162,7 +162,7 @@ struct PrayerPlanFlowView: View {
 
         case .read(let title, let ref, let verseText):
             VStack(spacing: 12) {
-                Text(title).font(.headline).multilineTextAlignment(.center)
+                Text(title).font(.headline).foregroundStyle(Theme.sectionTitle).multilineTextAlignment(.center)
                 if let verseText, !verseText.isEmpty {
                     Text(verseText)
                         .font(.title3)
@@ -185,7 +185,7 @@ struct PrayerPlanFlowView: View {
 
         case .pray(let prayer):
             VStack(spacing: 12) {
-                Text("Pray").font(.headline)
+                Text("Pray").font(.headline).foregroundStyle(Theme.sectionTitle)
                 Text(prayer)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -205,7 +205,7 @@ struct PrayerPlanFlowView: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.largeTitle)
                 .foregroundStyle(Theme.accent)
-            Text("Amen.").font(.title3).bold()
+            Text("Amen.").font(.title3).bold().foregroundStyle(Theme.sectionTitle)
             Text("Stay here as long as you need.")
                 .foregroundStyle(Theme.inkSecondary)
         }

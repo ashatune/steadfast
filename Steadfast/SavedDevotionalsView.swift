@@ -12,7 +12,7 @@ struct SavedDevotionalsView: View {
                         .foregroundStyle(Theme.line)
                     Text("No saved devotionals yet")
                         .font(.headline)
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
                     Text("Tap the bookmark on any devotional to save it here.")
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
@@ -54,7 +54,7 @@ private struct SavedDevotionalRow: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(devotional.title)
                 .font(.headline)
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.sectionTitle)
             Text(devotional.verseReference)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.accent)

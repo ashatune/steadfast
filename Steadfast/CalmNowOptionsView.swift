@@ -16,7 +16,7 @@ struct CalmNowOptionsView: View {
                 VStack(spacing: 10) {
                     Text("What would you like to focus on right now?")
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.sectionTitle)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
 
