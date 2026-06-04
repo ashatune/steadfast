@@ -8,6 +8,28 @@ struct PrayersView: View {
     private let cardAspectRatio: CGFloat = 1.18
 
     private let meditations = PrayerMeditationLibrary.all
+    private let quickStartVerse = Verse(
+        ref: "Quick Start Meditation",
+        text: "Be still, and know that I am God.",
+        breathIn: 4,
+        breathOut: 6,
+        inhaleCue: "Breathe in peace",
+        exhaleCue: "Release what you are holding"
+    )
+    private let quickStartIntroPrompts = [
+        "Welcome.",
+        "Thank you for showing up for yourself today.",
+        "Wherever you are, find a comfortable position.",
+        "If it is safe to do so, gently close or dim your eyes.",
+        "Try to think about God and your breath.",
+        "If other thoughts come, that is okay.",
+        "Just bring your awareness back to your breath.",
+        "Let’s begin."
+    ]
+
+    @State private var showQuickStartDurations = false
+    @State private var selectedQuickStartDuration: MeditationDurationOption?
+    @State private var showQuickStartSession = false
 
     var body: some View {
         GeometryReader { geo in
@@ -22,38 +44,77 @@ struct PrayersView: View {
             let placeholderCount = max(0, totalSlotsForFullRows - meditations.count)
 
             ScrollView {
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: hSpacing),
-                        GridItem(.flexible(), spacing: hSpacing)
-                    ],
-                    spacing: vSpacing
-                ) {
-                    // 1) Real meditations (tappable)
-                    ForEach(meditations) { m in
-                        NavigationLink {
-                            PrayerMeditationView(meditation: m)
-                        } label: {
-                            ScaleOnScrollCard(baseSize: cardSize) {
-                                MeditationCard(meditation: m, baseSize: cardSize)
-                            }
-                            .contentShape(Rectangle())
+                VStack(spacing: vSpacing) {
+                    HStack {
+                        Spacer(minLength: 0)
+                        QuickStartMeditationCard {
+                            showQuickStartDurations = true
                         }
-                        .buttonStyle(.plain)
+                        Spacer(minLength: 0)
                     }
 
-                    // 2) Placeholder cards to complete the last row (non-tappable)
-                    ForEach(0..<placeholderCount, id: \.self) { _ in
-                        ScaleOnScrollCard(baseSize: cardSize) {
-                            ComingSoonCard(baseSize: cardSize)
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: hSpacing),
+                            GridItem(.flexible(), spacing: hSpacing)
+                        ],
+                        spacing: vSpacing
+                    ) {
+                        // 1) Real meditations (tappable)
+                        ForEach(meditations) { m in
+                            NavigationLink {
+                                PrayerMeditationView(meditation: m)
+                            } label: {
+                                ScaleOnScrollCard(baseSize: cardSize) {
+                                    MeditationCard(meditation: m, baseSize: cardSize)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .allowsHitTesting(false)
+
+                        // 2) Placeholder cards to complete the last row (non-tappable)
+                        ForEach(0..<placeholderCount, id: \.self) { _ in
+                            ScaleOnScrollCard(baseSize: cardSize) {
+                                ComingSoonCard(baseSize: cardSize)
+                            }
+                            .allowsHitTesting(false)
+                        }
                     }
                 }
                 .padding(.horizontal, horizontalPadding)
                 .padding(.top, 16)
                 .padding(.bottom, 24)
             }
+            .background(
+                NavigationLink("", isActive: $showQuickStartSession) {
+                    AnchorBreathView(
+                        verse: quickStartVerse,
+                        totalDuration: selectedQuickStartDuration?.seconds ?? MeditationDurationOption.default.seconds,
+                        inhaleSecs: 4,
+                        holdSecs: 2,
+                        exhaleSecs: 6,
+                        bgm: .local(name: "oceanWaves", ext: "mp3"),
+                        showBibleLink: false,
+                        recordsAnchorCompletion: false,
+                        introPrompts: quickStartIntroPrompts
+                    )
+                }
+                .hidden()
+            )
+        }
+        .sheet(isPresented: $showQuickStartDurations) {
+            MeditationDurationPickerSheet(
+                selectedDuration: selectedQuickStartDuration ?? MeditationDurationOption.default
+            ) { duration in
+                selectedQuickStartDuration = duration
+                showQuickStartDurations = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    showQuickStartSession = true
+                }
+            }
+            .presentationDetents([.height(430), .medium])
+            .presentationDragIndicator(.visible)
         }
         .navigationTitle("Prayerful Meditations")
         .navigationBarTitleDisplayMode(.large)

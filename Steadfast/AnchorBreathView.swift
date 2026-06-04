@@ -22,6 +22,9 @@ struct AnchorBreathView: View {
     
     var showInlineMuteButton: Bool = false    // NEW
     var startMuted: Bool = false              // NEW
+    var recordsAnchorCompletion: Bool = true
+    var introPrompts: [String] = []
+    var introPromptDuration: TimeInterval = 2.75
 
 
     @Environment(\.dismiss) private var dismiss
@@ -39,6 +42,7 @@ struct AnchorBreathView: View {
     @State private var musicLooper: AVPlayerLooper?
     @State private var isMusicMuted: Bool = false
     @State private var musicBaseVolume: Float = 0.28
+    @State private var musicFadeTasks: [DispatchWorkItem] = []
     @StateObject private var breathingAudio = BreathingAudioManager()
     @State private var isVoiceGuidanceEnabled: Bool = true
     @State private var showCenterPlaybackOverlay = false
@@ -50,6 +54,9 @@ struct AnchorBreathView: View {
     @State private var isEndingSession: Bool = false
     @State private var hasRecordedCompletion = false
     @State private var pendingCompletion = false
+    @State private var isShowingIntroPrompts = false
+    @State private var currentIntroPromptIndex = 0
+    @State private var introPromptTask: DispatchWorkItem?
 
     enum Phase { case intro, inhale, hold, exhale }
     private var resolvedBgm: MediaSource? {
@@ -58,9 +65,13 @@ struct AnchorBreathView: View {
 
     var body: some View {
         ZStack {
-            // Main breathing UI
-            VStack(spacing: 20) {
-                Text(verse.ref).font(.headline)
+            if isShowingIntroPrompts {
+                introPromptView
+                    .transition(.opacity)
+            } else {
+                // Main breathing UI
+                VStack(spacing: 20) {
+                    Text(verse.ref).font(.headline)
 
                 Spacer(minLength: 0)
 
@@ -121,8 +132,9 @@ struct AnchorBreathView: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding()
-            .opacity(showCompletion ? 0 : 1) // fade out behind overlay
+                .padding()
+                .opacity(showCompletion ? 0 : 1) // fade out behind overlay
+            }
 
             if showCompletion {
                 if let milestone = streakManager.pendingMilestone {
@@ -141,27 +153,32 @@ struct AnchorBreathView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .safeAreaInset(edge: .bottom) {
-            HStack(spacing: 24) {
-                audioControlButton(
-                    systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
-                    action: toggleMusicMute
-                )
-                .accessibilityLabel("Sound")
-                .accessibilityValue(isMusicMuted ? "Off" : "On")
+            if !isShowingIntroPrompts && !showCompletion {
+                HStack(spacing: 24) {
+                    audioControlButton(
+                        systemName: isMusicMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                        action: toggleMusicMute
+                    )
+                    .accessibilityLabel("Sound")
+                    .accessibilityValue(isMusicMuted ? "Off" : "On")
 
-                audioControlButton(
-                    systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
-                    action: toggleVoiceGuidance
-                )
-                .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
-                .accessibilityLabel("Voice Guidance")
-                .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+                    audioControlButton(
+                        systemName: isVoiceGuidanceEnabled ? "person.wave.2.fill" : "person.wave.2",
+                        action: toggleVoiceGuidance
+                    )
+                    .opacity(isVoiceGuidanceEnabled ? 1.0 : 0.6)
+                    .accessibilityLabel("Voice Guidance")
+                    .accessibilityValue(isVoiceGuidanceEnabled ? "On" : "Off")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 12)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 12)
         }
         .contentShape(Rectangle())
-        .onTapGesture { showPlaybackOverlayTemporarily() }
+        .onTapGesture {
+            guard !isShowingIntroPrompts else { return }
+            showPlaybackOverlayTemporarily()
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -194,9 +211,34 @@ struct AnchorBreathView: View {
         }
         .onDisappear { teardown() }
         .animation(.easeInOut(duration: 0.25), value: showCompletion)
+        .animation(.easeInOut(duration: 0.35), value: isShowingIntroPrompts)
     }
 
     // MARK: - Prompts
+
+    private var currentIntroPrompt: String {
+        guard introPrompts.indices.contains(currentIntroPromptIndex) else { return "Let's begin." }
+        return introPrompts[currentIntroPromptIndex]
+    }
+
+    private var introPromptView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Text(currentIntroPrompt)
+                .id(currentIntroPromptIndex)
+                .font(.title3.weight(.medium))
+                .foregroundStyle(Theme.cardTitle)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .padding(.horizontal, 28)
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.bg.ignoresSafeArea())
+    }
 
     private var mainPrompt: String {
         switch phase {
@@ -251,14 +293,64 @@ struct AnchorBreathView: View {
         countdown = totalDuration
         pendingCompletion = false
         hasRecordedCompletion = false
+        showCompletion = false
+        isEndingSession = false
+        scale = 0.95
 
         setupAudioSession()
+
+        if introPrompts.isEmpty {
+            beginBreathingLoop(includeDefaultIntro: true)
+        } else {
+            beginIntroPrompts()
+        }
+    }
+
+    private func beginIntroPrompts() {
+        phase = .intro
+        phaseRemaining = 0
+        currentIntroPromptIndex = 0
+        isShowingIntroPrompts = true
+        startIntroMusicFadeIn()
+        scheduleNextIntroPrompt()
+    }
+
+    private func scheduleNextIntroPrompt() {
+        introPromptTask?.cancel()
+
+        let task = DispatchWorkItem {
+            if currentIntroPromptIndex < introPrompts.count - 1 {
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    currentIntroPromptIndex += 1
+                }
+                scheduleNextIntroPrompt()
+            } else {
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    isShowingIntroPrompts = false
+                }
+                beginBreathingLoop(includeDefaultIntro: false)
+            }
+        }
+
+        introPromptTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + introPromptDuration, execute: task)
+    }
+
+    private func beginBreathingLoop(includeDefaultIntro: Bool) {
+        introPromptTask?.cancel()
+        isShowingIntroPrompts = false
         configureMusicIfNeeded()
 
-        // intro phase before breathing starts
-        phase = .intro
-        phaseRemaining = launchSource == .onboarding ? 3 : 2
-        scale = 0.95
+        if includeDefaultIntro {
+            phase = .intro
+            phaseRemaining = launchSource == .onboarding ? 3 : 2
+            scale = 0.95
+        } else {
+            phase = .inhale
+            phaseRemaining = inhaleSecs
+            playCue(for: .inhale)
+            animateScale(to: 1.15, duration: Double(inhaleSecs))
+        }
 
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
             guard !isPaused else { return }
@@ -319,7 +411,14 @@ struct AnchorBreathView: View {
 
     // MARK: - Music
 
-    private func configureMusicIfNeeded() {
+    private func startIntroMusicFadeIn() {
+        configureMusicIfNeeded(initialVolume: 0.0)
+        guard !isMusicMuted else { return }
+        musicQueue?.play()
+        fadeMusicVolume(to: musicBaseVolume, over: 3.0)
+    }
+
+    private func configureMusicIfNeeded(initialVolume: Float? = nil) {
         guard let bgm = resolvedBgm, let url = url(for: bgm) else { return }
         if musicQueue == nil || musicLooper == nil {
             let item = AVPlayerItem(url: url)
@@ -328,7 +427,7 @@ struct AnchorBreathView: View {
             musicQueue = q
             musicLooper = looper
         }
-        musicQueue?.volume = isMusicMuted ? 0.0 : musicBaseVolume
+        musicQueue?.volume = initialVolume ?? (isMusicMuted ? 0.0 : musicBaseVolume)
     }
 
     private func toggleMusicMute() {
@@ -374,16 +473,25 @@ struct AnchorBreathView: View {
     }
 
     private func fadeMusicVolume(to target: Float, over duration: TimeInterval) {
+        cancelMusicFadeTasks()
         guard let q = musicQueue else { return }
-        let steps = 10
+        let steps = 12
         let stepDur = duration / Double(steps)
         let start = q.volume
         let delta = (target - start) / Float(steps)
         for i in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + stepDur * Double(i)) {
+            let task = DispatchWorkItem {
+                guard musicQueue === q else { return }
                 q.volume = start + delta * Float(i)
             }
+            musicFadeTasks.append(task)
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepDur * Double(i), execute: task)
         }
+    }
+
+    private func cancelMusicFadeTasks() {
+        musicFadeTasks.forEach { $0.cancel() }
+        musicFadeTasks.removeAll()
     }
 
     private func url(for source: MediaSource) -> URL? {
@@ -423,10 +531,12 @@ struct AnchorBreathView: View {
     private func completeSession() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        introPromptTask?.cancel(); introPromptTask = nil
+        isShowingIntroPrompts = false
         isPaused = false
         overlayHideTask?.cancel(); overlayHideTask = nil
         showCenterPlaybackOverlay = false
-        if !hasRecordedCompletion {
+        if recordsAnchorCompletion && !hasRecordedCompletion {
             hasRecordedCompletion = true
             streakManager.markAnchorCompleted()
             StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
@@ -440,10 +550,13 @@ struct AnchorBreathView: View {
     private func teardown() {
         phaseTimer?.invalidate(); phaseTimer = nil
         countdownTimer?.invalidate(); countdownTimer = nil
+        introPromptTask?.cancel(); introPromptTask = nil
+        isShowingIntroPrompts = false
         isPaused = false
         overlayHideTask?.cancel(); overlayHideTask = nil
         showCenterPlaybackOverlay = false
         breathingAudio.stop()
+        cancelMusicFadeTasks()
         musicQueue?.pause(); musicQueue = nil
         musicLooper = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
