@@ -44,37 +44,42 @@ struct PrayersView: View {
             let placeholderCount = max(0, totalSlotsForFullRows - meditations.count)
 
             ScrollView {
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: hSpacing),
-                        GridItem(.flexible(), spacing: hSpacing)
-                    ],
-                    spacing: vSpacing
-                ) {
-                    QuickStartMeditationCard {
-                        showQuickStartDurations = true
+                VStack(spacing: vSpacing) {
+                    HStack {
+                        Spacer(minLength: 0)
+                        QuickStartMeditationCard {
+                            showQuickStartDurations = true
+                        }
+                        Spacer(minLength: 0)
                     }
-                    .gridCellColumns(columns)
 
-                    // 1) Real meditations (tappable)
-                    ForEach(meditations) { m in
-                        NavigationLink {
-                            PrayerMeditationView(meditation: m)
-                        } label: {
-                            ScaleOnScrollCard(baseSize: cardSize) {
-                                MeditationCard(meditation: m, baseSize: cardSize)
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: hSpacing),
+                            GridItem(.flexible(), spacing: hSpacing)
+                        ],
+                        spacing: vSpacing
+                    ) {
+                        // 1) Real meditations (tappable)
+                        ForEach(meditations) { m in
+                            NavigationLink {
+                                PrayerMeditationView(meditation: m)
+                            } label: {
+                                ScaleOnScrollCard(baseSize: cardSize) {
+                                    MeditationCard(meditation: m, baseSize: cardSize)
+                                }
+                                .contentShape(Rectangle())
                             }
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-                    }
 
-                    // 2) Placeholder cards to complete the last row (non-tappable)
-                    ForEach(0..<placeholderCount, id: \.self) { _ in
-                        ScaleOnScrollCard(baseSize: cardSize) {
-                            ComingSoonCard(baseSize: cardSize)
+                        // 2) Placeholder cards to complete the last row (non-tappable)
+                        ForEach(0..<placeholderCount, id: \.self) { _ in
+                            ScaleOnScrollCard(baseSize: cardSize) {
+                                ComingSoonCard(baseSize: cardSize)
+                            }
+                            .allowsHitTesting(false)
                         }
-                        .allowsHitTesting(false)
                     }
                 }
                 .padding(.horizontal, horizontalPadding)

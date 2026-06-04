@@ -42,6 +42,7 @@ struct AnchorBreathView: View {
     @State private var musicLooper: AVPlayerLooper?
     @State private var isMusicMuted: Bool = false
     @State private var musicBaseVolume: Float = 0.28
+    @State private var musicFadeTasks: [DispatchWorkItem] = []
     @StateObject private var breathingAudio = BreathingAudioManager()
     @State private var isVoiceGuidanceEnabled: Bool = true
     @State private var showCenterPlaybackOverlay = false
@@ -310,6 +311,7 @@ struct AnchorBreathView: View {
         phaseRemaining = 0
         currentIntroPromptIndex = 0
         isShowingIntroPrompts = true
+        startIntroMusicFadeIn()
         scheduleNextIntroPrompt()
     }
 
@@ -409,7 +411,14 @@ struct AnchorBreathView: View {
 
     // MARK: - Music
 
-    private func configureMusicIfNeeded() {
+    private func startIntroMusicFadeIn() {
+        configureMusicIfNeeded(initialVolume: 0.0)
+        guard !isMusicMuted else { return }
+        musicQueue?.play()
+        fadeMusicVolume(to: musicBaseVolume, over: 3.0)
+    }
+
+    private func configureMusicIfNeeded(initialVolume: Float? = nil) {
         guard let bgm = resolvedBgm, let url = url(for: bgm) else { return }
         if musicQueue == nil || musicLooper == nil {
             let item = AVPlayerItem(url: url)
@@ -418,7 +427,7 @@ struct AnchorBreathView: View {
             musicQueue = q
             musicLooper = looper
         }
-        musicQueue?.volume = isMusicMuted ? 0.0 : musicBaseVolume
+        musicQueue?.volume = initialVolume ?? (isMusicMuted ? 0.0 : musicBaseVolume)
     }
 
     private func toggleMusicMute() {
@@ -464,16 +473,25 @@ struct AnchorBreathView: View {
     }
 
     private func fadeMusicVolume(to target: Float, over duration: TimeInterval) {
+        cancelMusicFadeTasks()
         guard let q = musicQueue else { return }
-        let steps = 10
+        let steps = 12
         let stepDur = duration / Double(steps)
         let start = q.volume
         let delta = (target - start) / Float(steps)
         for i in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + stepDur * Double(i)) {
+            let task = DispatchWorkItem {
+                guard musicQueue === q else { return }
                 q.volume = start + delta * Float(i)
             }
+            musicFadeTasks.append(task)
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepDur * Double(i), execute: task)
         }
+    }
+
+    private func cancelMusicFadeTasks() {
+        musicFadeTasks.forEach { $0.cancel() }
+        musicFadeTasks.removeAll()
     }
 
     private func url(for source: MediaSource) -> URL? {
@@ -538,6 +556,7 @@ struct AnchorBreathView: View {
         overlayHideTask?.cancel(); overlayHideTask = nil
         showCenterPlaybackOverlay = false
         breathingAudio.stop()
+        cancelMusicFadeTasks()
         musicQueue?.pause(); musicQueue = nil
         musicLooper = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)

@@ -29,7 +29,7 @@ struct QuickStartMeditationCard: View {
             HStack(spacing: 10) {
                 Text("Quick Start Meditation")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(Theme.cardTitle)
+                    .foregroundStyle(Theme.accent)
                     .lineLimit(1)
 
                 Image(systemName: "chevron.right")
@@ -51,7 +51,6 @@ struct QuickStartMeditationCard: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: 360)
-        .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityLabel("Quick Start Meditation")
         .accessibilityHint("Opens duration options before starting a breathing meditation")
     }
