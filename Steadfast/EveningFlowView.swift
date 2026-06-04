@@ -90,7 +90,7 @@ struct EveningFlowView: View {
                         if showGreeting {
                             Text("Good evening")
                                 .font(.title)
-                                .foregroundColor(ink)
+                                .foregroundColor(Theme.sectionTitle)
                                 .multilineTextAlignment(.center)
                                 .transition(.opacity)
                         }
@@ -114,7 +114,7 @@ struct EveningFlowView: View {
                             VStack(spacing: 16) {
                                 Text("What can you lay down for the day?")
                                     .font(.title3)
-                                    .foregroundColor(ink)
+                                    .foregroundColor(Theme.sectionTitle)
                                     .multilineTextAlignment(.center)
 
                                 TextField("Write a few words…", text: $journal)
