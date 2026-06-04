@@ -17,6 +17,7 @@ struct PrayerMeditationView: View {
             } else {
                 unsupportedAudioView
             }
+            .padding(24)
         }
     }
 
