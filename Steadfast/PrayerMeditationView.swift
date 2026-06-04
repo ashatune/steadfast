@@ -4,26 +4,33 @@ import SwiftUI
 struct PrayerMeditationView: View {
     let meditation: PrayerMeditation
 
+    @ViewBuilder
     var body: some View {
-        Group {
-            if let audio = meditation.localAudioResource {
-                RhythmAudioPlayerView(
-                    title: meditation.title,
-                    subtitle: meditation.subtitle,
-                    audioFileName: audio.name,
-                    audioFileExtension: audio.ext,
-                    backgroundImageName: meditation.playbackBackgroundName
-                )
-            } else {
-                unsupportedAudioView
-            }
-            .padding(24)
+        switch meditation.audio {
+        case .local(let name, let ext):
+            RhythmAudioPlayerView(
+                title: meditation.title,
+                subtitle: meditation.subtitle,
+                audioFileName: name,
+                audioFileExtension: ext,
+                backgroundImageName: meditation.playbackBackgroundName
+            )
+        case .remote:
+            UnsupportedPrayerMeditationAudioView(
+                title: meditation.title,
+                backgroundImageName: meditation.playbackBackgroundName
+            )
         }
     }
+}
 
-    private var unsupportedAudioView: some View {
+private struct UnsupportedPrayerMeditationAudioView: View {
+    let title: String
+    let backgroundImageName: String
+
+    var body: some View {
         ZStack {
-            Image(meditation.playbackBackgroundName)
+            Image(backgroundImageName)
                 .resizable()
                 .scaledToFill()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -42,7 +49,7 @@ struct PrayerMeditationView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 12) {
-                Text(meditation.title)
+                Text(title)
                     .font(.largeTitle.weight(.semibold))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
@@ -54,12 +61,5 @@ struct PrayerMeditationView: View {
             .padding(24)
         }
         .toolbar(.hidden, for: .navigationBar)
-    }
-}
-
-private extension PrayerMeditation {
-    var localAudioResource: (name: String, ext: String)? {
-        guard case let .local(name, ext) = audio else { return nil }
-        return (name, ext)
     }
 }
