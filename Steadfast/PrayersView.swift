@@ -2,6 +2,8 @@
 import SwiftUI
 
 struct PrayersView: View {
+    @EnvironmentObject private var vm: AppViewModel
+
     private let hSpacing: CGFloat = 16
     private let vSpacing: CGFloat = 16
     private let horizontalPadding: CGFloat = 16
@@ -92,5 +94,17 @@ struct PrayersView: View {
         }
         .navigationTitle("Prayerful Meditations")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            handlePendingDeepLink(vm.pendingDeepLink)
+        }
+        .onChange(of: vm.pendingDeepLink) { destination in
+            handlePendingDeepLink(destination)
+        }
+    }
+
+    private func handlePendingDeepLink(_ destination: AppViewModel.DeepLinkDestination?) {
+        guard destination == .quickStartMeditation else { return }
+        vm.pendingDeepLink = nil
+        showQuickStartDurations = true
     }
 }

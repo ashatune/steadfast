@@ -4,12 +4,28 @@ enum DeepLinkRoute {
     static let scheme = "steadfast"
     static let pendingRouteDefaultsKey = "steadfast.pendingRoute"
     static let dailyDevotionalRouteToken = "devotional/today"
+    static let streakProtectionRouteToken = "streakProtection"
+    static let quickStartMeditationRouteToken = "quickStartMeditation"
 
     static func dailyDevotionalURL() -> URL? {
         var comps = URLComponents()
         comps.scheme = scheme
         comps.host = "devotional"
         comps.path = "/today"
+        return comps.url
+    }
+
+    static func quickStartMeditationURL() -> URL? {
+        var comps = URLComponents()
+        comps.scheme = scheme
+        comps.host = "quick-start-meditation"
+        return comps.url
+    }
+
+    static func streakProtectionURL() -> URL? {
+        var comps = URLComponents()
+        comps.scheme = scheme
+        comps.host = "streak-protection"
         return comps.url
     }
 
