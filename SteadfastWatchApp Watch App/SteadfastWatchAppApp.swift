@@ -18,7 +18,7 @@ struct SteadfastWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            BreathingSessionView()
+            WatchMeditationFlowView()
                 .onAppear {
                     logger.info("Watch app window group appeared.")
                 }
