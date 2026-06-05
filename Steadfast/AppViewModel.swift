@@ -10,6 +10,7 @@ extension AppViewModel {
         case evening
         case anchor
         case devotional
+        case quickStartMeditation
     }
 }
 
@@ -198,6 +199,19 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        if host == "quick-start-meditation"
+            || host == "quickstartmeditation"
+            || host == "streak-protection"
+            || host == "streakprotection"
+            || path.contains("/quick-start-meditation")
+            || path.contains("/quickstartmeditation")
+            || path.contains("/streak-protection")
+            || path.contains("/streakprotection") {
+            selectedTab = .meditate
+            pendingDeepLink = .quickStartMeditation
+            return
+        }
+
         if host == "morning" || path.contains("/morning") {
             selectedTab = .home
             pendingDeepLink = .morning
@@ -216,7 +230,7 @@ final class AppViewModel: ObservableObject {
     }
 
     private func handleRouteToken(_ route: String) {
-        if let url = URL(string: route) {
+        if let url = URL(string: route), DeepLinkRoute.isSteadfastURL(url) {
             handleDeepLink(url)
             return
         }
@@ -235,6 +249,9 @@ final class AppViewModel: ObservableObject {
             triggerAnchorNavigation(anchorID: nil)
         case "devotional", "devotional/today", "dailyDevotional":
             pendingDeepLink = .devotional
+        case "streakProtection", "quickStartMeditation":
+            selectedTab = .meditate
+            pendingDeepLink = .quickStartMeditation
         default:
             break
         }

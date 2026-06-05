@@ -46,6 +46,8 @@ enum QuickStartMeditation {
 struct QuickStartMeditationSessionView: View {
     let duration: MeditationDurationOption
 
+    @EnvironmentObject private var streakManager: StreakManager
+
     var body: some View {
         AnchorBreathView(
             verse: QuickStartMeditation.verse,
@@ -55,6 +57,10 @@ struct QuickStartMeditationSessionView: View {
             exhaleSecs: 6,
             bgm: .local(name: "oceanWaves", ext: "mp3"),
             showBibleLink: false,
+            onCompleted: {
+                streakManager.markSessionCompleted()
+                StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+            },
             recordsAnchorCompletion: false,
             headerImageName: "SteadfastCROSS1024",
             introPrompts: QuickStartMeditation.introPrompts

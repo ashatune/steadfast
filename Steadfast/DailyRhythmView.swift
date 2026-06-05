@@ -72,7 +72,7 @@ struct DailyRhythmView: View {
         case .anchor:
             // ignore here; handled in HomeView
             return
-        case .devotional:
+        case .devotional, .quickStartMeditation:
             return
         }
 
