@@ -116,9 +116,12 @@ private struct FallingPrayerHandsView: View {
         let delay: Double
         let size: CGFloat
         let opacity: Double
+        let symbol: String
     }
 
-    private let particles: [Particle] = FallingPrayerHandsView.makeParticles(count: 16)
+    private static let emojiPalette = ["✨", "🙏", "💜", "🌿", "🕊️", "🌸"]
+
+    private let particles: [Particle] = FallingPrayerHandsView.makeParticles(count: 18)
 
     @State private var animate = false
 
@@ -129,7 +132,8 @@ private struct FallingPrayerHandsView: View {
             let delay = Double((idx * 13) % 20) * 0.12
             let size = CGFloat(18 + ((idx * 5) % 10))
             let opacity = 0.18 + Double((idx * 3) % 8) * 0.07
-            return Particle(x: x, duration: duration, delay: delay, size: size, opacity: opacity)
+            let symbol = emojiPalette[idx % emojiPalette.count]
+            return Particle(x: x, duration: duration, delay: delay, size: size, opacity: opacity, symbol: symbol)
         }
     }
 
@@ -137,11 +141,12 @@ private struct FallingPrayerHandsView: View {
         GeometryReader { geo in
             ZStack {
                 ForEach(particles) { particle in
-                    Text("🙏")
-                        // Keep the particle as a plain Unicode emoji and use the
-                        // default system font so iOS can resolve it through
-                        // Apple Color Emoji instead of an app/design font.
-                        .font(.system(size: particle.size, weight: .regular, design: .default))
+                    Text(particle.symbol)
+                        // Keep each particle as a normal Swift emoji literal and
+                        // use the plain system font (no custom face/weight/design)
+                        // so iOS can resolve glyphs through Apple Color Emoji.
+                        .font(.system(size: particle.size))
+                        .fixedSize()
                         .opacity(particle.opacity)
                         .position(x: particle.x * geo.size.width,
                                   y: animate ? geo.size.height + 60 : -80)
