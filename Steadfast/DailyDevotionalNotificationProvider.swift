@@ -6,9 +6,7 @@ struct DailyDevotionalNotificationContent {
     let subtitle: String?
     let category: String
     let isQuestionBased: Bool
-}
 
-extension DailyDevotionalNotificationContent {
     init(title: String, preview: String, subtitle: String? = nil, category: String = "devotional_reminder", isQuestionBased: Bool = false) {
         self.title = title
         self.preview = preview
@@ -115,28 +113,28 @@ final class DailyDevotionalNotificationProvider {
 
         switch moment {
         case .morning:
-            let options = [
+            let options: [DailyDevotionalNotificationContent] = [
                 DailyDevotionalNotificationContent(title: "Today's devotional is ready.", preview: takeaway, subtitle: title, category: category(for: moment, isQuestionBased: false)),
                 DailyDevotionalNotificationContent(title: question, preview: scriptureSubtitle ?? preview, subtitle: title, category: category(for: moment, isQuestionBased: true), isQuestionBased: true),
                 DailyDevotionalNotificationContent(title: titlePrefixed(title), preview: preview, subtitle: scriptureSubtitle, category: category(for: moment, isQuestionBased: false))
             ]
             return options[selector % options.count]
         case .afternoon:
-            let options = [
+            let options: [DailyDevotionalNotificationContent] = [
                 DailyDevotionalNotificationContent(title: "Pause for a moment.", preview: question, subtitle: title, category: category(for: moment, isQuestionBased: true), isQuestionBased: true),
                 DailyDevotionalNotificationContent(title: "Still carrying today's stress?", preview: "Take a moment to reset with God.", subtitle: title, category: category(for: moment, isQuestionBased: true), isQuestionBased: true),
                 DailyDevotionalNotificationContent(title: "Today's devotional asks a question worth reflecting on.", preview: question, subtitle: scriptureSubtitle ?? title, category: category(for: moment, isQuestionBased: true), isQuestionBased: true)
             ]
             return options[selector % options.count]
         case .evening:
-            let options = [
+            let options: [DailyDevotionalNotificationContent] = [
                 DailyDevotionalNotificationContent(title: "Before today ends", preview: "Spend a few quiet moments with God.", subtitle: title, category: category(for: moment, isQuestionBased: false)),
                 DailyDevotionalNotificationContent(title: "Did today's devotional question ever get answered?", preview: question, subtitle: title, category: category(for: moment, isQuestionBased: true), isQuestionBased: true),
                 DailyDevotionalNotificationContent(title: "Before bed, reflect on this:", preview: eveningPrompt, subtitle: scriptureSubtitle ?? title, category: category(for: moment, isQuestionBased: true), isQuestionBased: true)
             ]
             return options[selector % options.count]
         case .streak:
-            let options = [
+            let options: [DailyDevotionalNotificationContent] = [
                 DailyDevotionalNotificationContent(title: "Small moments with God add up.", preview: takeaway, subtitle: title, category: category(for: moment, isQuestionBased: false)),
                 DailyDevotionalNotificationContent(title: "You've shown up consistently.", preview: "Keep building the rhythm with one quiet step today.", subtitle: title, category: category(for: moment, isQuestionBased: false)),
                 DailyDevotionalNotificationContent(title: "Today's devotional is ready for your next step.", preview: preview, subtitle: scriptureSubtitle ?? title, category: category(for: moment, isQuestionBased: false))
