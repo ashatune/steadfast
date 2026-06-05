@@ -152,7 +152,7 @@ struct BreathingSessionView: View {
 
                 VStack(spacing: 2) {
                     if isRunning || isPaused {
-                        Text(timeString(remaining))
+                        Text(formattedRemainingTime(remaining))
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(.white.opacity(0.85))
                     } else if !isFinished {
@@ -220,15 +220,7 @@ struct BreathingSessionView: View {
         prompts.text(for: phase)
     }
 
-    private func timeString(_ seconds: Int) -> String {
-        if seconds < 60 { return "\(seconds)s" }
-        let minutes = seconds / 60
-        let remainder = seconds % 60
-        if remainder == 0 { return "\(minutes)m" }
-        return "\(minutes):" + String(format: "%02d", remainder)
-    }
-
-    private func timeString(_ seconds: Int) -> String {
+    private func formattedRemainingTime(_ seconds: Int) -> String {
         if seconds < 60 { return "\(seconds)s" }
         let minutes = seconds / 60
         let remainder = seconds % 60
