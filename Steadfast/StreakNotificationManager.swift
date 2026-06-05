@@ -56,11 +56,20 @@ final class StreakNotificationManager {
         var components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
         components.second = 0
 
+        let reminder = DailyDevotionalNotificationProvider.shared.cachedContent(for: day, moment: .streak)
+
         let content = UNMutableNotificationContent()
-        content.title = reminderTitle()
-        content.body = reminderBody(for: day)
+        content.title = reminder.title
+        content.subtitle = reminder.subtitle ?? ""
+        content.body = reminder.preview
         content.sound = .default
-        content.userInfo = ["route": DeepLinkRoute.anchorExerciseURL()?.absoluteString ?? "anchor"]
+        content.categoryIdentifier = reminder.category
+        content.userInfo = [
+            "route": DeepLinkRoute.anchorExerciseURL()?.absoluteString ?? "anchor",
+            "notificationType": reminder.category,
+            "notificationTimeOfDay": timeOfDay(for: date),
+            "notificationTone": reminder.isQuestionBased ? "question_based" : "reminder_based"
+        ]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(identifier: reminderId, content: content, trigger: trigger)
@@ -119,17 +128,10 @@ final class StreakNotificationManager {
         return target
     }
 
-    private func reminderTitle() -> String {
-        "Keep your rhythm going 🙏"
-    }
-
-    private func reminderBody(for day: Date) -> String {
-        let options = [
-            "Take a moment with Steadfast today.",
-            "Your streak is still here for you. Come back for a moment of peace.",
-            "Come back for a breath and a verse when you're ready."
-        ]
-        let dayIndex = Calendar.current.ordinality(of: .day, in: .year, for: day) ?? 0
-        return options[dayIndex % options.count]
+    private func timeOfDay(for date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+        if hour < 12 { return "morning" }
+        if hour < 17 { return "afternoon" }
+        return "evening"
     }
 }

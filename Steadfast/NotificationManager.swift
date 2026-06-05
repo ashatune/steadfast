@@ -148,17 +148,22 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
 
         func add(_ id: String,
-                 _ title: String,
-                 _ body: String,
+                 _ devotionalContent: DailyDevotionalNotificationContent,
                  _ date: Date,
-                 rhythmType: RhythmType) {
+                 rhythmType: RhythmType,
+                 timeOfDay: String) {
             let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = body
+            content.title = devotionalContent.title
+            content.subtitle = devotionalContent.subtitle ?? ""
+            content.body = devotionalContent.preview
             content.sound = .default
+            content.categoryIdentifier = devotionalContent.category
             content.userInfo = [
                 "route": rhythmType.rawValue,
-                "rhythmType": rhythmType.rawValue
+                "rhythmType": rhythmType.rawValue,
+                "notificationType": devotionalContent.category,
+                "notificationTimeOfDay": timeOfDay,
+                "notificationTone": devotionalContent.isQuestionBased ? "question_based" : "reminder_based"
             ]
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps(date), repeats: true)
@@ -168,27 +173,28 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
         }
 
+        let notificationProvider = DailyDevotionalNotificationProvider.shared
 
         if morning.enabled {
             add(ids[0],
-                "Good morning ☀️",
-                "Take a moment for your morning rhythm with God.",
+                notificationProvider.cachedContent(moment: .morning),
                 morning.date,
-                rhythmType: .morning)
+                rhythmType: .morning,
+                timeOfDay: "morning")
         }
         if midday.enabled {
             add(ids[1],
-                "Midday reset 🌿",
-                "Pause for your midday rhythm and reconnect.",
+                notificationProvider.cachedContent(moment: .afternoon),
                 midday.date,
-                rhythmType: .midday)
+                rhythmType: .midday,
+                timeOfDay: "afternoon")
         }
         if evening.enabled {
             add(ids[2],
-                "Wind down tonight 🌙",
-                "End the day with your evening rhythm.",
+                notificationProvider.cachedContent(moment: .evening),
                 evening.date,
-                rhythmType: .evening)
+                rhythmType: .evening,
+                timeOfDay: "evening")
         }
 
         // Morning devotional (fixed 8:00 AM local)
@@ -276,19 +282,23 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         guard masterEnabled else { return }
 
         let comps = DateComponents(hour: 8, minute: 0, second: 0)
-        let cached = DailyDevotionalNotificationProvider.shared.cachedContent(for: Date())
+        let cached = DailyDevotionalNotificationProvider.shared.cachedContent(for: Date(), moment: .morning)
         let routeString = DeepLinkRoute.dailyDevotionalURL()?.absoluteString
         ?? DeepLinkRoute.dailyDevotionalRouteToken
 
         let content = UNMutableNotificationContent()
-        content.title = "Daily Devotional"
-        content.subtitle = cached.title
+        content.title = cached.title
+        content.subtitle = cached.subtitle ?? "Daily Devotional"
         content.body = cached.preview
         content.sound = .default
+        content.categoryIdentifier = cached.category
         content.userInfo = [
             "route": routeString,
             "deepLink": routeString,
-            "deepLinkRoute": "dailyDevotional"
+            "deepLinkRoute": "dailyDevotional",
+            "notificationType": cached.category,
+            "notificationTimeOfDay": "morning",
+            "notificationTone": cached.isQuestionBased ? "question_based" : "reminder_based"
         ]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
