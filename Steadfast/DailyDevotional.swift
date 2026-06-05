@@ -9,6 +9,17 @@ struct DailyDevotional: Identifiable, Codable {
     var body: String
     var cta: String?
     var imageURL: URL?
+
+    // Future devotional notification metadata. These optional Firestore fields are
+    // intentionally not generated or required yet, but they reserve a stable
+    // schema for automated devotional creation to provide more tailored
+    // notification copy later. When absent, notifications fall back to title,
+    // scripture, body, cta, and reflection-derived prompts.
+    var notificationTitle: String? = nil
+    var notificationPreview: String? = nil
+    var notificationQuestion: String? = nil
+    var notificationTakeaway: String? = nil
+    var notificationEveningPrompt: String? = nil
 }
 
 extension DailyDevotional {

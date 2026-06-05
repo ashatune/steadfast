@@ -13,6 +13,9 @@ import FirebaseCore
 /// - `title`, `verseReference`, `verseText`, `body`
 /// - `cta` (optional)
 /// - `imageURL` (optional string; https or Firebase Storage download URL for the card background)
+/// - Future notification metadata (optional, not required today):
+///   `notificationTitle`, `notificationPreview`, `notificationQuestion`,
+///   `notificationTakeaway`, `notificationEveningPrompt`
 ///
 /// TODO: Ensure FirebaseApp.configure() is called at app launch.
 /// TODO: Make sure Firestore is added to the project via SPM or CocoaPods.
@@ -135,7 +138,12 @@ final class DailyDevotionalService {
             verseText: data["verseText"] as? String ?? placeholder.verseText,
             body: data["body"] as? String ?? placeholder.body,
             cta: data["cta"] as? String ?? placeholder.cta,
-            imageURL: imageURL
+            imageURL: imageURL,
+            notificationTitle: data["notificationTitle"] as? String,
+            notificationPreview: data["notificationPreview"] as? String,
+            notificationQuestion: data["notificationQuestion"] as? String,
+            notificationTakeaway: data["notificationTakeaway"] as? String,
+            notificationEveningPrompt: data["notificationEveningPrompt"] as? String
         )
 
         return devotional
