@@ -9,25 +9,36 @@ struct BreathingSessionView: View {
     private let inhaleDur: Double = 4
     private let holdDur: Double   = 3
     private let exhaleDur: Double = 7
-    private let totalSeconds = 90
+    let title: String
+    let duration: WatchMeditationDuration
+    let verseLines: [String]
+    let reference: String?
 
-    // Replace with your Anchor Verse lines
-    private let verseLines: [String] = [
-        "GOD is near",
-        "GOD is near",
-        "I am not alone"
-    ]
+    private var totalSeconds: Int { duration.seconds }
 
     // MARK: - State
     @Environment(\.colorScheme) private var scheme
     @State private var phase: Phase = .inhale
-    @State private var remaining = 90
+    @State private var remaining: Int
     @State private var isRunning = false
     @State private var isPaused = false
     @State private var isFinished = false
     @State private var scale: CGFloat = 1.0
     @State private var verseIndex = 0
     private let logger = Logger(subsystem: "ashatune.Steadfast.watchkitapp", category: "BreathingSession")
+
+    init(
+        title: String = "Quick Start Meditation",
+        duration: WatchMeditationDuration = .init(seconds: 90, title: "90 seconds"),
+        verseLines: [String] = ["GOD is near", "GOD is near", "I am not alone"],
+        reference: String? = nil
+    ) {
+        self.title = title
+        self.duration = duration
+        self.verseLines = verseLines.isEmpty ? ["Be still", "God is near"] : verseLines
+        self.reference = reference
+        _remaining = State(initialValue: duration.seconds)
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -103,8 +114,11 @@ struct BreathingSessionView: View {
                                 VStack(spacing: 3) {
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 22, weight: .bold))
-                                    Text("Start session")
+                                    Text("Start")
                                         .font(.caption2.weight(.semibold))
+                                    Text(duration.title)
+                                        .font(.caption2)
+                                        .opacity(0.9)
                                 }
                                 .foregroundStyle(.white)
                                 .padding(12)
@@ -116,10 +130,26 @@ struct BreathingSessionView: View {
                     }
                 }
 
-                if isRunning || isPaused {
-                    Text("\(remaining)s")
-                        .font(.footnote.monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.85))
+                VStack(spacing: 2) {
+                    if isRunning || isPaused {
+                        Text(timeString(remaining))
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(.white.opacity(0.85))
+                    } else if !isFinished {
+                        Text(duration.title)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+
+                    if let reference, !reference.isEmpty {
+                        Text(reference)
+                            .font(.caption2)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.white.opacity(0.72))
+                            .padding(.horizontal, 8)
+                    }
                 }
 
                 Spacer(minLength: side * 0.02)
@@ -167,6 +197,14 @@ struct BreathingSessionView: View {
         verseLines[safe: verseIndex] ?? verseLines.first ?? ""
     }
 
+    private func timeString(_ seconds: Int) -> String {
+        if seconds < 60 { return "\(seconds)s" }
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        if remainder == 0 { return "\(minutes)m" }
+        return "\(minutes):" + String(format: "%02d", remainder)
+    }
+
     // MARK: - Core Controls
     private func handleTap() {
         guard isRunning, !isFinished else { return }
@@ -185,7 +223,7 @@ struct BreathingSessionView: View {
         isFinished = false
         isPaused = false
         isRunning = true
-        logger.info("Session started.")
+        logger.info("Session started for \(self.totalSeconds)s.")
         animateForCurrentPhase()
         advancePhaseLoop()
         startCountdown()
@@ -240,8 +278,6 @@ struct BreathingSessionView: View {
             device.play(.directionDown) // or .click for the quietest cue
         }
     }
-
-    
 
 
     private func pause() {

@@ -11,6 +11,7 @@ final class SteadfastAppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         NotificationManager.shared.configure()
+        WatchAnchorSyncManager.shared.activate()
         return true
     }
 }

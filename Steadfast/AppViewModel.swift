@@ -275,11 +275,13 @@ final class AppViewModel: ObservableObject {
                 anchorDate: Calendar.current.startOfDay(for: anchorDate),
                 lastUpdated: Date()
             )
+            WatchAnchorSyncManager.shared.sync(payload)
             print("🟢 Saved anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         } else {
             // Keep widget + app aligned with the same default when no anchor is available
             let fallback = AnchorOfDayStore.fallbackPayload(anchorDate: Calendar.current.startOfDay(for: anchorDate))
             AnchorOfDayStore.save(fallback)
+            WatchAnchorSyncManager.shared.sync(fallback)
             anchorOfDay = Verse(ref: fallback.ref, text: fallback.text, breathIn: nil, breathOut: nil, audioFile: nil, inhaleCue: fallback.inhale, exhaleCue: fallback.exhale)
             print("🟡 Stored fallback anchor for widget @ \(fallback.lastUpdated) ref=\(fallback.ref)")
         }
@@ -299,6 +301,7 @@ final class AppViewModel: ObservableObject {
             anchorDate: Calendar.current.startOfDay(for: Date()),
             lastUpdated: Date()
         )
+        WatchAnchorSyncManager.shared.sync(payload)
         print("🟢 Manually set anchor for widget @ \(payload.lastUpdated) ref=\(payload.ref)")
         WidgetCenter.shared.reloadTimelines(ofKind: "AnchorWidget")
     }
