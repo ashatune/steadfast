@@ -2,6 +2,20 @@ import OSLog
 import SwiftUI
 import WatchKit
 
+struct WatchBreathingPrompts: Equatable {
+    let inhale: String
+    let hold: String
+    let exhale: String
+
+    func text(for phase: BreathingSessionView.Phase) -> String {
+        switch phase {
+        case .inhale: return inhale
+        case .hold: return hold
+        case .exhale: return exhale
+        }
+    }
+}
+
 struct BreathingSessionView: View {
     enum Phase { case inhale, hold, exhale }
 
@@ -11,7 +25,7 @@ struct BreathingSessionView: View {
     private let exhaleDur: Double = 7
     let title: String
     let duration: WatchMeditationDuration
-    let verseLines: [String]
+    let prompts: WatchBreathingPrompts
     let reference: String?
 
     private var totalSeconds: Int { duration.seconds }
@@ -24,18 +38,23 @@ struct BreathingSessionView: View {
     @State private var isPaused = false
     @State private var isFinished = false
     @State private var scale: CGFloat = 1.0
-    @State private var verseIndex = 0
+    @State private var phaseTask: Task<Void, Never>?
+    @State private var countdownTask: Task<Void, Never>?
     private let logger = Logger(subsystem: "ashatune.Steadfast.watchkitapp", category: "BreathingSession")
 
     init(
         title: String = "Quick Start Meditation",
         duration: WatchMeditationDuration = .init(seconds: 90, title: "90 seconds"),
-        verseLines: [String] = ["GOD is near", "GOD is near", "I am not alone"],
+        prompts: WatchBreathingPrompts = .init(
+            inhale: "GOD is near",
+            hold: "GOD is near",
+            exhale: "I am not alone"
+        ),
         reference: String? = nil
     ) {
         self.title = title
         self.duration = duration
-        self.verseLines = verseLines.isEmpty ? ["Be still", "God is near"] : verseLines
+        self.prompts = prompts
         self.reference = reference
         _remaining = State(initialValue: duration.seconds)
     }
@@ -96,7 +115,7 @@ struct BreathingSessionView: View {
                             }
                         } else if isRunning {
                             VStack(spacing: 4) {
-                                Text(currentVerse)
+                                Text(currentPrompt)
                                     .multilineTextAlignment(.center)
                                     .minimumScaleFactor(0.7)
                                     .lineLimit(3)
@@ -104,6 +123,7 @@ struct BreathingSessionView: View {
                                     .foregroundStyle(.white)
                                     .shadow(radius: 2, x: 0, y: 1)
                                     .padding(.horizontal, 8)
+                                    .id(phase)
 
                                 Text(phaseLabel)
                                     .font(.caption2.weight(.medium))
@@ -173,6 +193,9 @@ struct BreathingSessionView: View {
                 }
                 logger.info("Breathing session view ready. Remaining: \(self.remaining)")
             }
+            .onDisappear {
+                cancelSessionTasks()
+            }
         }
     }
 
@@ -193,8 +216,16 @@ struct BreathingSessionView: View {
         }
     }
 
-    private var currentVerse: String {
-        verseLines[safe: verseIndex] ?? verseLines.first ?? ""
+    private var currentPrompt: String {
+        prompts.text(for: phase)
+    }
+
+    private func timeString(_ seconds: Int) -> String {
+        if seconds < 60 { return "\(seconds)s" }
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        if remainder == 0 { return "\(minutes)m" }
+        return "\(minutes):" + String(format: "%02d", remainder)
     }
 
     private func timeString(_ seconds: Int) -> String {
@@ -208,39 +239,40 @@ struct BreathingSessionView: View {
     // MARK: - Core Controls
     private func handleTap() {
         guard isRunning, !isFinished else { return }
-        isPaused.toggle()
         if isPaused {
-            //WKInterfaceDevice.current().play(.stop)
-        } else {
             resume()
+        } else {
+            pause()
         }
     }
 
     private func start() {
+        cancelSessionTasks()
         remaining = totalSeconds
         phase = .inhale
-        verseIndex = 0
         isFinished = false
         isPaused = false
         isRunning = true
         logger.info("Session started for \(self.totalSeconds)s.")
         animateForCurrentPhase()
-        advancePhaseLoop()
-        startCountdown()
+        startPhaseLoop()
+        startCountdownLoop()
         //WKInterfaceDevice.current().play(.start)
     }
 
     private func resume() {
+        cancelSessionTasks()
         isPaused = false
         isRunning = true
         logger.info("Session resumed at \(self.remaining)s remaining.")
         animateForCurrentPhase()
-        advancePhaseLoop()
-        startCountdown()
+        startPhaseLoop()
+        startCountdownLoop()
         //WKInterfaceDevice.current().play(.start)
     }
 
     private func restart() {
+        cancelSessionTasks()
         isPaused = false
         isFinished = false
         isRunning = false
@@ -250,6 +282,7 @@ struct BreathingSessionView: View {
     }
 
     private func finish() {
+        cancelSessionTasks()
         isRunning = false
         isFinished = true
         logger.info("Session finished.")
@@ -279,53 +312,65 @@ struct BreathingSessionView: View {
         }
     }
 
-
     private func pause() {
         guard isRunning, !isPaused else { return }
+        cancelSessionTasks()
         isPaused = true
         logger.info("Session paused at \(self.remaining)s remaining.")
         //WKInterfaceDevice.current().play(.stop)
     }
 
-    private func advancePhaseLoop() {
-        guard isRunning, !isPaused else { return }
-        let delay: Double
-        switch phase {
-        case .inhale: delay = inhaleDur
-        case .hold:   delay = holdDur
-        case .exhale: delay = exhaleDur
-        }
+    private func startPhaseLoop() {
+        phaseTask?.cancel()
+        phaseTask = Task { @MainActor in
+            while !Task.isCancelled, isRunning, !isPaused, !isFinished {
+                let delay = currentPhaseDuration
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                } catch {
+                    return
+                }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            guard isRunning, !isPaused else { return }
-
-            verseIndex = (verseIndex + 1) % max(verseLines.count, 1)
-
-            switch phase {
-            case .inhale: phase = .hold
-            case .hold:   phase = .exhale
-            case .exhale: phase = .inhale
+                guard !Task.isCancelled, isRunning, !isPaused, !isFinished, remaining > 0 else { return }
+                advancePhase()
             }
-            animateForCurrentPhase()
-            advancePhaseLoop()
         }
     }
 
-    private func startCountdown() {
-        guard isRunning, !isPaused else { return }
-        if remaining <= 0 {
-            finish()
-            return
+    private func advancePhase() {
+        switch phase {
+        case .inhale: phase = .hold
+        case .hold:   phase = .exhale
+        case .exhale: phase = .inhale
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            guard isRunning, !isPaused else { return }
-            remaining -= 1
-            startCountdown()
+        animateForCurrentPhase()
+    }
+
+    private func startCountdownLoop() {
+        countdownTask?.cancel()
+        countdownTask = Task { @MainActor in
+            while !Task.isCancelled, isRunning, !isPaused, !isFinished {
+                guard remaining > 0 else {
+                    finish()
+                    return
+                }
+
+                do {
+                    try await Task.sleep(nanoseconds: 1_000_000_000)
+                } catch {
+                    return
+                }
+
+                guard !Task.isCancelled, isRunning, !isPaused, !isFinished else { return }
+                remaining -= 1
+            }
         }
     }
-}
 
-// Safe index helper
-fileprivate extension Array {
-    subscript (safe i: Index) -> Element? { indices.contains(i) ? self[i] : nil }
+    private func cancelSessionTasks() {
+        phaseTask?.cancel()
+        countdownTask?.cancel()
+        phaseTask = nil
+        countdownTask = nil
+    }
 }
