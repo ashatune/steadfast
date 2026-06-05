@@ -228,6 +228,14 @@ struct BreathingSessionView: View {
         return "\(minutes):" + String(format: "%02d", remainder)
     }
 
+    private func timeString(_ seconds: Int) -> String {
+        if seconds < 60 { return "\(seconds)s" }
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        if remainder == 0 { return "\(minutes)m" }
+        return "\(minutes):" + String(format: "%02d", remainder)
+    }
+
     // MARK: - Core Controls
     private func handleTap() {
         guard isRunning, !isFinished else { return }
