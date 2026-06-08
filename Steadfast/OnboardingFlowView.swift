@@ -165,7 +165,7 @@ fileprivate struct AppleWatchOnboardingSlide: View {
 
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
-        case intro1, intro2, intro3, nameConsent, welcomeUser, personalizationWhy, personalizationWhyResponse, personalizationExperience, personalizationExperienceResponse, personalizationFocus, personalizationFocusResponse, personalizationReassurance, morningReminder, widgetReminder, appleWatchInfo, beginMeditation, quickPractice, done
+        case intro1, intro2, intro3, nameConsent, welcomeUser, personalizationWhy, personalizationWhyResponse, personalizationExperience, personalizationExperienceResponse, personalizationFocus, personalizationFocusResponse, personalizationReassurance, morningReminder, widgetReminder, appleWatchInfo, beginMeditation, done
     }
 
     @StateObject private var viewModel = OnboardingViewModel()
@@ -315,19 +315,18 @@ struct OnboardingFlowView: View {
                     AppleWatchOnboardingSlide()
                         .tag(Page.appleWatchInfo)
 
-                    BeginMeditationSlide()
-                        .tag(Page.beginMeditation)
-
                     Group {
                         if hasStartedIntroMeditation && !didCompleteOnboardingMeditation {
                             QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
+                                debugLog("QuickPracticeSlideBranded.onCompleted callback")
                                 finishIntroMeditationStep()
                             })
                         } else {
-                            Color.clear
+                            BeginMeditationSlide()
                         }
                     }
-                    .tag(Page.quickPractice)
+                    .id(hasStartedIntroMeditation ? "intro-practice" : "begin-meditation")
+                    .tag(Page.beginMeditation)
 
                     DoneSlideBranded {
                         hasCompletedOnboarding = true
@@ -338,7 +337,7 @@ struct OnboardingFlowView: View {
                 .indexViewStyle(.page(backgroundDisplayMode: .interactive))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    if viewModel.page != .done && viewModel.page != .nameConsent && viewModel.page != .quickPractice {
+                    if shouldShowOnboardingControls {
                         onboardingControls
                             .padding(.horizontal, 24)
                             .padding(.top, 12)
@@ -352,8 +351,16 @@ struct OnboardingFlowView: View {
         }
         .navigationBarBackButtonHidden(true)
         .onChange(of: viewModel.page) { newPage in
-            normalizeIntroMeditationNavigation(for: newPage)
+            debugLog("page changed to \(newPage)")
         }
+    }
+
+    private var shouldShowOnboardingControls: Bool {
+        viewModel.page != .done && viewModel.page != .nameConsent && !isIntroMeditationRunning
+    }
+
+    private var isIntroMeditationRunning: Bool {
+        viewModel.page == .beginMeditation && hasStartedIntroMeditation && !didCompleteOnboardingMeditation
     }
 
     private var onboardingControls: some View {
@@ -392,7 +399,6 @@ struct OnboardingFlowView: View {
         case .widgetReminder:  return "Continue"
         case .appleWatchInfo:  return "Continue"
         case .beginMeditation: return "Begin"
-        case .quickPractice:   return "Skip"
         case .done:            return "Enter Steadfast"
         }
     }
@@ -412,6 +418,7 @@ struct OnboardingFlowView: View {
     }
 
     private func goForward() {
+        debugLog("primary button tapped label=\(nextLabel) pageBefore=\(viewModel.page)")
         if viewModel.page == .nameConsent {
             let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
             let persistedName = trimmedName.isEmpty ? "Friend" : trimmedName
@@ -423,49 +430,52 @@ struct OnboardingFlowView: View {
             startIntroMeditationFlow()
             return
         }
-        if viewModel.page == .quickPractice { return }
         advance(from: viewModel.page)
     }
 
     private func startIntroMeditationFlow() {
+        debugLog("startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
+        debugLog("activePages=\(Page.allCases) quickPracticePagePresent=false quickPracticeMountedInline=\(!didCompleteOnboardingMeditation)")
         guard !didCompleteOnboardingMeditation else {
+            debugLog("startIntroMeditationFlow found already completed; advancing to done")
             advancePastIntroMeditation()
             return
         }
         hasStartedIntroMeditation = true
-        advance(from: .beginMeditation)
+        debugLog("startIntroMeditationFlow set hasStartedIntroMeditation=true pageAfter=\(viewModel.page)")
     }
 
     private func finishIntroMeditationStep() {
-        guard !didCompleteOnboardingMeditation else { return }
+        debugLog("finishIntroMeditationStep entered")
+        guard !didCompleteOnboardingMeditation else {
+            debugLog("finishIntroMeditationStep ignored because didCompleteOnboardingMeditation is already true")
+            return
+        }
         didCompleteOnboardingMeditation = true
         hasStartedIntroMeditation = false
+        debugLog("finishIntroMeditationStep marked complete; advancing to done")
         advancePastIntroMeditation()
     }
 
     private func skipMeditationAndAdvance() {
+        debugLog("skip tapped from page=\(viewModel.page)")
         finishIntroMeditationStep()
     }
 
-    private func normalizeIntroMeditationNavigation(for page: Page) {
-        guard page == .quickPractice else { return }
-        if didCompleteOnboardingMeditation {
-            advancePastIntroMeditation()
-        } else if !hasStartedIntroMeditation {
-            viewModel.page = .beginMeditation
-        }
-    }
-
     private func advancePastIntroMeditation() {
-        if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
-            viewModel.page = next
-        }
+        viewModel.page = .done
+        debugLog("advancePastIntroMeditation pageAfter=\(viewModel.page)")
     }
 
     private func advance(from page: Page) {
         if let next = Page(rawValue: page.rawValue + 1), page != .done {
+            debugLog("advance from \(page) to \(next)")
             viewModel.page = next
         }
+    }
+
+    private func debugLog(_ message: String) {
+        print("[OnboardingIntroMeditation] \(message) page=\(viewModel.page) hasStartedIntroMeditation=\(hasStartedIntroMeditation) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)")
     }
 
     private func responseText(for selection: String, in dictionary: [String: String]) -> String {
