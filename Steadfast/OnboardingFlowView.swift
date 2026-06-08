@@ -177,7 +177,6 @@ struct OnboardingFlowView: View {
     @AppStorage("onboarding_personalization_reason") private var personalizationReason = ""
     @AppStorage("onboarding_personalization_experience") private var personalizationExperience = ""
     @AppStorage("onboarding_personalization_focus") private var personalizationFocus = ""
-    @State private var shouldSkipMeditation = false
 
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
@@ -319,9 +318,7 @@ struct OnboardingFlowView: View {
                         .tag(Page.beginMeditation)
 
                     QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
-                        if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
-                            viewModel.page = next
-                        }
+                        finishIntroMeditationStep()
                     })
                     .tag(Page.quickPractice)
 
@@ -347,28 +344,6 @@ struct OnboardingFlowView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .fullScreenCover(isPresented: $viewModel.showBeginMeditation) {
-            NavigationStack {
-                AnchorBreathView(
-                    verse: defaultVerse,
-                    totalDuration: 60,
-                    inhaleSecs: 4,
-                    holdSecs: 4,
-                    exhaleSecs: 6,
-                    showBibleLink: false,
-                    launchSource: .onboarding,
-                    shouldSkipOnAppear: shouldSkipMeditation,
-                    onSkip: {
-                        skipMeditationAndAdvance()
-                    },
-                    onCompleted: {
-                        finishIntroMeditationStep()
-                    },
-                    showInlineMuteButton: true,
-                    startMuted: false
-                )
-            }
-        }
     }
 
     private var onboardingControls: some View {
@@ -383,7 +358,7 @@ struct OnboardingFlowView: View {
                     .buttonStyle(OnboardingSecondaryButtonStyle())
             }
 
-            if viewModel.page == .beginMeditation && !didCompleteOnboardingMeditation {
+            if (viewModel.page == .beginMeditation || viewModel.page == .quickPractice) && !didCompleteOnboardingMeditation {
                 Button("Skip") { skipMeditationAndAdvance() }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.accent)
@@ -435,31 +410,34 @@ struct OnboardingFlowView: View {
         }
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if viewModel.page == .beginMeditation {
-            if didCompleteOnboardingMeditation || shouldSkipMeditation {
-                advance(from: .beginMeditation)
+            if didCompleteOnboardingMeditation {
+                advancePastIntroMeditation()
             } else {
-                viewModel.showBeginMeditation = true
+                advance(from: .beginMeditation)
             }
             return
         }
         if viewModel.page == .quickPractice {
-            advance(from: .quickPractice)
+            skipMeditationAndAdvance()
             return
         }
         advance(from: viewModel.page)
     }
 
     private func finishIntroMeditationStep() {
+        guard !didCompleteOnboardingMeditation else { return }
         didCompleteOnboardingMeditation = true
-        viewModel.showBeginMeditation = false
-        if viewModel.page == .beginMeditation {
-            advance(from: .beginMeditation)
-        }
+        advancePastIntroMeditation()
     }
 
     private func skipMeditationAndAdvance() {
-        shouldSkipMeditation = true
         finishIntroMeditationStep()
+    }
+
+    private func advancePastIntroMeditation() {
+        if let next = Page(rawValue: Page.quickPractice.rawValue + 1) {
+            viewModel.page = next
+        }
     }
 
     private func advance(from page: Page) {
@@ -702,7 +680,6 @@ final class OnboardingViewModel: ObservableObject {
     @Published var page: OnboardingFlowView.Page = .intro1
     @Published var enableMorningReminder: Bool
     @Published var morningReminderTime: Date
-    @Published var showBeginMeditation = false
 
     init() {
         let defaultTime = Calendar.current.date(
