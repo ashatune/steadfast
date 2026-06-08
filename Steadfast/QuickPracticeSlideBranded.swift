@@ -7,6 +7,7 @@ struct QuickPracticeSlideBranded: View {
     @State private var stage: Stage = .intro
     @State private var promptIndex = 0
     @State private var showPrompt = false
+    @State private var didStartPrompts = false
 
     private let fade: TimeInterval = 0.6
 
@@ -46,7 +47,10 @@ struct QuickPracticeSlideBranded: View {
                     exhaleSecs: 6,
                     bgm: .local(name: "wanderingMeditation", ext: "mp3"),
                     showBibleLink: false,
-                    onCompleted: { onCompleted?() },
+                    onCompleted: {
+                        print("[OnboardingIntroMeditation] QuickPracticeSlideBranded breathing exercise completed")
+                        onCompleted?()
+                    },
                     showInlineMuteButton: true,
                     startMuted: false
                 )
@@ -57,11 +61,15 @@ struct QuickPracticeSlideBranded: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
-        .onAppear { playPrompts() }
+        .onAppear {
+            print("[OnboardingIntroMeditation] QuickPracticeSlideBranded.onAppear stage=\(stage) promptIndex=\(promptIndex)")
+            playPrompts()
+        }
     }
 
     private func playPrompts() {
-        guard stage == .intro else { return }
+        guard stage == .intro, !didStartPrompts else { return }
+        didStartPrompts = true
         promptIndex = 0
         showPrompt = true
 
@@ -75,6 +83,7 @@ struct QuickPracticeSlideBranded: View {
                         step()
                     } else {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            print("[OnboardingIntroMeditation] QuickPracticeSlideBranded intro prompts complete; starting breathing exercise")
                             withAnimation(.easeInOut(duration: 0.6)) {
                                 stage = .breathing
                             }
