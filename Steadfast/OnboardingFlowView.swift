@@ -166,6 +166,11 @@ fileprivate struct AppleWatchOnboardingSlide: View {
 struct OnboardingFlowView: View {
     enum Page: Int, CaseIterable {
         case intro1, intro2, intro3, nameConsent, welcomeUser, personalizationWhy, personalizationWhyResponse, personalizationExperience, personalizationExperienceResponse, personalizationFocus, personalizationFocusResponse, personalizationReassurance, morningReminder, widgetReminder, appleWatchInfo, beginMeditation, done
+
+        // Backward-compatible alias for any still-compiled references from the
+        // previous onboarding intro implementation. The intro practice now runs
+        // inline on `beginMeditation`, not as a separate TabView page.
+        static let quickPractice = Page.beginMeditation
     }
 
     @StateObject private var viewModel = OnboardingViewModel()
