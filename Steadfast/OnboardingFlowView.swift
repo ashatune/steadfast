@@ -435,7 +435,7 @@ struct OnboardingFlowView: View {
 
     private func startIntroMeditationFlow() {
         debugLog("startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
-        debugLog("activePages=\(Page.allCases) quickPracticePagePresent=false quickPracticeMountedInline=\(!didCompleteOnboardingMeditation)")
+        debugLog("activePages=\(Page.allCases) introPracticeMountedInline=\(!didCompleteOnboardingMeditation)")
         guard !didCompleteOnboardingMeditation else {
             debugLog("startIntroMeditationFlow found already completed; advancing to done")
             advancePastIntroMeditation()
