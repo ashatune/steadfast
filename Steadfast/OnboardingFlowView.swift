@@ -182,7 +182,13 @@ struct OnboardingFlowView: View {
     @AppStorage("onboarding_personalization_reason") private var personalizationReason = ""
     @AppStorage("onboarding_personalization_experience") private var personalizationExperience = ""
     @AppStorage("onboarding_personalization_focus") private var personalizationFocus = ""
-    @State private var hasStartedIntroMeditation = false
+    @State private var introMeditationState: IntroMeditationState = .beginMeditationPrompt
+    @State private var didPrepareFreshOnboardingMeditationState = false
+
+    private enum IntroMeditationState: String {
+        case beginMeditationPrompt
+        case introMeditationActive
+    }
 
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
@@ -320,18 +326,8 @@ struct OnboardingFlowView: View {
                     AppleWatchOnboardingSlide()
                         .tag(Page.appleWatchInfo)
 
-                    Group {
-                        if hasStartedIntroMeditation && !didCompleteOnboardingMeditation {
-                            QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
-                                debugLog("QuickPracticeSlideBranded.onCompleted callback")
-                                finishIntroMeditationStep()
-                            })
-                        } else {
-                            BeginMeditationSlide()
-                        }
-                    }
-                    .id(hasStartedIntroMeditation ? "intro-practice" : "begin-meditation")
-                    .tag(Page.beginMeditation)
+                    BeginMeditationSlide()
+                        .tag(Page.beginMeditation)
 
                     DoneSlideBranded {
                         hasCompletedOnboarding = true
@@ -352,11 +348,33 @@ struct OnboardingFlowView: View {
                 .padding(.top, max(proxy.safeAreaInsets.top, 8))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(Color.clear)
+                .allowsHitTesting(introMeditationState != .introMeditationActive)
+
+                if introMeditationState == .introMeditationActive {
+                    introMeditationActiveView
+                        .transition(.opacity)
+                        .zIndex(10)
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            prepareFreshOnboardingMeditationStateIfNeeded()
+        }
         .onChange(of: viewModel.page) { newPage in
             debugLog("page changed to \(newPage)")
+        }
+    }
+
+    private var introMeditationActiveView: some View {
+        QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
+            debugLog("QuickPracticeSlideBranded.onCompleted callback")
+            finishIntroMeditationStep()
+        })
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(OnboardingPalette.backgroundVeil.ignoresSafeArea())
+        .onAppear {
+            debugLog("introMeditationActiveView appeared; meditation component mounted")
         }
     }
 
@@ -365,7 +383,7 @@ struct OnboardingFlowView: View {
     }
 
     private var isIntroMeditationRunning: Bool {
-        viewModel.page == .beginMeditation && hasStartedIntroMeditation && !didCompleteOnboardingMeditation
+        introMeditationState == .introMeditationActive
     }
 
     private var onboardingControls: some View {
@@ -419,6 +437,7 @@ struct OnboardingFlowView: View {
     }
 
     private func goBack() {
+        guard introMeditationState != .introMeditationActive else { return }
         if let prev = Page(rawValue: viewModel.page.rawValue - 1) { viewModel.page = prev }
     }
 
@@ -435,36 +454,59 @@ struct OnboardingFlowView: View {
             startIntroMeditationFlow()
             return
         }
-        advance(from: viewModel.page)
-    }
-
-    private func startIntroMeditationFlow() {
-        debugLog("startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
-        debugLog("activePages=\(Page.allCases) introPracticeMountedInline=\(!didCompleteOnboardingMeditation)")
-        guard !didCompleteOnboardingMeditation else {
-            debugLog("startIntroMeditationFlow found already completed; advancing to done")
-            advancePastIntroMeditation()
-            return
-        }
         hasStartedIntroMeditation = true
         debugLog("startIntroMeditationFlow set hasStartedIntroMeditation=true pageAfter=\(viewModel.page)")
     }
 
+    private func prepareFreshOnboardingMeditationStateIfNeeded() {
+        guard !didPrepareFreshOnboardingMeditationState else { return }
+        didPrepareFreshOnboardingMeditationState = true
+        guard !hasCompletedOnboarding else { return }
+        if didCompleteOnboardingMeditation {
+            debugLog("resetting stale didCompleteOnboardingMeditation for fresh onboarding before Begin")
+            didCompleteOnboardingMeditation = false
+        }
+    }
+
+    private func startIntroMeditationFlow() {
+        debugLog("Begin tapped; startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
+        debugLog("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
+        guard viewModel.page == .beginMeditation else { return }
+        if didCompleteOnboardingMeditation {
+            debugLog("clearing stale didCompleteOnboardingMeditation before starting visible meditation")
+            didCompleteOnboardingMeditation = false
+        }
+        introMeditationState = .introMeditationActive
+        debugLog("active onboarding state changed to introMeditationActive")
+    }
+
     private func finishIntroMeditationStep() {
-        debugLog("finishIntroMeditationStep entered")
+        debugLog("finishIntroMeditationStep entered from component completion")
         guard !didCompleteOnboardingMeditation else {
             debugLog("finishIntroMeditationStep ignored because didCompleteOnboardingMeditation is already true")
             return
         }
         didCompleteOnboardingMeditation = true
-        hasStartedIntroMeditation = false
-        debugLog("finishIntroMeditationStep marked complete; advancing to done")
+        introMeditationState = .beginMeditationPrompt
+        debugLog("finishIntroMeditationStep marked complete; Welcome will appear next")
         advancePastIntroMeditation()
     }
 
     private func skipMeditationAndAdvance() {
-        debugLog("skip tapped from page=\(viewModel.page)")
-        finishIntroMeditationStep()
+        debugLog("Skip hyperlink tapped from Begin screen")
+        guard !didCompleteOnboardingMeditation else {
+            advancePastIntroMeditation()
+            return
+        }
+        didCompleteOnboardingMeditation = true
+        introMeditationState = .beginMeditationPrompt
+        debugLog("Skip marked meditation complete intentionally; Welcome will appear next")
+        advancePastIntroMeditation()
+    }
+
+    private func advancePastIntroMeditation() {
+        viewModel.page = .done
+        debugLog("Welcome page appeared via advancePastIntroMeditation pageAfter=\(viewModel.page)")
     }
 
     private func advancePastIntroMeditation() {
@@ -480,7 +522,7 @@ struct OnboardingFlowView: View {
     }
 
     private func debugLog(_ message: String) {
-        print("[OnboardingIntroMeditation] \(message) page=\(viewModel.page) hasStartedIntroMeditation=\(hasStartedIntroMeditation) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)")
+        print("[OnboardingIntroMeditation] \(message) page=\(viewModel.page) introMeditationState=\(introMeditationState.rawValue) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)")
     }
 
     private func responseText(for selection: String, in dictionary: [String: String]) -> String {

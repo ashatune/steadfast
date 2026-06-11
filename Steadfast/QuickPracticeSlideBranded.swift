@@ -72,6 +72,7 @@ struct QuickPracticeSlideBranded: View {
         didStartPrompts = true
         promptIndex = 0
         showPrompt = true
+        print("[OnboardingIntroMeditation] QuickPracticeSlideBranded pre-prompts started")
 
         func step() {
             DispatchQueue.main.asyncAfter(deadline: .now() + promptDuration(for: prompts[promptIndex])) {
