@@ -405,7 +405,7 @@ struct OnboardingFlowView: View {
                     .buttonStyle(OnboardingSecondaryButtonStyle())
             }
 
-            if viewModel.page == .beginMeditation && !didCompleteOnboardingMeditation {
+            if (viewModel.page == .beginMeditation || viewModel.page == .quickPractice) && !didCompleteOnboardingMeditation {
                 Button("Skip") { skipMeditationAndAdvance() }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.accent)
@@ -461,7 +461,8 @@ struct OnboardingFlowView: View {
             startIntroMeditationFlow()
             return
         }
-        advance(from: viewModel.page)
+        introMeditationState = .introMeditationActive
+        debugLog("active onboarding state changed to introMeditationActive")
     }
 
     private func prepareFreshOnboardingMeditationStateIfNeeded() {
