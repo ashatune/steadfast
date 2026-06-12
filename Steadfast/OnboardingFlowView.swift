@@ -190,6 +190,13 @@ struct OnboardingFlowView: View {
         case introMeditationActive
     }
 
+    private var hasStartedIntroMeditation: Bool {
+        get { introMeditationState == .introMeditationActive }
+        nonmutating set {
+            introMeditationState = newValue ? .introMeditationActive : .beginMeditationPrompt
+        }
+    }
+
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
         breathIn: "I can do all things through Christ",
@@ -454,8 +461,8 @@ struct OnboardingFlowView: View {
             startIntroMeditationFlow()
             return
         }
-        hasStartedIntroMeditation = true
-        debugLog("startIntroMeditationFlow set hasStartedIntroMeditation=true pageAfter=\(viewModel.page)")
+        introMeditationState = .introMeditationActive
+        debugLog("active onboarding state changed to introMeditationActive")
     }
 
     private func prepareFreshOnboardingMeditationStateIfNeeded() {
@@ -489,29 +496,24 @@ struct OnboardingFlowView: View {
         didCompleteOnboardingMeditation = true
         introMeditationState = .beginMeditationPrompt
         debugLog("finishIntroMeditationStep marked complete; Welcome will appear next")
-        advancePastIntroMeditation()
+        showWelcomeAfterIntroMeditation()
     }
 
     private func skipMeditationAndAdvance() {
         debugLog("Skip hyperlink tapped from Begin screen")
         guard !didCompleteOnboardingMeditation else {
-            advancePastIntroMeditation()
+            showWelcomeAfterIntroMeditation()
             return
         }
         didCompleteOnboardingMeditation = true
         introMeditationState = .beginMeditationPrompt
         debugLog("Skip marked meditation complete intentionally; Welcome will appear next")
-        advancePastIntroMeditation()
+        showWelcomeAfterIntroMeditation()
     }
 
-    private func advancePastIntroMeditation() {
+    private func showWelcomeAfterIntroMeditation() {
         viewModel.page = .done
-        debugLog("Welcome page appeared via advancePastIntroMeditation pageAfter=\(viewModel.page)")
-    }
-
-    private func advancePastIntroMeditation() {
-        viewModel.page = .done
-        debugLog("advancePastIntroMeditation pageAfter=\(viewModel.page)")
+        debugLog("Welcome page appeared via showWelcomeAfterIntroMeditation pageAfter=\(viewModel.page)")
     }
 
     private func advance(from page: Page) {
