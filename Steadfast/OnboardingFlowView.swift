@@ -182,19 +182,13 @@ struct OnboardingFlowView: View {
     @AppStorage("onboarding_personalization_reason") private var personalizationReason = ""
     @AppStorage("onboarding_personalization_experience") private var personalizationExperience = ""
     @AppStorage("onboarding_personalization_focus") private var personalizationFocus = ""
-    @State private var introMeditationState: IntroMeditationState = .beginMeditationPrompt
+    @State private var introMeditationState: IntroMeditationState = .notStarted
     @State private var didPrepareFreshOnboardingMeditationState = false
 
     private enum IntroMeditationState: String {
-        case beginMeditationPrompt
-        case introMeditationActive
-    }
-
-    private var hasStartedIntroMeditation: Bool {
-        get { introMeditationState == .introMeditationActive }
-        nonmutating set {
-            introMeditationState = newValue ? .introMeditationActive : .beginMeditationPrompt
-        }
+        case notStarted
+        case active
+        case completed
     }
 
     private let defaultVerse = Verse(
@@ -355,9 +349,9 @@ struct OnboardingFlowView: View {
                 .padding(.top, max(proxy.safeAreaInsets.top, 8))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(Color.clear)
-                .allowsHitTesting(introMeditationState != .introMeditationActive)
+                .allowsHitTesting(!isIntroMeditationRunning)
 
-                if introMeditationState == .introMeditationActive {
+                if isIntroMeditationRunning {
                     introMeditationActiveView
                         .transition(.opacity)
                         .zIndex(10)
@@ -370,6 +364,10 @@ struct OnboardingFlowView: View {
         }
         .onChange(of: viewModel.page) { newPage in
             debugLog("page changed to \(newPage)")
+            if newPage != .beginMeditation && introMeditationState == .active {
+                debugLog("leaving Begin page while meditation active; returning to notStarted so it cannot overlay other onboarding slides")
+                introMeditationState = .notStarted
+            }
         }
     }
 
@@ -378,6 +376,7 @@ struct OnboardingFlowView: View {
             debugLog("QuickPracticeSlideBranded.onCompleted callback")
             finishIntroMeditationStep()
         })
+        .id("onboarding-intro-meditation-active")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(OnboardingPalette.backgroundVeil.ignoresSafeArea())
         .onAppear {
@@ -390,7 +389,7 @@ struct OnboardingFlowView: View {
     }
 
     private var isIntroMeditationRunning: Bool {
-        introMeditationState == .introMeditationActive
+        viewModel.page == .beginMeditation && introMeditationState == .active
     }
 
     private var onboardingControls: some View {
@@ -444,7 +443,7 @@ struct OnboardingFlowView: View {
     }
 
     private func goBack() {
-        guard introMeditationState != .introMeditationActive else { return }
+        guard !isIntroMeditationRunning else { return }
         if let prev = Page(rawValue: viewModel.page.rawValue - 1) { viewModel.page = prev }
     }
 
@@ -461,18 +460,6 @@ struct OnboardingFlowView: View {
             startIntroMeditationFlow()
             return
         }
-        introMeditationState = .introMeditationActive
-        debugLog("active onboarding state changed to introMeditationActive")
-    }
-
-    private func prepareFreshOnboardingMeditationStateIfNeeded() {
-        guard !didPrepareFreshOnboardingMeditationState else { return }
-        didPrepareFreshOnboardingMeditationState = true
-        guard !hasCompletedOnboarding else { return }
-        if didCompleteOnboardingMeditation {
-            debugLog("resetting stale didCompleteOnboardingMeditation for fresh onboarding before Begin")
-            didCompleteOnboardingMeditation = false
-        }
     }
 
     private func startIntroMeditationFlow() {
@@ -487,6 +474,28 @@ struct OnboardingFlowView: View {
         debugLog("active onboarding state changed to introMeditationActive")
     }
 
+    private func prepareFreshOnboardingMeditationStateIfNeeded() {
+        guard !didPrepareFreshOnboardingMeditationState else { return }
+        didPrepareFreshOnboardingMeditationState = true
+        guard !hasCompletedOnboarding else { return }
+        if introMeditationState != .notStarted {
+            debugLog("onboarding appeared before Begin; resetting introMeditationState to notStarted")
+            introMeditationState = .notStarted
+        }
+    }
+
+    private func startIntroMeditationFlow() {
+        debugLog("Begin tapped; startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
+        debugLog("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
+        guard viewModel.page == .beginMeditation else { return }
+        if didCompleteOnboardingMeditation {
+            debugLog("clearing stale didCompleteOnboardingMeditation before starting visible meditation")
+            didCompleteOnboardingMeditation = false
+        }
+        introMeditationState = .active
+        debugLog("active onboarding state changed to introMeditationActive")
+    }
+
     private func finishIntroMeditationStep() {
         debugLog("finishIntroMeditationStep entered from component completion")
         guard !didCompleteOnboardingMeditation else {
@@ -494,7 +503,7 @@ struct OnboardingFlowView: View {
             return
         }
         didCompleteOnboardingMeditation = true
-        introMeditationState = .beginMeditationPrompt
+        introMeditationState = .completed
         debugLog("finishIntroMeditationStep marked complete; Welcome will appear next")
         showWelcomeAfterIntroMeditation()
     }
@@ -506,7 +515,7 @@ struct OnboardingFlowView: View {
             return
         }
         didCompleteOnboardingMeditation = true
-        introMeditationState = .beginMeditationPrompt
+        introMeditationState = .completed
         debugLog("Skip marked meditation complete intentionally; Welcome will appear next")
         showWelcomeAfterIntroMeditation()
     }
