@@ -189,6 +189,9 @@ struct OnboardingFlowView: View {
         case notStarted
         case active
         case completed
+
+        // Compatibility for any stale references from the previous enum naming.
+        static let introMeditationActive = IntroMeditationState.active
     }
 
     private let defaultVerse = Verse(
@@ -457,7 +460,7 @@ struct OnboardingFlowView: View {
         }
         if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
         if viewModel.page == .beginMeditation {
-            startIntroMeditationFlow()
+            beginIntroMeditationFlow()
             return
         }
     }
@@ -470,7 +473,7 @@ struct OnboardingFlowView: View {
             debugLog("clearing stale didCompleteOnboardingMeditation before starting visible meditation")
             didCompleteOnboardingMeditation = false
         }
-        introMeditationState = .introMeditationActive
+        introMeditationState = .active
         debugLog("active onboarding state changed to introMeditationActive")
     }
 
@@ -484,8 +487,8 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func startIntroMeditationFlow() {
-        debugLog("Begin tapped; startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
+    private func beginIntroMeditationFlow() {
+        debugLog("Begin tapped; beginIntroMeditationFlow entered pageBefore=\(viewModel.page)")
         debugLog("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
         guard viewModel.page == .beginMeditation else { return }
         if didCompleteOnboardingMeditation {
