@@ -398,13 +398,32 @@ struct OnboardingFlowView: View {
     }
 
     private var introMeditationActiveView: some View {
-        QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
-            logOnboardingIntroMeditation("QuickPracticeSlideBranded.onCompleted callback")
-            finishIntroMeditationStep()
-        })
-        .id("onboarding-intro-meditation-active")
+        VStack(spacing: 12) {
+            QuickPracticeSlideBranded(verse: defaultVerse, onCompleted: {
+                logOnboardingIntroMeditation("QuickPracticeSlideBranded.onCompleted callback")
+                finishIntroMeditationStep()
+            })
+            .id("onboarding-intro-meditation-active")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Button("Skip") {
+                skipMeditationAndAdvance()
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.accent)
+            .padding(.bottom, 24)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(OnboardingPalette.backgroundVeil.ignoresSafeArea())
+        .background {
+            ZStack {
+                Color(uiColor: .systemBackground)
+                    .ignoresSafeArea()
+                OnboardingCloudBackground()
+                    .ignoresSafeArea()
+                OnboardingPalette.backgroundVeil
+                    .ignoresSafeArea()
+            }
+        }
         .onAppear {
             logOnboardingIntroMeditation("introMeditationActiveView appeared; meditation component mounted")
         }
