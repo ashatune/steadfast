@@ -45,7 +45,9 @@ enum QuickStartMeditation {
 
 struct QuickStartMeditationSessionView: View {
     let duration: MeditationDurationOption
+    var onDone: (() -> Void)? = nil
 
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
 
     var body: some View {
@@ -60,6 +62,11 @@ struct QuickStartMeditationSessionView: View {
             onCompleted: {
                 streakManager.markSessionCompleted()
                 StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+                if let onDone {
+                    onDone()
+                } else {
+                    dismiss()
+                }
             },
             recordsAnchorCompletion: false,
             headerImageName: "SteadfastCROSS1024",
@@ -71,6 +78,17 @@ struct QuickStartMeditationSessionView: View {
 struct QuickStartMeditationFlow: View {
     var autoPresentDurations = false
     var onExit: (() -> Void)? = nil
+    var onDone: (() -> Void)? = nil
+
+    init(
+        autoPresentDurations: Bool = false,
+        onExit: (() -> Void)? = nil,
+        onDone: (() -> Void)? = nil
+    ) {
+        self.autoPresentDurations = autoPresentDurations
+        self.onExit = onExit
+        self.onDone = onDone
+    }
 
     @State private var showDurations = false
     @State private var selectedDuration: MeditationDurationOption?
@@ -124,7 +142,8 @@ struct QuickStartMeditationFlow: View {
         .background(
             NavigationLink("", isActive: $showSession) {
                 QuickStartMeditationSessionView(
-                    duration: selectedDuration ?? MeditationDurationOption.default
+                    duration: selectedDuration ?? MeditationDurationOption.default,
+                    onDone: finishSession
                 )
             }
             .hidden()
@@ -150,6 +169,13 @@ struct QuickStartMeditationFlow: View {
                 showDurations = true
             }
         }
+    }
+
+    private func finishSession() {
+        guard showSession else { return }
+        showSession = false
+        selectedDuration = nil
+        onDone?()
     }
 }
 

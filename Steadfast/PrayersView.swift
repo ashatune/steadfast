@@ -73,7 +73,8 @@ struct PrayersView: View {
             .background(
                 NavigationLink("", isActive: $showQuickStartSession) {
                     QuickStartMeditationSessionView(
-                        duration: selectedQuickStartDuration ?? MeditationDurationOption.default
+                        duration: selectedQuickStartDuration ?? MeditationDurationOption.default,
+                        onDone: finishQuickStartSession
                     )
                 }
                 .hidden()
@@ -106,5 +107,11 @@ struct PrayersView: View {
         guard destination == .quickStartMeditation else { return }
         vm.pendingDeepLink = nil
         showQuickStartDurations = true
+    }
+
+    private func finishQuickStartSession() {
+        guard showQuickStartSession else { return }
+        showQuickStartSession = false
+        selectedQuickStartDuration = nil
     }
 }
