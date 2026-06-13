@@ -489,18 +489,34 @@ struct OnboardingFlowView: View {
             activateIntroMeditationFromBegin()
             return
         }
+        introMeditationState = .active
+        debugLog("active onboarding state changed to introMeditationActive")
     }
 
-    private func beginIntroMeditationFlow() {
-        debugLog("Begin tapped; beginIntroMeditationFlow entered pageBefore=\(viewModel.page)")
-        debugLog("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
+    private func prepareFreshOnboardingMeditationStateIfNeeded() {
+        guard !didPrepareFreshOnboardingMeditationState else { return }
+        didPrepareFreshOnboardingMeditationState = true
+        guard !hasCompletedOnboarding else { return }
+        if introMeditationState != .notStarted {
+            logOnboardingIntroMeditation("onboarding appeared before Begin; resetting introMeditationState to notStarted")
+            introMeditationState = .notStarted
+        }
+        if didCompleteOnboardingMeditation {
+            logOnboardingIntroMeditation("resetting stale didCompleteOnboardingMeditation for incomplete onboarding")
+            didCompleteOnboardingMeditation = false
+        }
+    }
+
+    private func activateIntroMeditationFromBegin() {
+        logOnboardingIntroMeditation("Begin tapped; activateIntroMeditationFromBegin entered pageBefore=\(viewModel.page)")
+        logOnboardingIntroMeditation("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
         guard viewModel.page == .beginMeditation else { return }
         if didCompleteOnboardingMeditation {
-            debugLog("clearing stale didCompleteOnboardingMeditation before starting visible meditation")
+            logOnboardingIntroMeditation("clearing stale didCompleteOnboardingMeditation before starting visible meditation")
             didCompleteOnboardingMeditation = false
         }
         introMeditationState = .active
-        debugLog("active onboarding state changed to introMeditationActive")
+        logOnboardingIntroMeditation("active onboarding state changed to introMeditationActive")
     }
 
     private func prepareFreshOnboardingMeditationStateIfNeeded() {
@@ -571,7 +587,8 @@ struct OnboardingFlowView: View {
     }
 
     private func logOnboardingIntroMeditation(_ message: String) {
-        print("[OnboardingIntroMeditation] \(message) page=\(viewModel.page) introMeditationState=\(introMeditationState.rawValue) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)")
+        let context = "page=\(viewModel.page) introMeditationState=\(introMeditationState.rawValue) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)"
+        print("[OnboardingIntroMeditation] \(message) \(context)")
     }
 
     private func responseText(for selection: String, in dictionary: [String: String]) -> String {
