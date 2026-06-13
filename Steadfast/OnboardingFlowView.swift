@@ -194,6 +194,29 @@ struct OnboardingFlowView: View {
         static let introMeditationActive = IntroMeditationState.active
     }
 
+
+    private var onboardingPages: [Page] {
+        [
+            .intro1,
+            .intro2,
+            .intro3,
+            .nameConsent,
+            .welcomeUser,
+            .personalizationWhy,
+            .personalizationWhyResponse,
+            .personalizationExperience,
+            .personalizationExperienceResponse,
+            .personalizationFocus,
+            .personalizationFocusResponse,
+            .personalizationReassurance,
+            .morningReminder,
+            .widgetReminder,
+            .appleWatchInfo,
+            .beginMeditation,
+            .done
+        ]
+    }
+
     private let defaultVerse = Verse(
         ref: "Philippians 4:13",
         breathIn: "I can do all things through Christ",
@@ -447,7 +470,10 @@ struct OnboardingFlowView: View {
 
     private func goBack() {
         guard !isIntroMeditationRunning else { return }
-        if let prev = Page(rawValue: viewModel.page.rawValue - 1) { viewModel.page = prev }
+        guard let currentIndex = onboardingPages.firstIndex(of: viewModel.page), currentIndex > onboardingPages.startIndex else { return }
+        let previous = onboardingPages[onboardingPages.index(before: currentIndex)]
+        debugLog("back from \(viewModel.page) to \(previous)")
+        viewModel.page = previous
     }
 
     private func goForward() {
@@ -465,8 +491,8 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func startIntroMeditationFlow() {
-        debugLog("Begin tapped; startIntroMeditationFlow entered pageBefore=\(viewModel.page)")
+    private func beginIntroMeditationFlow() {
+        debugLog("Begin tapped; beginIntroMeditationFlow entered pageBefore=\(viewModel.page)")
         debugLog("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
         guard viewModel.page == .beginMeditation else { return }
         if didCompleteOnboardingMeditation {
@@ -484,6 +510,10 @@ struct OnboardingFlowView: View {
         if introMeditationState != .notStarted {
             debugLog("onboarding appeared before Begin; resetting introMeditationState to notStarted")
             introMeditationState = .notStarted
+        }
+        if didCompleteOnboardingMeditation {
+            debugLog("resetting stale didCompleteOnboardingMeditation for incomplete onboarding")
+            didCompleteOnboardingMeditation = false
         }
     }
 
@@ -529,10 +559,19 @@ struct OnboardingFlowView: View {
     }
 
     private func advance(from page: Page) {
-        if let next = Page(rawValue: page.rawValue + 1), page != .done {
-            debugLog("advance from \(page) to \(next)")
-            viewModel.page = next
+        guard let currentIndex = onboardingPages.firstIndex(of: page) else {
+            debugLog("advance blocked because page \(page) is not in onboardingPages=\(onboardingPages)")
+            return
         }
+        let nextIndex = onboardingPages.index(after: currentIndex)
+        guard nextIndex < onboardingPages.endIndex else { return }
+        let next = onboardingPages[nextIndex]
+        debugLog("advance from \(page) to \(next) using onboardingPages index \(currentIndex)->\(nextIndex)")
+        viewModel.page = next
+    }
+
+    private func debugLog(_ message: String) {
+        print("[OnboardingIntroMeditation] \(message) page=\(viewModel.page) introMeditationState=\(introMeditationState.rawValue) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)")
     }
 
     private func debugLog(_ message: String) {
