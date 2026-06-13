@@ -477,20 +477,27 @@ struct OnboardingFlowView: View {
     }
 
     private func goForward() {
-        logOnboardingIntroMeditation("primary button tapped label=\(nextLabel) pageBefore=\(viewModel.page)")
-        if viewModel.page == .nameConsent {
+        let currentPage = viewModel.page
+        logOnboardingIntroMeditation("primary button tapped label=\(nextLabel) pageBefore=\(currentPage)")
+
+        if currentPage == .nameConsent {
             let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
             let persistedName = trimmedName.isEmpty ? "Friend" : trimmedName
             displayName = persistedName
             appViewModel.profileFirstName = persistedName
         }
-        if viewModel.page == .morningReminder { viewModel.commitMorningReminder() }
-        if viewModel.page == .beginMeditation {
+
+        if currentPage == .morningReminder {
+            viewModel.commitMorningReminder()
+        }
+
+        if currentPage == .beginMeditation {
             activateIntroMeditationFromBegin()
             return
         }
-        introMeditationState = .active
-        logOnboardingIntroMeditation("active onboarding state changed to introMeditationActive")
+
+        advance(from: currentPage)
+        logOnboardingIntroMeditation("advanced from \(currentPage) to \(viewModel.page)")
     }
 
     // MARK: - Intro Meditation Flow
