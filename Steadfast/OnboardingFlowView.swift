@@ -490,34 +490,10 @@ struct OnboardingFlowView: View {
             return
         }
         introMeditationState = .active
-        debugLog("active onboarding state changed to introMeditationActive")
-    }
-
-    private func prepareFreshOnboardingMeditationStateIfNeeded() {
-        guard !didPrepareFreshOnboardingMeditationState else { return }
-        didPrepareFreshOnboardingMeditationState = true
-        guard !hasCompletedOnboarding else { return }
-        if introMeditationState != .notStarted {
-            logOnboardingIntroMeditation("onboarding appeared before Begin; resetting introMeditationState to notStarted")
-            introMeditationState = .notStarted
-        }
-        if didCompleteOnboardingMeditation {
-            logOnboardingIntroMeditation("resetting stale didCompleteOnboardingMeditation for incomplete onboarding")
-            didCompleteOnboardingMeditation = false
-        }
-    }
-
-    private func activateIntroMeditationFromBegin() {
-        logOnboardingIntroMeditation("Begin tapped; activateIntroMeditationFromBegin entered pageBefore=\(viewModel.page)")
-        logOnboardingIntroMeditation("activePages=\(Page.allCases) introMeditationRoutePresent=true introPracticeComponent=QuickPracticeSlideBranded")
-        guard viewModel.page == .beginMeditation else { return }
-        if didCompleteOnboardingMeditation {
-            logOnboardingIntroMeditation("clearing stale didCompleteOnboardingMeditation before starting visible meditation")
-            didCompleteOnboardingMeditation = false
-        }
-        introMeditationState = .active
         logOnboardingIntroMeditation("active onboarding state changed to introMeditationActive")
     }
+
+    // MARK: - Intro Meditation Flow
 
     private func prepareFreshOnboardingMeditationStateIfNeeded() {
         guard !didPrepareFreshOnboardingMeditationState else { return }
@@ -585,6 +561,8 @@ struct OnboardingFlowView: View {
         logOnboardingIntroMeditation("advance from \(page) to \(next) using onboardingPages index \(currentIndex)->\(nextIndex)")
         viewModel.page = next
     }
+
+    // MARK: - Logging
 
     private func logOnboardingIntroMeditation(_ message: String) {
         let context = "page=\(viewModel.page) introMeditationState=\(introMeditationState.rawValue) didCompleteOnboardingMeditation=\(didCompleteOnboardingMeditation)"
