@@ -43,9 +43,11 @@ struct CalmNowOptionsView: View {
         .navigationDestination(item: $destination) { destination in
             switch destination {
             case .quickMeditation:
-                QuickStartMeditationFlow(autoPresentDurations: true) {
-                    self.destination = nil
-                }
+                QuickStartMeditationFlow(
+                    autoPresentDurations: true,
+                    onExit: { self.destination = nil },
+                    onDone: { self.destination = nil }
+                )
             case .panicReset:
                 PanicResetView()
             case .godIsWithYou:

@@ -123,9 +123,11 @@ struct SOSFlow: View {
             )
 
         case .pathQuickMeditation:
-            QuickStartMeditationFlow(autoPresentDurations: true) {
-                stage = .choice
-            }
+            QuickStartMeditationFlow(
+                autoPresentDurations: true,
+                onExit: { stage = .choice },
+                onDone: { stage = .finale }
+            )
 
         case .pathQuickCalm:
             QuickCalmFlow(onDone: { stage = .finale }, speak: speakFn)
