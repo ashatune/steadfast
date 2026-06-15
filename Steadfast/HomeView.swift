@@ -5,6 +5,8 @@ import UIKit
 struct HomeView: View {
     @AppStorage("displayName") private var storedDisplayName = ""
     @AppStorage("home.devotionalVerseCompletedDay") private var devotionalVerseCompletedDay = ""
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasSeenHomeTutorial") private var hasSeenHomeTutorial = false
 
     @EnvironmentObject var vm: AppViewModel
     @EnvironmentObject private var streakManager: StreakManager
@@ -24,6 +26,7 @@ struct HomeView: View {
     @State private var previousDevotionalCompletion = false
     @State private var previousAnchorCompletion = false
     @State private var didInitializeCompletionState = false
+    @State private var tutorialFrames: [HomeTutorialTarget: CGRect] = [:]
 
     enum TopTab { case home, reframe }
     private enum ExpandedRhythmCard { case devotionalVerse, devotional, anchor }
@@ -75,6 +78,7 @@ struct HomeView: View {
                 // Profile icon on the right
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileMonogram(initial: vm.profileInitial)
+                        .homeTutorialTarget(.profile)
                         .onTapGesture { showProfileSheet = true }
                 }
             }
@@ -161,7 +165,8 @@ struct HomeView: View {
 
     // MARK: - Home content
     private var homeContent: some View {
-        ScrollView {
+        ScrollViewReader { scrollProxy in
+            ScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 // Greeting
                 Text("\(greetingPrefix), \(greetingName)")
@@ -172,11 +177,15 @@ struct HomeView: View {
                     .transition(.opacity)
 
                 streakSection
+                    .homeTutorialTarget(.streak)
+                    .id(HomeTutorialTarget.streak)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 4)
 
                 // Big SOS button
                 SOSButton { vm.showSOS = true }
+                    .homeTutorialTarget(.calmNow)
+                    .id(HomeTutorialTarget.calmNow)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 4)
 
@@ -185,22 +194,41 @@ struct HomeView: View {
                     .padding(.top, 8)
 
                 rhythmCardsSection
+                    .homeTutorialTarget(.devotional)
+                    .id(HomeTutorialTarget.devotional)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
                 // Daily Rhythm
                 DailyRhythmView()
+                    .homeTutorialTarget(.dailyRhythm)
+                    .id(HomeTutorialTarget.dailyRhythm)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 14)
 
                 HomeMeditationsCarouselView()
+                    .homeTutorialTarget(.meditations)
+                    .id(HomeTutorialTarget.meditations)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 14)
 
                 libraryFooterSection
             }
         }
-        .background(Theme.bg.ignoresSafeArea())
+            .background(Theme.bg.ignoresSafeArea())
+            .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
+            .overlay {
+                if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
+                    HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
+                        withAnimation(.easeInOut(duration: 0.28)) {
+                            scrollProxy.scrollTo(target, anchor: target == .meditations ? .center : .top)
+                        }
+                    }, onComplete: {
+                        hasSeenHomeTutorial = true
+                    })
+                }
+            }
+        }
         .task {
             devotionalVM.loadDevotionalIfNeeded()
         }
@@ -1163,5 +1191,237 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
         }
         .scaleEffect(animateCompletion ? 1.04 : 1)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Home tutorial overlay
+
+enum HomeTutorialTarget: String, CaseIterable, Hashable {
+    case profile
+    case streak
+    case calmNow
+    case devotional
+    case dailyRhythm
+    case meditations
+    case bottomNavigation
+}
+
+private struct HomeTutorialStep: Identifiable {
+    let id: HomeTutorialTarget
+    let title: String
+    let description: String
+}
+
+private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
+
+    static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+private extension View {
+    func homeTutorialTarget(_ target: HomeTutorialTarget) -> some View {
+        background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: HomeTutorialTargetFramePreferenceKey.self,
+                    value: [target: proxy.frame(in: .global)]
+                )
+            }
+        )
+    }
+}
+
+private struct HomeTutorialOverlay: View {
+    let frames: [HomeTutorialTarget: CGRect]
+    let onScrollToTarget: (HomeTutorialTarget) -> Void
+    let onComplete: () -> Void
+
+    @State private var stepIndex = 0
+
+    private let steps: [HomeTutorialStep] = [
+        HomeTutorialStep(id: .profile, title: "Your profile", description: "Update your profile information, preferences, and account details here."),
+        HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
+        HomeTutorialStep(id: .calmNow, title: "Need calm right now?", description: "Tap here when you need quick relief from anxiety, a calming breath, or a peaceful reset."),
+        HomeTutorialStep(id: .devotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
+        HomeTutorialStep(id: .dailyRhythm, title: "Find calm throughout your day", description: "Use Daily Rhythm to meet each part of your day with a moment of peace, prayer, and grounding."),
+        HomeTutorialStep(id: .meditations, title: "Explore meditations", description: "Find guided meditations for different needs, emotions, and moments when you want to slow down."),
+        HomeTutorialStep(id: .bottomNavigation, title: "Explore more", description: "Use the menu to find verses, more meditations, settings, and other parts of your journey.")
+    ]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let step = steps[stepIndex]
+            let overlayFrame = proxy.frame(in: .global)
+            let targetFrame = frame(for: step.id, in: proxy, overlayFrame: overlayFrame)
+            let highlightFrame = targetFrame.insetBy(dx: -8, dy: -8)
+
+            ZStack {
+                Color.black.opacity(0.48)
+                    .ignoresSafeArea()
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .frame(width: highlightFrame.width, height: highlightFrame.height)
+                            .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                            .blendMode(.destinationOut)
+                    }
+                    .compositingGroup()
+
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Theme.accent, lineWidth: 3)
+                    .frame(width: highlightFrame.width, height: highlightFrame.height)
+                    .shadow(color: Theme.accent.opacity(0.35), radius: 12)
+                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                    .accessibilityHidden(true)
+
+                tooltip(for: step, screenSize: proxy.size, highlightFrame: highlightFrame)
+            }
+            .contentShape(Rectangle())
+            .onAppear { prepareCurrentStep() }
+            .onChange(of: stepIndex) { _ in prepareCurrentStep() }
+            .onChange(of: frames) { _ in
+                logMeasurement(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame, proxy: proxy)
+            }
+        }
+        .transition(.opacity)
+        .zIndex(20)
+    }
+
+    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
+        if target == .bottomNavigation {
+            return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
+        }
+
+        if let frame = frames[target], frame.width > 1, frame.height > 1 {
+            return relativeFrame(forGlobalFrame: frame, inOverlay: overlayFrame)
+        }
+
+        return CGRect(
+            x: proxy.size.width - 64,
+            y: max(proxy.safeAreaInsets.top, 12) + 8,
+            width: 44,
+            height: 44
+        )
+    }
+
+    private func bottomNavigationFrame(in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
+        let screenBounds = UIScreen.main.bounds
+        let tabBarHeight: CGFloat = 58
+        let bottomInset = max(proxy.safeAreaInsets.bottom, 0)
+        let globalY = screenBounds.height - bottomInset - tabBarHeight
+        let localY = globalY - overlayFrame.minY
+        let localX = max(8 - overlayFrame.minX, 8)
+        let availableWidth = min(screenBounds.width, proxy.size.width + max(overlayFrame.minX, 0))
+
+        return CGRect(
+            x: localX,
+            y: max(localY, 8),
+            width: max(0, availableWidth - 16),
+            height: tabBarHeight
+        )
+    }
+
+    private func relativeFrame(forGlobalFrame frame: CGRect, inOverlay overlayFrame: CGRect) -> CGRect {
+        CGRect(
+            x: frame.minX - overlayFrame.minX,
+            y: frame.minY - overlayFrame.minY,
+            width: frame.width,
+            height: frame.height
+        )
+    }
+
+    private func logMeasurement(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect, proxy: GeometryProxy) {
+        #if DEBUG
+        print("HomeTutorialOverlay measurement step=\(target.rawValue) targetLocal=\(targetFrame) overlayGlobal=\(overlayFrame) safeTop=\(proxy.safeAreaInsets.top) safeBottom=\(proxy.safeAreaInsets.bottom)")
+        #endif
+    }
+
+    private func tooltip(for step: HomeTutorialStep, screenSize: CGSize, highlightFrame: CGRect) -> some View {
+        let cardWidth = min(screenSize.width - 32, 340)
+        let appearsBelow = highlightFrame.midY < screenSize.height * 0.56
+        let yPosition = appearsBelow
+            ? min(highlightFrame.maxY + 112, screenSize.height - 126)
+            : max(highlightFrame.minY - 112, 126)
+        let xPosition = min(max(highlightFrame.midX, cardWidth / 2 + 16), screenSize.width - cardWidth / 2 - 16)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(step.title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Theme.cardTitle)
+                Spacer()
+                Text("\(stepIndex + 1)/\(steps.count)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+            }
+
+            Text(step.description)
+                .font(.subheadline)
+                .foregroundStyle(Theme.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button("Skip", action: onComplete)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+
+                Spacer()
+
+                if stepIndex > 0 {
+                    Button("Back") { stepIndex -= 1 }
+                        .buttonStyle(HomeTutorialSecondaryButtonStyle())
+                }
+
+                Button(stepIndex == steps.count - 1 ? "Done" : "Next") {
+                    if stepIndex == steps.count - 1 {
+                        onComplete()
+                    } else {
+                        stepIndex += 1
+                    }
+                }
+                .buttonStyle(HomeTutorialPrimaryButtonStyle())
+            }
+        }
+        .padding(16)
+        .frame(width: cardWidth)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Theme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Theme.line.opacity(0.9))
+        )
+        .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        .position(x: xPosition, y: yPosition)
+    }
+
+    private func prepareCurrentStep() {
+        let target = steps[stepIndex].id
+        guard target != .profile, target != .bottomNavigation else { return }
+        onScrollToTarget(target)
+    }
+}
+
+private struct HomeTutorialPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .background(Capsule().fill(Theme.accent.opacity(configuration.isPressed ? 0.78 : 1)))
+    }
+}
+
+private struct HomeTutorialSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.accent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Theme.accent.opacity(configuration.isPressed ? 0.18 : 0.1)))
     }
 }
