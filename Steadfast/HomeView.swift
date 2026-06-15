@@ -1294,12 +1294,7 @@ private struct HomeTutorialOverlay: View {
         }
 
         if let frame = frames[target], frame.width > 1, frame.height > 1 {
-            return CGRect(
-                x: frame.minX - overlayFrame.minX,
-                y: frame.minY - overlayFrame.minY,
-                width: frame.width,
-                height: frame.height
-            )
+            return relativeFrame(forGlobalFrame: frame, inOverlay: overlayFrame)
         }
 
         return CGRect(
@@ -1321,9 +1316,18 @@ private struct HomeTutorialOverlay: View {
 
         return CGRect(
             x: localX,
-            y: min(max(localY, 8), proxy.size.height - tabBarHeight - 8),
+            y: max(localY, 8),
             width: max(0, availableWidth - 16),
             height: tabBarHeight
+        )
+    }
+
+    private func relativeFrame(forGlobalFrame frame: CGRect, inOverlay overlayFrame: CGRect) -> CGRect {
+        CGRect(
+            x: frame.minX - overlayFrame.minX,
+            y: frame.minY - overlayFrame.minY,
+            width: frame.width,
+            height: frame.height
         )
     }
 
