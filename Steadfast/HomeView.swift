@@ -78,11 +78,13 @@ struct HomeView: View {
                 // Profile icon on the right
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileMonogram(initial: vm.profileInitial)
+                        .homeTutorialTarget(.profile)
                         .onTapGesture { showProfileSheet = true }
                 }
             }
             .toolbarBackground(.clear, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
