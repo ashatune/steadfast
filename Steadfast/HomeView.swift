@@ -84,6 +84,7 @@ struct HomeView: View {
             }
             .toolbarBackground(.clear, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
@@ -643,6 +644,8 @@ struct HomeView: View {
         LibraryShortcutCard {
             vm.selectedTab = .library
         }
+        .homeTutorialTarget(.bottomNavigation)
+        .id(HomeTutorialTarget.bottomNavigation)
         .padding(.horizontal, sidePadding)
         .padding(.top, 2)
         .padding(.bottom, 16)
@@ -1216,7 +1219,17 @@ private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
     static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
 
     static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
+        let next = nextValue()
+        #if DEBUG
+        for (target, frame) in next {
+            if let existingFrame = value[target] {
+                print("HomeTutorialTarget duplicate registration target=\(target.rawValue) existing=\(existingFrame) next=\(frame)")
+            } else {
+                print("HomeTutorialTarget registered target=\(target.rawValue) frame=\(frame)")
+            }
+        }
+        #endif
+        value.merge(next, uniquingKeysWith: { existing, _ in existing })
     }
 }
 
@@ -1289,12 +1302,12 @@ private struct HomeTutorialOverlay: View {
     }
 
     private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
-        if target == .bottomNavigation {
-            return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
-        }
-
         if let frame = frames[target], frame.width > 1, frame.height > 1 {
             return relativeFrame(forGlobalFrame: frame, inOverlay: overlayFrame)
+        }
+
+        if target == .bottomNavigation {
+            return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
         }
 
         return CGRect(
@@ -1399,7 +1412,7 @@ private struct HomeTutorialOverlay: View {
 
     private func prepareCurrentStep() {
         let target = steps[stepIndex].id
-        guard target != .profile, target != .bottomNavigation else { return }
+        guard target != .profile else { return }
         onScrollToTarget(target)
     }
 }
