@@ -1253,7 +1253,8 @@ private struct HomeTutorialOverlay: View {
     var body: some View {
         GeometryReader { proxy in
             let step = steps[stepIndex]
-            let targetFrame = frame(for: step.id, in: proxy)
+            let overlayFrame = proxy.frame(in: .global)
+            let targetFrame = frame(for: step.id, in: proxy, overlayFrame: overlayFrame)
             let highlightFrame = targetFrame.insetBy(dx: -8, dy: -8)
 
             ZStack {
@@ -1279,22 +1280,57 @@ private struct HomeTutorialOverlay: View {
             .contentShape(Rectangle())
             .onAppear { prepareCurrentStep() }
             .onChange(of: stepIndex) { _ in prepareCurrentStep() }
+            .onChange(of: frames) { _ in
+                logMeasurement(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame, proxy: proxy)
+            }
         }
         .transition(.opacity)
         .zIndex(20)
     }
 
-    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy) -> CGRect {
+    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
         if target == .bottomNavigation {
-            let bottomInset = max(proxy.safeAreaInsets.bottom, 8)
-            return CGRect(x: 8, y: proxy.size.height - bottomInset - 62, width: proxy.size.width - 16, height: 58)
+            return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
         }
 
         if let frame = frames[target], frame.width > 1, frame.height > 1 {
-            return frame
+            return CGRect(
+                x: frame.minX - overlayFrame.minX,
+                y: frame.minY - overlayFrame.minY,
+                width: frame.width,
+                height: frame.height
+            )
         }
 
-        return CGRect(x: proxy.size.width - 64, y: max(proxy.safeAreaInsets.top, 12) + 8, width: 44, height: 44)
+        return CGRect(
+            x: proxy.size.width - 64,
+            y: max(proxy.safeAreaInsets.top, 12) + 8,
+            width: 44,
+            height: 44
+        )
+    }
+
+    private func bottomNavigationFrame(in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
+        let screenBounds = UIScreen.main.bounds
+        let tabBarHeight: CGFloat = 58
+        let bottomInset = max(proxy.safeAreaInsets.bottom, 0)
+        let globalY = screenBounds.height - bottomInset - tabBarHeight
+        let localY = globalY - overlayFrame.minY
+        let localX = max(8 - overlayFrame.minX, 8)
+        let availableWidth = min(screenBounds.width, proxy.size.width + max(overlayFrame.minX, 0))
+
+        return CGRect(
+            x: localX,
+            y: min(max(localY, 8), proxy.size.height - tabBarHeight - 8),
+            width: max(0, availableWidth - 16),
+            height: tabBarHeight
+        )
+    }
+
+    private func logMeasurement(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect, proxy: GeometryProxy) {
+        #if DEBUG
+        print("HomeTutorialOverlay measurement step=\(target.rawValue) targetLocal=\(targetFrame) overlayGlobal=\(overlayFrame) safeTop=\(proxy.safeAreaInsets.top) safeBottom=\(proxy.safeAreaInsets.bottom)")
+        #endif
     }
 
     private func tooltip(for step: HomeTutorialStep, screenSize: CGSize, highlightFrame: CGRect) -> some View {
