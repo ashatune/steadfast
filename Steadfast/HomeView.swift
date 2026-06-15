@@ -75,7 +75,6 @@ struct HomeView: View {
                     .padding(.vertical, 2)
                 }
 
-                // Profile icon on the right
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileMonogram(initial: vm.profileInitial)
                         .homeTutorialTarget(.profile)
