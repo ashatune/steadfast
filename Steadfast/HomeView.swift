@@ -1200,7 +1200,6 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
 // MARK: - Home tutorial overlay
 
 enum HomeTutorialTarget: String, CaseIterable, Hashable {
-    case profile
     case streak
     case calmNow
     case devotional
@@ -1219,17 +1218,7 @@ private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
     static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
 
     static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
-        let next = nextValue()
-        #if DEBUG
-        for (target, frame) in next {
-            if let existingFrame = value[target] {
-                print("HomeTutorialTarget duplicate registration target=\(target.rawValue) existing=\(existingFrame) next=\(frame)")
-            } else {
-                print("HomeTutorialTarget registered target=\(target.rawValue) frame=\(frame)")
-            }
-        }
-        #endif
-        value.merge(next, uniquingKeysWith: { existing, _ in existing })
+        value.merge(nextValue(), uniquingKeysWith: { existing, _ in existing })
     }
 }
 
@@ -1254,7 +1243,6 @@ private struct HomeTutorialOverlay: View {
     @State private var stepIndex = 0
 
     private let steps: [HomeTutorialStep] = [
-        HomeTutorialStep(id: .profile, title: "Your profile", description: "Update your profile information, preferences, and account details here."),
         HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
         HomeTutorialStep(id: .calmNow, title: "Need calm right now?", description: "Tap here when you need quick relief from anxiety, a calming breath, or a peaceful reset."),
         HomeTutorialStep(id: .devotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
@@ -1293,9 +1281,6 @@ private struct HomeTutorialOverlay: View {
             .contentShape(Rectangle())
             .onAppear { prepareCurrentStep() }
             .onChange(of: stepIndex) { _ in prepareCurrentStep() }
-            .onChange(of: frames) { _ in
-                logMeasurement(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame, proxy: proxy)
-            }
         }
         .transition(.opacity)
         .zIndex(20)
@@ -1342,12 +1327,6 @@ private struct HomeTutorialOverlay: View {
             width: frame.width,
             height: frame.height
         )
-    }
-
-    private func logMeasurement(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect, proxy: GeometryProxy) {
-        #if DEBUG
-        print("HomeTutorialOverlay measurement step=\(target.rawValue) targetLocal=\(targetFrame) overlayGlobal=\(overlayFrame) safeTop=\(proxy.safeAreaInsets.top) safeBottom=\(proxy.safeAreaInsets.bottom)")
-        #endif
     }
 
     private func tooltip(for step: HomeTutorialStep, screenSize: CGSize, highlightFrame: CGRect) -> some View {
@@ -1411,9 +1390,7 @@ private struct HomeTutorialOverlay: View {
     }
 
     private func prepareCurrentStep() {
-        let target = steps[stepIndex].id
-        guard target != .profile else { return }
-        onScrollToTarget(target)
+        onScrollToTarget(steps[stepIndex].id)
     }
 }
 
