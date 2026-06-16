@@ -187,6 +187,13 @@ struct HomeView: View {
                     .homeTutorialTarget(.calmNow)
                     .id(HomeTutorialTarget.calmNow)
                     .frame(maxWidth: .infinity, alignment: .center)
+                    .overlay(alignment: .center) {
+                        Color.clear
+                            .frame(width: 188, height: 188)
+                            .homeTutorialTarget(.calmNow)
+                            .allowsHitTesting(false)
+                    }
+                    .id(HomeTutorialTarget.calmNow)
                     .padding(.top, 4)
 
                 rhythmHeader
@@ -220,8 +227,17 @@ struct HomeView: View {
             .overlay {
                 if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
                     HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
+                        guard target != .streak, target != .calmNow else { return }
+
                         withAnimation(.easeInOut(duration: 0.28)) {
-                            scrollProxy.scrollTo(target, anchor: target == .meditations ? .center : .top)
+                            switch target {
+                            case .streak, .calmNow:
+                                break
+                            case .devotional, .dailyRhythm, .meditations:
+                                scrollProxy.scrollTo(target, anchor: .center)
+                            case .bottomNavigation:
+                                scrollProxy.scrollTo(target, anchor: .bottom)
+                            }
                         }
                     }, onComplete: {
                         hasSeenHomeTutorial = true
@@ -1278,8 +1294,17 @@ private struct HomeTutorialOverlay: View {
                 tooltip(for: step, screenSize: proxy.size, highlightFrame: highlightFrame)
             }
             .contentShape(Rectangle())
-            .onAppear { prepareCurrentStep() }
-            .onChange(of: stepIndex) { _ in prepareCurrentStep() }
+            .onAppear {
+                prepareCurrentStep()
+                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+            }
+            .onChange(of: stepIndex) { _ in
+                prepareCurrentStep()
+                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+            }
+            .onChange(of: frames) { _ in
+                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+            }
         }
         .transition(.opacity)
         .zIndex(20)
@@ -1389,7 +1414,30 @@ private struct HomeTutorialOverlay: View {
     }
 
     private func prepareCurrentStep() {
-        onScrollToTarget(steps[stepIndex].id)
+        let target = steps[stepIndex].id
+
+        switch target {
+        case .streak, .calmNow:
+            logScrollDecision(for: target, skippedScroll: true)
+            return
+        case .devotional, .dailyRhythm, .meditations, .bottomNavigation:
+            logScrollDecision(for: target, skippedScroll: false)
+            onScrollToTarget(target)
+        }
+    }
+
+    private func logFrameIfNeeded(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect) {
+        #if DEBUG
+        guard target == .streak || target == .calmNow else { return }
+        print("[HomeTutorial] step=\(target.rawValue) targetFrame=\(targetFrame) overlayFrame=\(overlayFrame)")
+        #endif
+    }
+
+    private func logScrollDecision(for target: HomeTutorialTarget, skippedScroll: Bool) {
+        #if DEBUG
+        guard target == .streak || target == .calmNow else { return }
+        print("[HomeTutorial] step=\(target.rawValue) skippedScroll=\(skippedScroll)")
+        #endif
     }
 }
 
