@@ -77,7 +77,6 @@ struct HomeView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileMonogram(initial: vm.profileInitial)
-                        .homeTutorialTarget(.profile)
                         .onTapGesture { showProfileSheet = true }
                 }
             }
@@ -184,8 +183,6 @@ struct HomeView: View {
 
                 // Big SOS button
                 SOSButton { vm.showSOS = true }
-                    .homeTutorialTarget(.calmNow)
-                    .id(HomeTutorialTarget.calmNow)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .overlay(alignment: .center) {
                         Color.clear
@@ -195,6 +192,7 @@ struct HomeView: View {
                     }
                     .id(HomeTutorialTarget.calmNow)
                     .padding(.top, 4)
+
 
                 rhythmHeader
                     .padding(.horizontal, sidePadding)
