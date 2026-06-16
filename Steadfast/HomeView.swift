@@ -227,15 +227,15 @@ struct HomeView: View {
             .overlay {
                 if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
                     HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
-                        guard target != .streak, target != .calmNow else { return }
-
-                        withAnimation(.easeInOut(duration: 0.28)) {
-                            switch target {
-                            case .streak, .calmNow:
-                                break
-                            case .devotional, .dailyRhythm, .meditations:
+                        switch target {
+                        case .streak, .calmNow:
+                            return
+                        case .devotional, .dailyRhythm, .meditations:
+                            withAnimation(.easeInOut(duration: 0.28)) {
                                 scrollProxy.scrollTo(target, anchor: .center)
-                            case .bottomNavigation:
+                            }
+                        case .bottomNavigation:
+                            withAnimation(.easeInOut(duration: 0.28)) {
                                 scrollProxy.scrollTo(target, anchor: .bottom)
                             }
                         }
