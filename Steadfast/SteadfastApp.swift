@@ -43,6 +43,7 @@ struct SteadfastApp: App {
         UserDefaults.standard.register(defaults: [
             "hasShownSplash": false,
             "hasCompletedOnboarding": false,
+            "hasSeenHomeTutorial": false,
             "hasAcceptedTerms": false,
             "displayName": "",
             "ttsGuidanceEnabled": false,
