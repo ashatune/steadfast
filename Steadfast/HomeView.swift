@@ -77,11 +77,13 @@ struct HomeView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileMonogram(initial: vm.profileInitial)
+                        .homeTutorialTarget(.profile)
                         .onTapGesture { showProfileSheet = true }
                 }
             }
             .toolbarBackground(.clear, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
@@ -182,6 +184,8 @@ struct HomeView: View {
 
                 // Big SOS button
                 SOSButton { vm.showSOS = true }
+                    .homeTutorialTarget(.calmNow)
+                    .id(HomeTutorialTarget.calmNow)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .overlay(alignment: .center) {
                         Color.clear
