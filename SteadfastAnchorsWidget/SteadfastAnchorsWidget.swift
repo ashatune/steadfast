@@ -29,25 +29,22 @@ struct Provider: TimelineProvider {
 
 
     func getSnapshot(in context: Context, completion: @escaping (AnchorEntry) -> Void) {
-        completion(loadCurrentEntry() ?? placeholder(in: context))
+        completion(loadCurrentEntry(for: Date()) ?? placeholder(in: context))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AnchorEntry>) -> Void) {
-        let entry = loadCurrentEntry() ?? placeholder(in: context)
-
-        // Your existing refresh plan is fine:
-        let cal = Calendar.current
-        let nextMidnight = cal.startOfDay(for: Date().addingTimeInterval(60*60*24))
-        let refresh = min(nextMidnight.addingTimeInterval(60*5), Date().addingTimeInterval(60*30))
+        let now = Date()
+        let entry = loadCurrentEntry(for: now) ?? placeholder(in: context)
+        let refresh = DailyAnchorResolver.nextLocalDayBoundary(after: now, calendar: Calendar.current).addingTimeInterval(60)
 
         completion(Timeline(entries: [entry], policy: .after(refresh)))
     }
 
-    private func loadCurrentEntry() -> AnchorEntry? {
-        if let payload = AnchorOfDayStore.load() {
+    private func loadCurrentEntry(for date: Date) -> AnchorEntry? {
+        if let payload = AnchorOfDayStore.load(), DailyAnchorResolver.payload(payload, matches: date, calendar: Calendar.current) {
             print("🔵 Widget READ anchor payload @ \(payload.lastUpdated)")
             return AnchorEntry(
-                date: payload.anchorDate,
+                date: date,
                 text: payload.text,
                 ref: payload.ref,
                 inhale: payload.inhale,
@@ -56,39 +53,15 @@ struct Provider: TimelineProvider {
             )
         }
 
-        // Fallback: legacy SharedStore (keeps compatibility during transition)
-        if let compat = SharedStore.load() {
-            print("🟡 Widget migrated legacy SharedStore payload.")
-            let migrated = AnchorOfDayPayload(
-                id: compat.ref,
-                ref: compat.ref,
-                text: "",
-                inhale: compat.inhale,
-                exhale: compat.exhale,
-                anchorDate: .now,
-                lastUpdated: compat.lastUpdated
-            )
-            AnchorOfDayStore.save(migrated)
-            return AnchorEntry(
-                date: migrated.anchorDate,
-                text: migrated.text,
-                ref: migrated.ref,
-                inhale: migrated.inhale,
-                exhale: migrated.exhale,
-                lastUpdated: migrated.lastUpdated
-            )
-        }
-
-        // Store and return the same fallback the app would use so both stay aligned
-        let fallback = AnchorOfDayStore.fallbackPayload(anchorDate: Calendar.current.startOfDay(for: Date()))
-        AnchorOfDayStore.save(fallback)
+        let resolved = DailyAnchorResolver.payload(for: date, calendar: Calendar.current)
+        AnchorOfDayStore.save(resolved)
         return AnchorEntry(
-            date: fallback.anchorDate,
-            text: fallback.text,
-            ref: fallback.ref,
-            inhale: fallback.inhale,
-            exhale: fallback.exhale,
-            lastUpdated: fallback.lastUpdated
+            date: date,
+            text: resolved.text,
+            ref: resolved.ref,
+            inhale: resolved.inhale,
+            exhale: resolved.exhale,
+            lastUpdated: resolved.lastUpdated
         )
     }
 
