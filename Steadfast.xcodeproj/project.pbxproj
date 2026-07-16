@@ -20,6 +20,7 @@
 		24DA00012F00000100DA0001 /* DailyAnchorResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */; };
 		24DA00022F00000100DA0001 /* DailyAnchorResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */; };
 		24DA00042F00000100DA0001 /* AnchorOfDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */; };
+		24DA00052F00000100DA0001 /* AnchorOfDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */; };
 		2476296D2F5A63F8001DFEA3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2476296C2F5A63F8001DFEA3 /* GoogleService-Info.plist */; };
 		247629702F5A7FDA001DFEA3 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2476296F2F5A7FDA001DFEA3 /* FirebaseAnalytics */; };
 		247629722F5A7FDA001DFEA3 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 247629712F5A7FDA001DFEA3 /* FirebaseCrashlytics */; };
@@ -651,6 +652,7 @@
 			files = (
 				246995422EA839D50098BB6A /* AnchorService.swift in Sources */,
 				24DA00012F00000100DA0001 /* DailyAnchorResolver.swift in Sources */,
+				24DA00052F00000100DA0001 /* AnchorOfDayStore.swift in Sources */,
 				246BB0A62FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */,
 				246995722EA854FD0098BB6A /* VerseShared.swift in Sources */,
 			);
