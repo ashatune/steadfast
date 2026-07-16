@@ -10,6 +10,7 @@ struct AnchorOfDayPayload: Codable, Equatable {
     let inhale: String
     let exhale: String
     let anchorDate: Date
+    let localDayKey: String?
     let lastUpdated: Date
 }
 
@@ -53,11 +54,12 @@ enum AnchorOfDayStore {
             inhale: "Be still",
             exhale: "Know that I am God",
             anchorDate: anchorDate,
+            localDayKey: DailyAnchorResolver.localDayKey(for: anchorDate),
             lastUpdated: .now
         )
     }
 
-    static func makePayload(from verse: Verse, anchorDate: Date, lastUpdated: Date = .now) -> AnchorOfDayPayload {
+    static func makePayload(from verse: Verse, anchorDate: Date, localDayKey: String? = nil, lastUpdated: Date = .now) -> AnchorOfDayPayload {
         let ref = verse.ref.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = verse.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let textWords = text
@@ -74,6 +76,7 @@ enum AnchorOfDayStore {
             inhale: inhale,
             exhale: exhale,
             anchorDate: anchorDate,
+            localDayKey: localDayKey ?? DailyAnchorResolver.localDayKey(for: anchorDate),
             lastUpdated: lastUpdated
         )
     }

@@ -19,7 +19,7 @@ struct DailyVerseProvider {
     }
 
     func verse(for date: Date = Date(), calendar: Calendar = Calendar.current) -> Verse {
-        let dayKey = Self.dayKey(for: date, calendar: calendar)
+        let dayKey = DailyAnchorResolver.localDayKey(for: date, calendar: calendar)
         if let cached = cachedVerse(for: dayKey) {
             return cached
         }
@@ -93,8 +93,7 @@ struct DailyVerseProvider {
     }
 
     private func selectVerse(for date: Date, calendar: Calendar) -> Verse {
-        let anchor = AnchorService.shared.anchorsForToday(count: 1, date: date, calendar: calendar).first
-        return anchor ?? Verse(ref: "Psalm 46:10", text: "Be still, and know that I am God.")
+        DailyAnchorResolver.anchor(for: date, calendar: calendar)
     }
 
     private func persist(_ verse: Verse, for dayKey: String) {
