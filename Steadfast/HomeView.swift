@@ -14,11 +14,14 @@ struct HomeView: View {
     @State private var showAnchorDurationPicker = false
     @State private var selectedAnchorDuration: MeditationDurationOption?
     @EnvironmentObject var flags: FeatureFlags
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showProfileSheet = false
     @State private var now = Date()
     @StateObject private var devotionalVM = DailyDevotionalViewModel()
     @State private var showDevotionalDetail = false
-    @State private var showDevotionalVerseStory = false
+    @State private var presentedDevotionalStory: PresentedDevotionalStory?
+    @State private var selectedDevotionalForDetail: DailyDevotional?
+    @State private var pendingDevotionalDetail: DailyDevotional?
     @State private var devotionalDeepLinkPending = false
     @State private var expandedRhythmCard: ExpandedRhythmCard?
     @State private var rhythmNodeCenters: [Int: CGFloat] = [:]
@@ -115,23 +118,27 @@ struct HomeView: View {
             .presentationDragIndicator(.visible)
         }
         .fullScreenCover(
-            isPresented: $showDevotionalVerseStory,
+            item: $presentedDevotionalStory,
             onDismiss: {
                 completeDevotionalVerseCard(advanceToNext: true)
-            }
-        ) {
-            if let devotional = devotionalVM.devotional {
-                DevotionalVerseStoryView(devotional: devotional) {
-                    showDevotionalVerseStory = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        showDevotionalDetail = true
-                    }
+                if let pendingDevotionalDetail {
+                    selectedDevotionalForDetail = pendingDevotionalDetail
+                    self.pendingDevotionalDetail = nil
+                    showDevotionalDetail = true
                 }
+            }
+        ) { presentation in
+            DevotionalVerseStoryView(devotional: presentation.devotional) { capturedDevotional in
+                pendingDevotionalDetail = capturedDevotional
+                presentedDevotionalStory = nil
             }
         }
 
         // Tick greeting + refresh anchors
-        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now = $0 }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { tick in
+            now = tick
+            devotionalVM.refreshIfDayChanged(now: tick)
+        }
         .onChange(of: vm.pendingDeepLink) { dest in
             guard let dest = dest else { return }
             if dest == .anchor {
@@ -139,7 +146,7 @@ struct HomeView: View {
                 vm.pendingDeepLink = nil
             } else if dest == .devotional {
                 devotionalDeepLinkPending = true
-                devotionalVM.refresh()
+                devotionalVM.refresh(now: now)
             }
         }
 
@@ -155,7 +162,7 @@ struct HomeView: View {
         }
         .hidden()
         NavigationLink("", isActive: $showDevotionalDetail) {
-            if let devotional = devotionalVM.devotional {
+            if let devotional = selectedDevotionalForDetail {
                 DailyDevotionalDetailView(devotional: devotional)
             }
         }
@@ -244,20 +251,25 @@ struct HomeView: View {
             }
         }
         .task {
-            devotionalVM.loadDevotionalIfNeeded()
+            devotionalVM.loadDevotionalIfNeeded(now: now)
         }
         .onAppear {
             vm.syncProfileNameFromDefaults()
-            print("🏠 Home screen reached; triggering devotional fetch")
-            devotionalVM.refresh()
+            print("🏠 Home screen reached; checking devotional day")
+            devotionalVM.loadDevotionalIfNeeded(now: now)
             syncCompletionBaselines()
         }
         .onChange(of: storedDisplayName) { _ in
             vm.syncProfileNameFromDefaults()
         }
+        .onChange(of: scenePhase) { phase in
+            guard phase == .active else { return }
+            devotionalVM.refreshIfDayChanged(now: Date())
+        }
         .onChange(of: devotionalVM.devotional?.id) { _ in
             guard devotionalDeepLinkPending else { return }
-            if devotionalVM.devotional != nil {
+            if let devotional = devotionalVM.devotional {
+                selectedDevotionalForDetail = devotional
                 showDevotionalDetail = true
                 devotionalDeepLinkPending = false
                 vm.pendingDeepLink = nil
@@ -482,6 +494,13 @@ struct HomeView: View {
                             .font(.subheadline)
                             .foregroundStyle(Theme.inkSecondary)
                     }
+
+                    Button {
+                        presentDevotionalStory()
+                    } label: {
+                        RhythmCTAButtonLabel("Open verse story")
+                    }
+                    .padding(.top, 4)
                 } else if let devotional = devotionalVM.devotional {
                     Text(devotional.verseReference)
                         .font(.subheadline.weight(.semibold))
@@ -494,7 +513,7 @@ struct HomeView: View {
                         .multilineTextAlignment(.leading)
 
                     Button {
-                        showDevotionalVerseStory = true
+                        presentDevotionalStory(with: devotional)
                     } label: {
                         RhythmCTAButtonLabel("Open verse story")
                     }
@@ -503,10 +522,24 @@ struct HomeView: View {
                     Text("Today’s devotional verse is not available yet.")
                         .font(.subheadline)
                         .foregroundStyle(Theme.inkSecondary)
+
+                    Button {
+                        presentDevotionalStory()
+                    } label: {
+                        RhythmCTAButtonLabel("Open verse story")
+                    }
+                    .padding(.top, 4)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private func presentDevotionalStory(with devotional: DailyDevotional? = nil) {
+        presentedDevotionalStory = DevotionalStoryPresentationResolver.presentation(
+            for: devotional ?? devotionalVM.devotional,
+            now: Date()
+        )
     }
 
     private var devotionalRhythmCard: some View {
@@ -540,6 +573,7 @@ struct HomeView: View {
                         .foregroundStyle(Theme.accent)
 
                     Button {
+                        selectedDevotionalForDetail = devotional
                         showDevotionalDetail = true
                     } label: {
                         RhythmCTAButtonLabel("Read")
@@ -739,15 +773,28 @@ private struct LibraryShortcutCard: View {
 
 private struct DevotionalVerseStoryView: View {
     let devotional: DailyDevotional
-    let onContinueToDevotional: () -> Void
+    let imageLoader: any DevotionalVerseRemoteImageLoading
+    let onContinueToDevotional: (DailyDevotional) -> Void
+
+    init(
+        devotional: DailyDevotional,
+        imageLoader: any DevotionalVerseRemoteImageLoading = DevotionalVerseRemoteImageLoader.shared,
+        onContinueToDevotional: @escaping (DailyDevotional) -> Void
+    ) {
+        self.devotional = devotional
+        self.imageLoader = imageLoader
+        self.onContinueToDevotional = onContinueToDevotional
+        _resolvedBackground = State(initialValue: DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional))
+    }
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
     @State private var shareImage: UIImage?
     @State private var showShareSheet = false
     @State private var showSavedConfirmation = false
+    @State private var resolvedBackground: DevotionalVerseStoryBackgroundSnapshot
 
-    private var backgroundName: String {
+    private var fallbackBackgroundName: String {
         DevotionalVerseStoryAssets.backgroundName(for: devotional.date)
     }
 
@@ -763,7 +810,7 @@ private struct DevotionalVerseStoryView: View {
 
                 DevotionalVerseStoryContent(
                     devotional: devotional,
-                    backgroundName: backgroundName,
+                    background: resolvedBackground,
                     logoSize: 72,
                     showsChromeSafePadding: true
                 )
@@ -771,6 +818,25 @@ private struct DevotionalVerseStoryView: View {
                 .ignoresSafeArea()
 
                 VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(.black.opacity(0.32), in: Circle())
+                                .overlay(
+                                    Circle().stroke(.white.opacity(0.22), lineWidth: 1)
+                                )
+                        }
+                        .accessibilityLabel("Close devotional story")
+                    }
+                    .padding(.top, max(geo.safeAreaInsets.top, 16) + 8)
+                    .padding(.horizontal, 18)
+
                     Spacer()
 
                     VStack(spacing: 14) {
@@ -830,6 +896,12 @@ private struct DevotionalVerseStoryView: View {
         }
         .background(Color.black.ignoresSafeArea())
         .ignoresSafeArea()
+        .task(id: devotional.id) {
+            await resolveRemoteBackgroundIfNeeded(for: devotional)
+        }
+        .onChange(of: devotional.id) { _ in
+            resolvedBackground = DevotionalVerseStoryBackgroundSnapshot(fallbackAssetName: fallbackBackgroundName)
+        }
         .sheet(isPresented: $showShareSheet) {
             if let shareImage {
                 DevotionalVerseShareSheet(activityItems: [shareImage])
@@ -856,7 +928,7 @@ private struct DevotionalVerseStoryView: View {
 
     private func continueToDevotional() {
         dismiss()
-        onContinueToDevotional()
+        onContinueToDevotional(devotional)
     }
 
     private func saveDevotionalVerse() {
@@ -874,17 +946,33 @@ private struct DevotionalVerseStoryView: View {
 
     @MainActor
     private func shareDevotionalVerse() {
+        let backgroundSnapshot = resolvedBackground
         shareImage = DevotionalVerseStoryRenderer.renderImage(
             devotional: devotional,
-            backgroundName: backgroundName
+            background: backgroundSnapshot
         )
         showShareSheet = shareImage != nil
+    }
+
+    @MainActor
+    private func resolveRemoteBackgroundIfNeeded(for devotional: DailyDevotional) async {
+        let fallback = DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional)
+        resolvedBackground = fallback
+
+        let requestedDevotionalID = devotional.id
+        let resolved = await DevotionalVerseStoryBackgroundResolver.resolve(
+            devotional: devotional,
+            fallbackAssetName: fallback.fallbackAssetName,
+            imageLoader: imageLoader
+        )
+        guard requestedDevotionalID == self.devotional.id else { return }
+        resolvedBackground = resolved
     }
 }
 
 private struct DevotionalVerseStoryContent: View {
     let devotional: DailyDevotional
-    let backgroundName: String
+    let background: DevotionalVerseStoryBackgroundSnapshot
     var logoSize: CGFloat
     var showsChromeSafePadding: Bool
 
@@ -893,7 +981,7 @@ private struct DevotionalVerseStoryContent: View {
             Color.black
                 .ignoresSafeArea()
 
-            DevotionalVerseStoryBackground(imageName: backgroundName)
+            DevotionalVerseStoryBackground(background: background)
 
             LinearGradient(
                 colors: [
@@ -946,7 +1034,7 @@ private struct DevotionalVerseStoryContent: View {
 }
 
 private struct DevotionalVerseStoryBackground: View {
-    let imageName: String
+    let background: DevotionalVerseStoryBackgroundSnapshot
 
     var body: some View {
         GeometryReader { geo in
@@ -966,7 +1054,7 @@ private struct DevotionalVerseStoryBackground: View {
                 Color.black
                     .ignoresSafeArea()
 
-                Image(imageName)
+                backgroundImage
                     .resizable()
                     .scaledToFill()
                     .frame(width: fullWidth, height: fullHeight)
@@ -979,9 +1067,99 @@ private struct DevotionalVerseStoryBackground: View {
         .background(Color.black.ignoresSafeArea())
         .ignoresSafeArea()
     }
+
+    private var backgroundImage: Image {
+        if let remoteImage = background.remoteImage {
+            return Image(uiImage: remoteImage)
+        }
+        return Image(background.fallbackAssetName)
+    }
 }
 
-private enum DevotionalVerseStoryAssets {
+struct DevotionalVerseStoryBackgroundSnapshot {
+    let fallbackAssetName: String
+    let remoteImage: UIImage?
+
+    init(fallbackAssetName: String, remoteImage: UIImage? = nil) {
+        self.fallbackAssetName = fallbackAssetName
+        self.remoteImage = remoteImage
+    }
+
+    static func initial(for devotional: DailyDevotional) -> DevotionalVerseStoryBackgroundSnapshot {
+        DevotionalVerseStoryBackgroundSnapshot(
+            fallbackAssetName: DevotionalVerseStoryAssets.backgroundName(for: devotional.date)
+        )
+    }
+
+    var usesRemoteImage: Bool { remoteImage != nil }
+}
+
+struct PresentedDevotionalStory: Identifiable {
+    let id = UUID()
+    let devotional: DailyDevotional
+}
+
+enum DevotionalStoryPresentationResolver {
+    static func presentation(for devotional: DailyDevotional?, now: Date = Date()) -> PresentedDevotionalStory {
+        PresentedDevotionalStory(devotional: devotional ?? DailyDevotional.fallback(for: now))
+    }
+}
+
+protocol DevotionalVerseRemoteImageLoading {
+    func loadImage(from url: URL) async -> UIImage?
+}
+
+enum DevotionalVerseStoryBackgroundResolver {
+    static func resolve(
+        devotional: DailyDevotional,
+        fallbackAssetName: String,
+        imageLoader: any DevotionalVerseRemoteImageLoading
+    ) async -> DevotionalVerseStoryBackgroundSnapshot {
+        guard let imageURL = devotional.imageURL,
+              let image = await imageLoader.loadImage(from: imageURL)
+        else {
+            return DevotionalVerseStoryBackgroundSnapshot(fallbackAssetName: fallbackAssetName)
+        }
+
+        return DevotionalVerseStoryBackgroundSnapshot(
+            fallbackAssetName: fallbackAssetName,
+            remoteImage: image
+        )
+    }
+}
+
+final class DevotionalVerseRemoteImageLoader: DevotionalVerseRemoteImageLoading {
+    static let shared = DevotionalVerseRemoteImageLoader()
+
+    private let session: URLSession
+    private let cache = NSCache<NSURL, UIImage>()
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
+
+    func loadImage(from url: URL) async -> UIImage? {
+        let cacheKey = url as NSURL
+        if let cached = cache.object(forKey: cacheKey) {
+            return cached
+        }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            if let httpResponse = response as? HTTPURLResponse,
+               !(200...299).contains(httpResponse.statusCode) {
+                return nil
+            }
+            guard let image = UIImage(data: data) else { return nil }
+            cache.setObject(image, forKey: cacheKey)
+            return image
+        } catch {
+            return nil
+        }
+    }
+}
+
+enum DevotionalVerseStoryAssets {
     private static let story1Name = "SteadfastStory1"
     private static let story2Name = "SteadfastStory2"
 
@@ -991,12 +1169,12 @@ private enum DevotionalVerseStoryAssets {
     }
 }
 
-private enum DevotionalVerseStoryRenderer {
+enum DevotionalVerseStoryRenderer {
     @MainActor
-    static func renderImage(devotional: DailyDevotional, backgroundName: String) -> UIImage? {
+    static func renderImage(devotional: DailyDevotional, background: DevotionalVerseStoryBackgroundSnapshot) -> UIImage? {
         let view = DevotionalVerseStoryContent(
             devotional: devotional,
-            backgroundName: backgroundName,
+            background: background,
             logoSize: 112,
             showsChromeSafePadding: false
         )
