@@ -336,6 +336,126 @@ struct DailyDevotionalImplementationTests {
         #expect(first == second)
     }
 
+    @Test func storyPresentationUsesLoadedDevotionalWhenAvailable() {
+        let devotional = DailyDevotional(
+            id: "loaded",
+            date: Date(),
+            title: "Loaded Title",
+            verseReference: "Loaded Ref",
+            verseText: "Loaded Verse",
+            body: "Loaded Body",
+            cta: nil,
+            imageURL: nil
+        )
+
+        let presentation = DevotionalStoryPresentationResolver.presentation(for: devotional, now: Date())
+
+        #expect(presentation.devotional.id == "loaded")
+        #expect(presentation.devotional.verseText == "Loaded Verse")
+        #expect(presentation.devotional.verseReference == "Loaded Ref")
+    }
+
+    @Test func storyPresentationUsesCompleteFallbackWhenNoDevotionalLoaded() {
+        let cal = calendar()
+        let now = date(2026, 7, 20, 8, 0, in: cal)
+        let presentation = DevotionalStoryPresentationResolver.presentation(for: nil, now: now)
+
+        #expect(presentation.devotional.id.hasPrefix("placeholder-"))
+        #expect(!presentation.devotional.title.isEmpty)
+        #expect(!presentation.devotional.verseText.isEmpty)
+        #expect(!presentation.devotional.verseReference.isEmpty)
+        #expect(!presentation.devotional.body.isEmpty)
+    }
+
+    @Test func initialStoryBackgroundIsLocalAssetWithoutImageURL() {
+        let devotional = DailyDevotional(
+            id: "local-background",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: nil
+        )
+
+        let snapshot = DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional)
+
+        #expect(!snapshot.usesRemoteImage)
+        #expect(["SteadfastStory1", "SteadfastStory2"].contains(snapshot.fallbackAssetName))
+    }
+
+    @Test func initialStoryBackgroundIsLocalAssetBeforeRemoteImageLoads() {
+        let devotional = DailyDevotional(
+            id: "remote-background",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: URL(string: "https://example.com/story.jpg")
+        )
+
+        let snapshot = DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional)
+
+        #expect(!snapshot.usesRemoteImage)
+        #expect(["SteadfastStory1", "SteadfastStory2"].contains(snapshot.fallbackAssetName))
+    }
+
+    @Test func cancellationStyleRemoteFailureRetainsLocalAssetSnapshot() async {
+        let loader = TestImageLoader(result: nil)
+        let devotional = DailyDevotional(
+            id: "cancelled-load",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: URL(string: "https://example.com/cancelled.jpg")
+        )
+
+        let resolved = await DevotionalVerseStoryBackgroundResolver.resolve(
+            devotional: devotional,
+            fallbackAssetName: "SteadfastStory1",
+            imageLoader: loader
+        )
+
+        #expect(!resolved.usesRemoteImage)
+        #expect(resolved.fallbackAssetName == "SteadfastStory1")
+    }
+
+    @Test func continueUsesCapturedDevotionalDespiteLaterViewModelChange() {
+        let captured = DailyDevotional(
+            id: "captured-story",
+            date: Date(),
+            title: "Captured Title",
+            verseReference: "Captured Ref",
+            verseText: "Captured Verse",
+            body: "Captured Body",
+            cta: nil,
+            imageURL: nil
+        )
+        let later = DailyDevotional(
+            id: "later-home-state",
+            date: Date(),
+            title: "Later Title",
+            verseReference: "Later Ref",
+            verseText: "Later Verse",
+            body: "Later Body",
+            cta: nil,
+            imageURL: nil
+        )
+
+        let presentation = PresentedDevotionalStory(devotional: captured)
+        let detailDevotional = presentation.devotional
+
+        #expect(detailDevotional.id == "captured-story")
+        #expect(later.id == "later-home-state")
+        #expect(detailDevotional.id != later.id)
+    }
+
     @MainActor
     @Test func shareRendererAcceptsCapturedDevotionalAndBackgroundSnapshot() {
         let devotional = DailyDevotional(
