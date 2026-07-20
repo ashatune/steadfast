@@ -6,13 +6,11 @@ import FirebaseFirestore
 import FirebaseCore
 #endif
 
-/// Loads today's devotional (document ID = `yyyy-MM-dd`), otherwise falls back
-/// to the most recent devotional ordered by `date`.
-/// Firestore documents must include a `date` field that can be ordered
-/// (`yyyy-MM-dd` string or `Timestamp`). Other fields:
-/// - `title`, `verseReference`, `verseText`, `body`
-/// - `cta` (optional)
-/// - `imageURL` (optional string; https or Firebase Storage download URL for the card background)
+/// Loads today's devotional from Firestore by exact local day key (`date == yyyy-MM-dd`).
+/// Firestore documents must include `date` as a `yyyy-MM-dd` string for lookup.
+/// Required non-empty string fields: `title`, `verseReference`, `verseText`, `body`.
+/// Optional fields: `cta` (canonical lowercase; uppercase `CTA` is read as a legacy fallback)
+/// and `imageURL` (HTTPS download URL for story backgrounds).
 /// - Future notification metadata (optional, not required today):
 ///   `notificationTitle`, `notificationPreview`, `notificationQuestion`,
 ///   `notificationTakeaway`, `notificationEveningPrompt`
@@ -21,7 +19,7 @@ import FirebaseCore
 /// TODO: Make sure Firestore is added to the project via SPM or CocoaPods.
 final class DailyDevotionalService {
     private let collectionName: String
-    private let calendar: Calendar
+    let calendar: Calendar
 
     init(collectionName: String = "dailyDevotions", calendar: Calendar = .autoupdatingCurrent) {
         self.collectionName = collectionName
@@ -31,8 +29,7 @@ final class DailyDevotionalService {
     /// Fetches today's devotional from Firestore or falls back to a local placeholder.
     func fetchDevotionalForToday(completion: @escaping (DailyDevotional) -> Void) {
         let today = calendar.startOfDay(for: Date())
-        let dateKey = Self.dateFormatter.string(from: today)
-        let todayString = dateKey
+        let todayString = Self.dayKey(for: today, calendar: calendar)
         let placeholder = DailyDevotional.placeholder(for: today)
 
         func completeWithPlaceholder(reason: String) {
@@ -70,7 +67,9 @@ final class DailyDevotionalService {
             else {
                 if let firstDocument = snapshot?.documents.first {
                     print("DailyDevotionalService: selected document id=\(firstDocument.documentID)")
-                    print("DailyDevotionalService: selected document raw data=\(firstDocument.data())")
+                    #if DEBUG
+                    print("DailyDevotionalService: selected document id=\(firstDocument.documentID) failed required-field validation")
+                    #endif
                     completeWithPlaceholder(reason: "first-document-map-failed")
                 } else {
                     completeWithPlaceholder(reason: "query-returned-zero-documents")
@@ -78,7 +77,6 @@ final class DailyDevotionalService {
                 return
             }
             print("DailyDevotionalService: selected document id=\(document.documentID)")
-            print("DailyDevotionalService: selected document raw data=\(document.data())")
             print("DailyDevotionalService: using Firestore devotional id=\(mapped.id) date=\(mapped.date)")
             completion(mapped)
         }
@@ -116,47 +114,92 @@ final class DailyDevotionalService {
     }
 
     private func map(data: [String: Any], id: String, fallbackDate: Date) -> DailyDevotional? {
-        let placeholder = DailyDevotional.placeholder(for: fallbackDate)
+        Self.mapFirestoreData(data, id: id, fallbackDate: fallbackDate)
+    }
+    #endif
+
+    // MARK: - Mapping helpers
+    static func mapFirestoreData(_ data: [String: Any], id: String, fallbackDate: Date, calendar: Calendar = .autoupdatingCurrent) -> DailyDevotional? {
+        guard let title = trimmedRequiredString(data["title"], key: "title", documentID: id),
+              let verseReference = trimmedRequiredString(data["verseReference"], key: "verseReference", documentID: id),
+              let verseText = trimmedRequiredString(data["verseText"], key: "verseText", documentID: id),
+              let body = trimmedRequiredString(data["body"], key: "body", documentID: id)
+        else { return nil }
+
         let date: Date = {
-            if let timestamp = data["date"] as? Timestamp { return timestamp.dateValue() }
-            if let dateString = data["date"] as? String, let parsed = Self.dateFormatter.date(from: dateString) {
+            if let dateString = data["date"] as? String, let parsed = dateFormatter(for: calendar).date(from: dateString.trimmingCharacters(in: .whitespacesAndNewlines)) {
                 return parsed
             }
             return fallbackDate
         }()
 
-        let imageURL: URL? = {
-            guard let urlString = data["imageURL"] as? String else { return nil }
-            return URL(string: urlString)
-        }()
-
-        let devotional = DailyDevotional(
+        return DailyDevotional(
             id: id,
             date: date,
-            title: data["title"] as? String ?? placeholder.title,
-            verseReference: data["verseReference"] as? String ?? placeholder.verseReference,
-            verseText: data["verseText"] as? String ?? placeholder.verseText,
-            body: data["body"] as? String ?? placeholder.body,
-            cta: data["cta"] as? String ?? placeholder.cta,
-            imageURL: imageURL,
-            notificationTitle: data["notificationTitle"] as? String,
-            notificationPreview: data["notificationPreview"] as? String,
-            notificationQuestion: data["notificationQuestion"] as? String,
-            notificationTakeaway: data["notificationTakeaway"] as? String,
-            notificationEveningPrompt: data["notificationEveningPrompt"] as? String
+            title: title,
+            verseReference: verseReference,
+            verseText: verseText,
+            body: body,
+            cta: optionalTrimmedString(data["cta"]) ?? optionalTrimmedString(data["CTA"]),
+            imageURL: validatedImageURL(from: data["imageURL"]),
+            notificationTitle: optionalTrimmedString(data["notificationTitle"]),
+            notificationPreview: optionalTrimmedString(data["notificationPreview"]),
+            notificationQuestion: optionalTrimmedString(data["notificationQuestion"]),
+            notificationTakeaway: optionalTrimmedString(data["notificationTakeaway"]),
+            notificationEveningPrompt: optionalTrimmedString(data["notificationEveningPrompt"])
         )
-
-        return devotional
     }
-    #endif
+
+    static func validatedImageURL(from value: Any?) -> URL? {
+        guard let raw = value as? String else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let components = URLComponents(string: trimmed),
+              components.scheme?.lowercased() == "https",
+              components.host?.isEmpty == false,
+              let url = components.url,
+              url.scheme?.lowercased() == "https"
+        else { return nil }
+        return url
+    }
+
+    static func dayKey(for date: Date, calendar: Calendar = .autoupdatingCurrent) -> String {
+        let startOfDay = calendar.startOfDay(for: date)
+        return dateFormatter(for: calendar).string(from: startOfDay)
+    }
+
+    private static func trimmedRequiredString(_ value: Any?, key: String, documentID: String) -> String? {
+        guard let string = value as? String else {
+            debugInvalidDocument(documentID: documentID, reason: "missing-or-wrong-type required field \(key)")
+            return nil
+        }
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            debugInvalidDocument(documentID: documentID, reason: "blank required field \(key)")
+            return nil
+        }
+        return trimmed
+    }
+
+    private static func optionalTrimmedString(_ value: Any?) -> String? {
+        guard let string = value as? String else { return nil }
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func debugInvalidDocument(documentID: String, reason: String) {
+        #if DEBUG
+        print("DailyDevotionalService: rejected Firestore devotional id=\(documentID) reason=\(reason)")
+        #endif
+    }
 
     // MARK: - Formatting
-    private static let dateFormatter: DateFormatter = {
+    private static func dateFormatter(for calendar: Calendar) -> DateFormatter {
         let df = DateFormatter()
         df.calendar = Calendar(identifier: .gregorian)
-        df.locale = .autoupdatingCurrent
-        df.timeZone = .autoupdatingCurrent
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = calendar.timeZone
         df.dateFormat = "yyyy-MM-dd"
         return df
-    }()
+    }
 }
