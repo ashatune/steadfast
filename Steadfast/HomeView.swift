@@ -892,10 +892,13 @@ private struct DevotionalVerseStoryView: View {
                 }
             }
             .background(Color.black.ignoresSafeArea())
-            .ignoresSafeArea()
         }
         .background(Color.black.ignoresSafeArea())
-        .ignoresSafeArea()
+        .overlay(alignment: .topTrailing) {
+            closeButton
+                .padding(.top, 12)
+                .padding(.trailing, 18)
+        }
         .task(id: devotional.id) {
             await resolveRemoteBackgroundIfNeeded(for: devotional)
         }
@@ -907,6 +910,22 @@ private struct DevotionalVerseStoryView: View {
                 DevotionalVerseShareSheet(activityItems: [shareImage])
             }
         }
+    }
+
+    private var closeButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(.black.opacity(0.32), in: Circle())
+                .overlay(
+                    Circle().stroke(.white.opacity(0.22), lineWidth: 1)
+                )
+        }
+        .accessibilityLabel("Close devotional story")
     }
 
     private func storyActionLabel(title: String, systemImage: String) -> some View {
