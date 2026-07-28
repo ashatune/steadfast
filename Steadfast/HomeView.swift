@@ -236,13 +236,9 @@ struct HomeView: View {
                         case .streak, .calmNow:
                             return
                         case .devotional, .dailyRhythm, .meditations:
-                            withAnimation(.easeInOut(duration: 0.28)) {
-                                scrollProxy.scrollTo(target, anchor: .center)
-                            }
+                            scrollProxy.scrollTo(target, anchor: .center)
                         case .bottomNavigation:
-                            withAnimation(.easeInOut(duration: 0.28)) {
-                                scrollProxy.scrollTo(target, anchor: .bottom)
-                            }
+                            scrollProxy.scrollTo(target, anchor: .bottom)
                         }
                     }, onComplete: {
                         hasSeenHomeTutorial = true
@@ -1424,6 +1420,11 @@ private struct HomeTutorialStep: Identifiable {
     let description: String
 }
 
+private struct ResolvedHomeTutorialLayout {
+    let stepIndex: Int
+    let targetFrame: CGRect
+}
+
 private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
     static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
 
@@ -1450,7 +1451,10 @@ private struct HomeTutorialOverlay: View {
     let onScrollToTarget: (HomeTutorialTarget) -> Void
     let onComplete: () -> Void
 
-    @State private var stepIndex = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var resolvedLayout: ResolvedHomeTutorialLayout?
+    @State private var pendingStepIndex: Int?
+    @State private var calloutSize = CGSize(width: 340, height: 220)
 
     private let steps: [HomeTutorialStep] = [
         HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
@@ -1463,49 +1467,61 @@ private struct HomeTutorialOverlay: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let step = steps[stepIndex]
             let overlayFrame = proxy.frame(in: .global)
-            let targetFrame = frame(for: step.id, in: proxy, overlayFrame: overlayFrame)
-            let highlightFrame = targetFrame.insetBy(dx: -8, dy: -8)
 
             ZStack {
-                Color.black.opacity(0.48)
-                    .ignoresSafeArea()
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .frame(width: highlightFrame.width, height: highlightFrame.height)
-                            .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                            .blendMode(.destinationOut)
-                    }
-                    .compositingGroup()
+                if let layout = resolvedLayout {
+                    let step = steps[layout.stepIndex]
+                    let highlightFrame = layout.targetFrame.insetBy(dx: -8, dy: -8)
 
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Theme.accent, lineWidth: 3)
-                    .frame(width: highlightFrame.width, height: highlightFrame.height)
-                    .shadow(color: Theme.accent.opacity(0.35), radius: 12)
-                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                    .accessibilityHidden(true)
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .frame(width: highlightFrame.width, height: highlightFrame.height)
+                                .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                                .blendMode(.destinationOut)
+                        }
+                        .compositingGroup()
 
-                tooltip(for: step, screenSize: proxy.size, highlightFrame: highlightFrame)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Theme.accent, lineWidth: 3)
+                        .frame(width: highlightFrame.width, height: highlightFrame.height)
+                        .shadow(color: Theme.accent.opacity(0.35), radius: 12)
+                        .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                        .accessibilityHidden(true)
+
+                    tooltip(
+                        for: step,
+                        stepIndex: layout.stepIndex,
+                        screenSize: proxy.size,
+                        safeAreaInsets: proxy.safeAreaInsets,
+                        highlightFrame: highlightFrame,
+                        onBack: { requestStep(layout.stepIndex - 1, proxy: proxy, overlayFrame: overlayFrame) },
+                        onNext: { requestStep(layout.stepIndex + 1, proxy: proxy, overlayFrame: overlayFrame) }
+                    )
+                } else {
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                }
             }
             .contentShape(Rectangle())
             .onAppear {
-                prepareCurrentStep()
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
-            }
-            .onChange(of: stepIndex) { _ in
-                prepareCurrentStep()
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+                resolveStepIfPossible(0, proxy: proxy, overlayFrame: overlayFrame, animated: false)
             }
             .onChange(of: frames) { _ in
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+                if let pendingStepIndex {
+                    resolveStepIfPossible(pendingStepIndex, proxy: proxy, overlayFrame: overlayFrame, animated: true)
+                } else if resolvedLayout == nil {
+                    resolveStepIfPossible(0, proxy: proxy, overlayFrame: overlayFrame, animated: false)
+                }
             }
         }
         .transition(.opacity)
         .zIndex(20)
     }
 
-    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
+    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect? {
         if let frame = frames[target], frame.width > 1, frame.height > 1 {
             return relativeFrame(forGlobalFrame: frame, inOverlay: overlayFrame)
         }
@@ -1514,12 +1530,7 @@ private struct HomeTutorialOverlay: View {
             return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
         }
 
-        return CGRect(
-            x: proxy.size.width - 64,
-            y: max(proxy.safeAreaInsets.top, 12) + 8,
-            width: 44,
-            height: 44
-        )
+        return nil
     }
 
     private func bottomNavigationFrame(in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
@@ -1548,12 +1559,23 @@ private struct HomeTutorialOverlay: View {
         )
     }
 
-    private func tooltip(for step: HomeTutorialStep, screenSize: CGSize, highlightFrame: CGRect) -> some View {
+    private func tooltip(
+        for step: HomeTutorialStep,
+        stepIndex: Int,
+        screenSize: CGSize,
+        safeAreaInsets: EdgeInsets,
+        highlightFrame: CGRect,
+        onBack: @escaping () -> Void,
+        onNext: @escaping () -> Void
+    ) -> some View {
         let cardWidth = min(screenSize.width - 32, 340)
         let appearsBelow = highlightFrame.midY < screenSize.height * 0.56
+        let halfHeight = calloutSize.height / 2
+        let topBound = safeAreaInsets.top + halfHeight + 16
+        let bottomBound = screenSize.height - safeAreaInsets.bottom - halfHeight - 16
         let yPosition = appearsBelow
-            ? min(highlightFrame.maxY + 112, screenSize.height - 126)
-            : max(highlightFrame.minY - 112, 126)
+            ? min(highlightFrame.maxY + halfHeight + 16, bottomBound)
+            : max(highlightFrame.minY - halfHeight - 16, topBound)
         let xPosition = min(max(highlightFrame.midX, cardWidth / 2 + 16), screenSize.width - cardWidth / 2 - 16)
 
         return VStack(alignment: .leading, spacing: 12) {
@@ -1580,18 +1602,20 @@ private struct HomeTutorialOverlay: View {
                 Spacer()
 
                 if stepIndex > 0 {
-                    Button("Back") { stepIndex -= 1 }
+                    Button("Back", action: onBack)
                         .buttonStyle(HomeTutorialSecondaryButtonStyle())
+                        .disabled(pendingStepIndex != nil)
                 }
 
                 Button(stepIndex == steps.count - 1 ? "Done" : "Next") {
                     if stepIndex == steps.count - 1 {
                         onComplete()
                     } else {
-                        stepIndex += 1
+                        onNext()
                     }
                 }
                 .buttonStyle(HomeTutorialPrimaryButtonStyle())
+                .disabled(pendingStepIndex != nil)
             }
         }
         .padding(16)
@@ -1605,20 +1629,56 @@ private struct HomeTutorialOverlay: View {
                 .stroke(Theme.line.opacity(0.9))
         )
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        .onGeometryChange(for: CGSize.self, of: { $0.size }) { calloutSize = $0 }
         .position(x: xPosition, y: yPosition)
     }
 
-    private func prepareCurrentStep() {
-        let target = steps[stepIndex].id
+    private func requestStep(_ index: Int, proxy: GeometryProxy, overlayFrame: CGRect) {
+        guard steps.indices.contains(index), pendingStepIndex == nil else { return }
+        pendingStepIndex = index
+        let target = steps[index].id
 
         switch target {
         case .streak, .calmNow:
             logScrollDecision(for: target, skippedScroll: true)
+            resolveStepIfPossible(index, proxy: proxy, overlayFrame: overlayFrame, animated: true)
             return
         case .devotional, .dailyRhythm, .meditations, .bottomNavigation:
             logScrollDecision(for: target, skippedScroll: false)
-            onScrollToTarget(target)
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { onScrollToTarget(target) }
         }
+
+        if target == .bottomNavigation {
+            resolveStepIfPossible(index, proxy: proxy, overlayFrame: overlayFrame, animated: true)
+        }
+    }
+
+    private func resolveStepIfPossible(
+        _ index: Int,
+        proxy: GeometryProxy,
+        overlayFrame: CGRect,
+        animated: Bool
+    ) {
+        let target = steps[index].id
+        guard let targetFrame = frame(for: target, in: proxy, overlayFrame: overlayFrame) else { return }
+        let visibleBounds = CGRect(origin: .zero, size: proxy.size).insetBy(dx: -8, dy: -8)
+        guard target == .bottomNavigation || visibleBounds.intersects(targetFrame) else { return }
+
+        let update = {
+            resolvedLayout = ResolvedHomeTutorialLayout(stepIndex: index, targetFrame: targetFrame)
+            pendingStepIndex = nil
+        }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25), update)
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction, update)
+        }
+
+        logFrameIfNeeded(for: target, targetFrame: targetFrame, overlayFrame: overlayFrame)
     }
 
     private func logFrameIfNeeded(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect) {
