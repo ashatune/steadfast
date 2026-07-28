@@ -579,6 +579,8 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .homeTutorialTarget(.dailyDevotional)
+        .id(HomeTutorialTarget.dailyDevotional)
     }
 
     private var anchorRhythmCard: some View {
@@ -810,25 +812,6 @@ private struct DevotionalVerseStoryView: View {
                 .ignoresSafeArea()
 
                 VStack {
-                    HStack {
-                        Spacer()
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(.black.opacity(0.32), in: Circle())
-                                .overlay(
-                                    Circle().stroke(.white.opacity(0.22), lineWidth: 1)
-                                )
-                        }
-                        .accessibilityLabel("Close devotional story")
-                    }
-                    .padding(.top, max(geo.safeAreaInsets.top, 16) + 8)
-                    .padding(.horizontal, 18)
-
                     Spacer()
 
                     VStack(spacing: 14) {
@@ -1585,6 +1568,7 @@ private struct HomeTutorialOverlay: View {
                 if stepIndex > 0 {
                     Button("Back", action: onBack)
                         .buttonStyle(HomeTutorialSecondaryButtonStyle())
+                        .disabled(pendingStepIndex != nil)
                 }
 
                 Button(isLastStep ? "Done" : "Next") {
@@ -1595,6 +1579,7 @@ private struct HomeTutorialOverlay: View {
                     onNext()
                 }
                 .buttonStyle(HomeTutorialPrimaryButtonStyle())
+                .disabled(pendingStepIndex != nil)
             }
         }
         .padding(16)
@@ -1742,6 +1727,24 @@ private struct HomeTutorialOverlay: View {
                 calloutReferenceFrame: targetFrame
             )
         }
+
+        let update = {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: index,
+                targetFrame: targetFrame,
+                calloutReferenceFrame: targetFrame
+            )
+            pendingStepIndex = nil
+        }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25), update)
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction, update)
+        }
+
+        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
     }
 
     private func logFrameResolution(
