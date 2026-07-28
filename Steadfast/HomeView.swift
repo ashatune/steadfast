@@ -183,6 +183,7 @@ struct HomeView: View {
                     .transition(.opacity)
 
                 streakSection
+                    .frame(maxWidth: .infinity)
                     .homeTutorialTarget(.streak)
                     .id(HomeTutorialTarget.streak)
                     .padding(.horizontal, sidePadding)
@@ -206,8 +207,9 @@ struct HomeView: View {
                     .padding(.top, 8)
 
                 rhythmCardsSection
-                    .homeTutorialTarget(.devotional)
-                    .id(HomeTutorialTarget.devotional)
+                    .frame(maxWidth: .infinity)
+                    .homeTutorialTarget(.dailyDevotional)
+                    .id(HomeTutorialTarget.dailyDevotional)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
@@ -226,23 +228,18 @@ struct HomeView: View {
 
                 libraryFooterSection
             }
-        }
+            }
+            .coordinateSpace(name: HomeTutorialCoordinateSpace.name)
             .background(Theme.bg.ignoresSafeArea())
             .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
             .overlay {
                 if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
                     HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
                         switch target {
-                        case .streak, .calmNow:
-                            return
-                        case .devotional, .dailyRhythm, .meditations:
-                            withAnimation(.easeInOut(duration: 0.28)) {
-                                scrollProxy.scrollTo(target, anchor: .center)
-                            }
-                        case .bottomNavigation:
-                            withAnimation(.easeInOut(duration: 0.28)) {
-                                scrollProxy.scrollTo(target, anchor: .bottom)
-                            }
+                        case .explore:
+                            scrollProxy.scrollTo(target, anchor: .bottom)
+                        default:
+                            scrollProxy.scrollTo(target, anchor: .center)
                         }
                     }, onComplete: {
                         hasSeenHomeTutorial = true
@@ -691,8 +688,8 @@ struct HomeView: View {
         LibraryShortcutCard {
             vm.selectedTab = .library
         }
-        .homeTutorialTarget(.bottomNavigation)
-        .id(HomeTutorialTarget.bottomNavigation)
+        .homeTutorialTarget(.explore)
+        .id(HomeTutorialTarget.explore)
         .padding(.horizontal, sidePadding)
         .padding(.top, 2)
         .padding(.bottom, 16)
@@ -1412,10 +1409,14 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
 enum HomeTutorialTarget: String, CaseIterable, Hashable {
     case streak
     case calmNow
-    case devotional
+    case dailyDevotional
     case dailyRhythm
     case meditations
-    case bottomNavigation
+    case explore
+}
+
+private enum HomeTutorialCoordinateSpace {
+    static let name = "homeTutorial"
 }
 
 private struct HomeTutorialStep: Identifiable {
@@ -1424,11 +1425,16 @@ private struct HomeTutorialStep: Identifiable {
     let description: String
 }
 
+private struct ResolvedHomeTutorialLayout {
+    let stepIndex: Int
+    let targetFrame: CGRect
+}
+
 private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
     static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
 
     static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { existing, _ in existing })
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
 
@@ -1438,7 +1444,7 @@ private extension View {
             GeometryReader { proxy in
                 Color.clear.preference(
                     key: HomeTutorialTargetFramePreferenceKey.self,
-                    value: [target: proxy.frame(in: .global)]
+                    value: [target: proxy.frame(in: .named(HomeTutorialCoordinateSpace.name))]
                 )
             }
         )
@@ -1450,110 +1456,104 @@ private struct HomeTutorialOverlay: View {
     let onScrollToTarget: (HomeTutorialTarget) -> Void
     let onComplete: () -> Void
 
-    @State private var stepIndex = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var resolvedLayout: ResolvedHomeTutorialLayout?
+    @State private var pendingStepIndex: Int?
+    @State private var resolutionTask: Task<Void, Never>?
+    @State private var calloutSize = CGSize(width: 340, height: 220)
 
     private let steps: [HomeTutorialStep] = [
         HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
         HomeTutorialStep(id: .calmNow, title: "Need calm right now?", description: "Tap here when you need quick relief from anxiety, a calming breath, or a peaceful reset."),
-        HomeTutorialStep(id: .devotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
+        HomeTutorialStep(id: .dailyDevotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
         HomeTutorialStep(id: .dailyRhythm, title: "Find calm throughout your day", description: "Use Daily Rhythm to meet each part of your day with a moment of peace, prayer, and grounding."),
         HomeTutorialStep(id: .meditations, title: "Explore meditations", description: "Find guided meditations for different needs, emotions, and moments when you want to slow down."),
-        HomeTutorialStep(id: .bottomNavigation, title: "Explore more", description: "Use the menu to find verses, more meditations, settings, and other parts of your journey.")
+        HomeTutorialStep(id: .explore, title: "Explore more", description: "Use the menu to find verses, more meditations, settings, and other parts of your journey.")
     ]
 
     var body: some View {
         GeometryReader { proxy in
-            let step = steps[stepIndex]
-            let overlayFrame = proxy.frame(in: .global)
-            let targetFrame = frame(for: step.id, in: proxy, overlayFrame: overlayFrame)
-            let highlightFrame = targetFrame.insetBy(dx: -8, dy: -8)
-
             ZStack {
-                Color.black.opacity(0.48)
-                    .ignoresSafeArea()
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .frame(width: highlightFrame.width, height: highlightFrame.height)
-                            .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                            .blendMode(.destinationOut)
-                    }
-                    .compositingGroup()
+                if let layout = resolvedLayout {
+                    let step = steps[layout.stepIndex]
+                    let highlightFrame = layout.targetFrame.insetBy(dx: -8, dy: -8)
 
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Theme.accent, lineWidth: 3)
-                    .frame(width: highlightFrame.width, height: highlightFrame.height)
-                    .shadow(color: Theme.accent.opacity(0.35), radius: 12)
-                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                    .accessibilityHidden(true)
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .frame(width: highlightFrame.width, height: highlightFrame.height)
+                                .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                                .blendMode(.destinationOut)
+                        }
+                        .compositingGroup()
+                        .allowsHitTesting(false)
 
-                tooltip(for: step, screenSize: proxy.size, highlightFrame: highlightFrame)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Theme.accent, lineWidth: 3)
+                        .frame(width: highlightFrame.width, height: highlightFrame.height)
+                        .shadow(color: Theme.accent.opacity(0.35), radius: 12)
+                        .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                        .accessibilityHidden(true)
+                        .allowsHitTesting(false)
+
+                    tooltip(
+                        for: step,
+                        stepIndex: layout.stepIndex,
+                        screenSize: proxy.size,
+                        safeAreaInsets: proxy.safeAreaInsets,
+                        highlightFrame: highlightFrame,
+                        onBack: { requestStep(layout.stepIndex - 1, proxy: proxy) },
+                        onNext: { requestStep(layout.stepIndex + 1, proxy: proxy) }
+                    )
+                } else {
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                }
             }
             .contentShape(Rectangle())
             .onAppear {
-                prepareCurrentStep()
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
-            }
-            .onChange(of: stepIndex) { _ in
-                prepareCurrentStep()
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+                resolveStepIfPossible(0, visibleSize: proxy.size, animated: false, allowPartialVisibility: false)
             }
             .onChange(of: frames) { _ in
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+                if let pendingStepIndex {
+                    resolveStepIfPossible(pendingStepIndex, visibleSize: proxy.size, animated: true, allowPartialVisibility: true)
+                } else if resolvedLayout == nil {
+                    resolveStepIfPossible(0, visibleSize: proxy.size, animated: false, allowPartialVisibility: false)
+                } else {
+                    refreshResolvedFrameIfNeeded(proxy: proxy)
+                }
             }
+            .onDisappear { cancelPendingResolution() }
         }
         .transition(.opacity)
         .zIndex(20)
     }
 
-    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
-        if let frame = frames[target], frame.width > 1, frame.height > 1 {
-            return relativeFrame(forGlobalFrame: frame, inOverlay: overlayFrame)
-        }
-
-        if target == .bottomNavigation {
-            return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
-        }
-
-        return CGRect(
-            x: proxy.size.width - 64,
-            y: max(proxy.safeAreaInsets.top, 12) + 8,
-            width: 44,
-            height: 44
-        )
+    private func frame(for target: HomeTutorialTarget) -> CGRect? {
+        guard let frame = frames[target], isValid(frame) else { return nil }
+        return frame
     }
 
-    private func bottomNavigationFrame(in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
-        let screenBounds = UIScreen.main.bounds
-        let tabBarHeight: CGFloat = 58
-        let bottomInset = max(proxy.safeAreaInsets.bottom, 0)
-        let globalY = screenBounds.height - bottomInset - tabBarHeight
-        let localY = globalY - overlayFrame.minY
-        let localX = max(8 - overlayFrame.minX, 8)
-        let availableWidth = min(screenBounds.width, proxy.size.width + max(overlayFrame.minX, 0))
-
-        return CGRect(
-            x: localX,
-            y: max(localY, 8),
-            width: max(0, availableWidth - 16),
-            height: tabBarHeight
-        )
-    }
-
-    private func relativeFrame(forGlobalFrame frame: CGRect, inOverlay overlayFrame: CGRect) -> CGRect {
-        CGRect(
-            x: frame.minX - overlayFrame.minX,
-            y: frame.minY - overlayFrame.minY,
-            width: frame.width,
-            height: frame.height
-        )
-    }
-
-    private func tooltip(for step: HomeTutorialStep, screenSize: CGSize, highlightFrame: CGRect) -> some View {
+    private func tooltip(
+        for step: HomeTutorialStep,
+        stepIndex: Int,
+        screenSize: CGSize,
+        safeAreaInsets: EdgeInsets,
+        highlightFrame: CGRect,
+        onBack: @escaping () -> Void,
+        onNext: @escaping () -> Void
+    ) -> some View {
+        let isLastStep = stepIndex == steps.count - 1
         let cardWidth = min(screenSize.width - 32, 340)
         let appearsBelow = highlightFrame.midY < screenSize.height * 0.56
+        let halfHeight = calloutSize.height / 2
+        let topBound = safeAreaInsets.top + halfHeight + 16
+        let bottomBound = screenSize.height - safeAreaInsets.bottom - halfHeight - 16
         let yPosition = appearsBelow
-            ? min(highlightFrame.maxY + 112, screenSize.height - 126)
-            : max(highlightFrame.minY - 112, 126)
+            ? min(highlightFrame.maxY + halfHeight + 16, bottomBound)
+            : max(highlightFrame.minY - halfHeight - 16, topBound)
         let xPosition = min(max(highlightFrame.midX, cardWidth / 2 + 16), screenSize.width - cardWidth / 2 - 16)
 
         return VStack(alignment: .leading, spacing: 12) {
@@ -1573,25 +1573,29 @@ private struct HomeTutorialOverlay: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                Button("Skip", action: onComplete)
+                Button("Skip") {
+                    completeTutorial()
+                }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.inkSecondary)
 
                 Spacer()
 
                 if stepIndex > 0 {
-                    Button("Back") { stepIndex -= 1 }
+                    Button("Back", action: onBack)
                         .buttonStyle(HomeTutorialSecondaryButtonStyle())
+                        .disabled(pendingStepIndex != nil)
                 }
 
-                Button(stepIndex == steps.count - 1 ? "Done" : "Next") {
-                    if stepIndex == steps.count - 1 {
-                        onComplete()
-                    } else {
-                        stepIndex += 1
+                Button(isLastStep ? "Done" : "Next") {
+                    guard !isLastStep else {
+                        completeTutorial()
+                        return
                     }
+                    onNext()
                 }
                 .buttonStyle(HomeTutorialPrimaryButtonStyle())
+                .disabled(pendingStepIndex != nil)
             }
         }
         .padding(16)
@@ -1605,33 +1609,190 @@ private struct HomeTutorialOverlay: View {
                 .stroke(Theme.line.opacity(0.9))
         )
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        .onGeometryChange(for: CGSize.self, of: { $0.size }) { calloutSize = $0 }
         .position(x: xPosition, y: yPosition)
     }
 
-    private func prepareCurrentStep() {
-        let target = steps[stepIndex].id
+    private func completeTutorial() {
+        cancelPendingResolution()
 
-        switch target {
-        case .streak, .calmNow:
-            logScrollDecision(for: target, skippedScroll: true)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { onComplete() }
+    }
+
+    private func requestStep(_ index: Int, proxy: GeometryProxy) {
+        #if DEBUG
+        let currentIndex = resolvedLayout?.stepIndex
+        let requestedID = steps.indices.contains(index) ? steps[index].id.rawValue : "outOfBounds"
+        print("[HomeTutorial] advance current=\(String(describing: currentIndex)) requested=\(index) target=\(requestedID) total=\(steps.count)")
+        #endif
+
+        guard steps.indices.contains(index), pendingStepIndex == nil else { return }
+
+        pendingStepIndex = index
+        let requestedTarget = steps[index].id
+
+        if let targetFrame = frame(for: requestedTarget),
+           isVisibleBeforeScroll(targetFrame, visibleSize: proxy.size) {
+            logScrollDecision(for: requestedTarget, skippedScroll: true)
+            commitResolvedStep(index, targetFrame: targetFrame, animated: true)
             return
-        case .devotional, .dailyRhythm, .meditations, .bottomNavigation:
-            logScrollDecision(for: target, skippedScroll: false)
-            onScrollToTarget(target)
+        }
+
+        logScrollDecision(for: requestedTarget, skippedScroll: false)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { onScrollToTarget(requestedTarget) }
+        guard pendingStepIndex == index else { return }
+        scheduleResolution(for: index, target: requestedTarget, visibleSize: proxy.size)
+    }
+
+    @discardableResult
+    private func resolveStepIfPossible(
+        _ index: Int,
+        visibleSize: CGSize,
+        animated: Bool,
+        allowPartialVisibility: Bool
+    ) -> Bool {
+        guard steps.indices.contains(index) else {
+            cancelPendingResolution()
+            return false
+        }
+
+        if let pendingStepIndex, pendingStepIndex != index { return false }
+
+        let requestedTarget = steps[index].id
+        guard let targetFrame = frame(for: requestedTarget) else {
+            logFrameResolution(
+                for: requestedTarget,
+                targetFrame: frames[requestedTarget],
+                passedValidation: false
+            )
+            return false
+        }
+
+        let isVisible = allowPartialVisibility
+            ? hasEnteredViewport(targetFrame, visibleSize: visibleSize)
+            : isVisibleBeforeScroll(targetFrame, visibleSize: visibleSize)
+        guard isVisible else { return false }
+
+        commitResolvedStep(index, targetFrame: targetFrame, animated: animated)
+        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
+        return true
+    }
+
+    private func commitResolvedStep(_ stepIndex: Int, targetFrame: CGRect, animated: Bool) {
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                applyResolvedStep(stepIndex, targetFrame: targetFrame)
+            }
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                applyResolvedStep(stepIndex, targetFrame: targetFrame)
+            }
         }
     }
 
-    private func logFrameIfNeeded(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect) {
+    private func applyResolvedStep(_ stepIndex: Int, targetFrame: CGRect) {
+        resolvedLayout = ResolvedHomeTutorialLayout(
+            stepIndex: stepIndex,
+            targetFrame: targetFrame
+        )
+        pendingStepIndex = nil
+        resolutionTask?.cancel()
+        resolutionTask = nil
+    }
+
+    private func isValid(_ frame: CGRect) -> Bool {
+        frame.minX.isFinite && frame.minY.isFinite &&
+            frame.width.isFinite && frame.height.isFinite &&
+            frame.width > 1 && frame.height > 1
+    }
+
+    private func isVisibleBeforeScroll(_ frame: CGRect, visibleSize: CGSize) -> Bool {
+        guard isValid(frame) else { return false }
+        let visibleBounds = CGRect(origin: .zero, size: visibleSize)
+        let intersection = visibleBounds.intersection(frame)
+        return !intersection.isNull &&
+            intersection.width > 1 &&
+            intersection.height >= min(frame.height, 44)
+    }
+
+    private func hasEnteredViewport(_ frame: CGRect, visibleSize: CGSize) -> Bool {
+        guard isValid(frame) else { return false }
+        let intersection = CGRect(origin: .zero, size: visibleSize).intersection(frame)
+        return !intersection.isNull && intersection.width > 1 && intersection.height > 1
+    }
+
+    private func scheduleResolution(for index: Int, target: HomeTutorialTarget, visibleSize: CGSize) {
+        resolutionTask?.cancel()
+        resolutionTask = Task { @MainActor in
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            if resolveStepIfPossible(
+                index,
+                visibleSize: visibleSize,
+                animated: true,
+                allowPartialVisibility: true
+            ) { return }
+
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            if resolveStepIfPossible(
+                index,
+                visibleSize: visibleSize,
+                animated: true,
+                allowPartialVisibility: true
+            ) { return }
+
+            guard pendingStepIndex == index else { return }
+            pendingStepIndex = nil
+            resolutionTask = nil
+            #if DEBUG
+            print("[HomeTutorial] unable to resolve target=\(target.rawValue); keeping committed step visible")
+            #endif
+        }
+    }
+
+    private func cancelPendingResolution() {
+        resolutionTask?.cancel()
+        resolutionTask = nil
+        pendingStepIndex = nil
+    }
+
+    private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
+        guard let layout = resolvedLayout else { return }
+        let resolvedTarget = steps[layout.stepIndex].id
+        guard let targetFrame = frame(for: resolvedTarget),
+              hasEnteredViewport(targetFrame, visibleSize: proxy.size),
+              targetFrame != layout.targetFrame else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: layout.stepIndex,
+                targetFrame: targetFrame
+            )
+        }
+    }
+
+    private func logFrameResolution(
+        for target: HomeTutorialTarget,
+        targetFrame: CGRect?,
+        passedValidation: Bool
+    ) {
         #if DEBUG
-        guard target == .streak || target == .calmNow else { return }
-        print("[HomeTutorial] step=\(target.rawValue) targetFrame=\(targetFrame) overlayFrame=\(overlayFrame)")
+        print("[HomeTutorial] target=\(target.rawValue) frame=\(String(describing: targetFrame)) valid=\(passedValidation)")
         #endif
     }
 
     private func logScrollDecision(for target: HomeTutorialTarget, skippedScroll: Bool) {
         #if DEBUG
-        guard target == .streak || target == .calmNow else { return }
-        print("[HomeTutorial] step=\(target.rawValue) skippedScroll=\(skippedScroll)")
+        print("[HomeTutorial] target=\(target.rawValue) skippedScroll=\(skippedScroll)")
         #endif
     }
 }
