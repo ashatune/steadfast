@@ -1405,7 +1405,8 @@ private struct HomeTutorialStep: Identifiable {
 
 private struct ResolvedHomeTutorialLayout {
     let stepIndex: Int
-    let targetFrame: CGRect
+    let targetFrame: CGRect?
+    let calloutReferenceFrame: CGRect
 }
 
 private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
@@ -1453,33 +1454,39 @@ private struct HomeTutorialOverlay: View {
             ZStack {
                 if let layout = resolvedLayout {
                     let step = steps[layout.stepIndex]
-                    let highlightFrame = layout.targetFrame.insetBy(dx: -8, dy: -8)
+                    let highlightFrame = layout.targetFrame?.insetBy(dx: -8, dy: -8)
 
-                    Color.black.opacity(0.48)
-                        .ignoresSafeArea()
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .frame(width: highlightFrame.width, height: highlightFrame.height)
-                                .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                                .blendMode(.destinationOut)
-                        }
-                        .compositingGroup()
-                        .allowsHitTesting(false)
+                    if let highlightFrame {
+                        Color.black.opacity(0.48)
+                            .ignoresSafeArea()
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .frame(width: highlightFrame.width, height: highlightFrame.height)
+                                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                                    .blendMode(.destinationOut)
+                            }
+                            .compositingGroup()
+                            .allowsHitTesting(false)
 
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Theme.accent, lineWidth: 3)
-                        .frame(width: highlightFrame.width, height: highlightFrame.height)
-                        .shadow(color: Theme.accent.opacity(0.35), radius: 12)
-                        .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                        .accessibilityHidden(true)
-                        .allowsHitTesting(false)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Theme.accent, lineWidth: 3)
+                            .frame(width: highlightFrame.width, height: highlightFrame.height)
+                            .shadow(color: Theme.accent.opacity(0.35), radius: 12)
+                            .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                            .accessibilityHidden(true)
+                            .allowsHitTesting(false)
+                    } else {
+                        Color.black.opacity(0.48)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                    }
 
                     tooltip(
                         for: step,
                         stepIndex: layout.stepIndex,
                         screenSize: proxy.size,
                         safeAreaInsets: proxy.safeAreaInsets,
-                        highlightFrame: highlightFrame,
+                        highlightFrame: highlightFrame ?? layout.calloutReferenceFrame.insetBy(dx: -8, dy: -8),
                         onBack: { requestStep(layout.stepIndex - 1, proxy: proxy) },
                         onNext: { requestStep(layout.stepIndex + 1, proxy: proxy) }
                     )
@@ -1608,6 +1615,7 @@ private struct HomeTutorialOverlay: View {
         }
 
         logScrollDecision(for: target, skippedScroll: false)
+        showPendingStep(index)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { onScrollToTarget(target) }
@@ -1625,7 +1633,11 @@ private struct HomeTutorialOverlay: View {
         }
 
         let update = {
-            resolvedLayout = ResolvedHomeTutorialLayout(stepIndex: index, targetFrame: targetFrame)
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: index,
+                targetFrame: targetFrame,
+                calloutReferenceFrame: targetFrame
+            )
             pendingStepIndex = nil
         }
         if animated && !reduceMotion {
@@ -1643,6 +1655,30 @@ private struct HomeTutorialOverlay: View {
         frame.minX.isFinite && frame.minY.isFinite &&
             frame.width.isFinite && frame.height.isFinite &&
             frame.width > 1 && frame.height > 1
+    }
+
+    private func showPendingStep(_ index: Int) {
+        guard let currentLayout = resolvedLayout else { return }
+        let update = {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: index,
+                targetFrame: nil,
+                calloutReferenceFrame: currentLayout.calloutReferenceFrame
+            )
+        }
+
+        if reduceMotion {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction, update)
+        } else {
+            withAnimation(.easeInOut(duration: 0.25), update)
+        }
+
+        logScrollDecision(for: target, skippedScroll: false)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { onScrollToTarget(target) }
     }
 
     private func isReadyForTransition(_ frame: CGRect, in proxy: GeometryProxy) -> Bool {
@@ -1666,7 +1702,8 @@ private struct HomeTutorialOverlay: View {
         withTransaction(transaction) {
             resolvedLayout = ResolvedHomeTutorialLayout(
                 stepIndex: layout.stepIndex,
-                targetFrame: targetFrame
+                targetFrame: targetFrame,
+                calloutReferenceFrame: targetFrame
             )
         }
     }
