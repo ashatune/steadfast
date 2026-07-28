@@ -183,6 +183,7 @@ struct HomeView: View {
                     .transition(.opacity)
 
                 streakSection
+                    .frame(maxWidth: .infinity)
                     .homeTutorialTarget(.streak)
                     .id(HomeTutorialTarget.streak)
                     .padding(.horizontal, sidePadding)
@@ -206,8 +207,9 @@ struct HomeView: View {
                     .padding(.top, 8)
 
                 rhythmCardsSection
-                    .homeTutorialTarget(.devotional)
-                    .id(HomeTutorialTarget.devotional)
+                    .frame(maxWidth: .infinity)
+                    .homeTutorialTarget(.dailyDevotional)
+                    .id(HomeTutorialTarget.dailyDevotional)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
@@ -226,24 +228,14 @@ struct HomeView: View {
 
                 libraryFooterSection
             }
-        }
+            }
+            .coordinateSpace(name: HomeTutorialCoordinateSpace.name)
             .background(Theme.bg.ignoresSafeArea())
             .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
             .overlay {
                 if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
                     HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
-                        switch target {
-                        case .streak, .calmNow:
-                            return
-                        case .devotional, .dailyRhythm, .meditations:
-                            withAnimation(.easeInOut(duration: 0.28)) {
-                                scrollProxy.scrollTo(target, anchor: .center)
-                            }
-                        case .bottomNavigation:
-                            withAnimation(.easeInOut(duration: 0.28)) {
-                                scrollProxy.scrollTo(target, anchor: .bottom)
-                            }
-                        }
+                        scrollProxy.scrollTo(target, anchor: .center)
                     }, onComplete: {
                         hasSeenHomeTutorial = true
                     })
@@ -691,8 +683,8 @@ struct HomeView: View {
         LibraryShortcutCard {
             vm.selectedTab = .library
         }
-        .homeTutorialTarget(.bottomNavigation)
-        .id(HomeTutorialTarget.bottomNavigation)
+        .homeTutorialTarget(.explore)
+        .id(HomeTutorialTarget.explore)
         .padding(.horizontal, sidePadding)
         .padding(.top, 2)
         .padding(.bottom, 16)
@@ -1412,10 +1404,14 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
 enum HomeTutorialTarget: String, CaseIterable, Hashable {
     case streak
     case calmNow
-    case devotional
+    case dailyDevotional
     case dailyRhythm
     case meditations
-    case bottomNavigation
+    case explore
+}
+
+private enum HomeTutorialCoordinateSpace {
+    static let name = "homeTutorial"
 }
 
 private struct HomeTutorialStep: Identifiable {
@@ -1424,11 +1420,17 @@ private struct HomeTutorialStep: Identifiable {
     let description: String
 }
 
+private struct ResolvedHomeTutorialLayout {
+    let stepIndex: Int
+    let targetFrame: CGRect?
+    let calloutReferenceFrame: CGRect
+}
+
 private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
     static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
 
     static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { existing, _ in existing })
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
 
@@ -1438,7 +1440,7 @@ private extension View {
             GeometryReader { proxy in
                 Color.clear.preference(
                     key: HomeTutorialTargetFramePreferenceKey.self,
-                    value: [target: proxy.frame(in: .global)]
+                    value: [target: proxy.frame(in: .named(HomeTutorialCoordinateSpace.name))]
                 )
             }
         )
@@ -1450,110 +1452,108 @@ private struct HomeTutorialOverlay: View {
     let onScrollToTarget: (HomeTutorialTarget) -> Void
     let onComplete: () -> Void
 
-    @State private var stepIndex = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var resolvedLayout: ResolvedHomeTutorialLayout?
+    @State private var pendingStepIndex: Int?
+    @State private var calloutSize = CGSize(width: 340, height: 220)
 
     private let steps: [HomeTutorialStep] = [
         HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
         HomeTutorialStep(id: .calmNow, title: "Need calm right now?", description: "Tap here when you need quick relief from anxiety, a calming breath, or a peaceful reset."),
-        HomeTutorialStep(id: .devotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
+        HomeTutorialStep(id: .dailyDevotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
         HomeTutorialStep(id: .dailyRhythm, title: "Find calm throughout your day", description: "Use Daily Rhythm to meet each part of your day with a moment of peace, prayer, and grounding."),
         HomeTutorialStep(id: .meditations, title: "Explore meditations", description: "Find guided meditations for different needs, emotions, and moments when you want to slow down."),
-        HomeTutorialStep(id: .bottomNavigation, title: "Explore more", description: "Use the menu to find verses, more meditations, settings, and other parts of your journey.")
+        HomeTutorialStep(id: .explore, title: "Explore more", description: "Use the menu to find verses, more meditations, settings, and other parts of your journey.")
     ]
 
     var body: some View {
         GeometryReader { proxy in
-            let step = steps[stepIndex]
-            let overlayFrame = proxy.frame(in: .global)
-            let targetFrame = frame(for: step.id, in: proxy, overlayFrame: overlayFrame)
-            let highlightFrame = targetFrame.insetBy(dx: -8, dy: -8)
-
             ZStack {
-                Color.black.opacity(0.48)
-                    .ignoresSafeArea()
-                    .overlay {
+                if let layout = resolvedLayout {
+                    let step = steps[layout.stepIndex]
+                    let highlightFrame = layout.targetFrame?.insetBy(dx: -8, dy: -8)
+
+                    if let highlightFrame {
+                        Color.black.opacity(0.48)
+                            .ignoresSafeArea()
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .frame(width: highlightFrame.width, height: highlightFrame.height)
+                                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                                    .blendMode(.destinationOut)
+                            }
+                            .compositingGroup()
+                            .allowsHitTesting(false)
+
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Theme.accent, lineWidth: 3)
                             .frame(width: highlightFrame.width, height: highlightFrame.height)
+                            .shadow(color: Theme.accent.opacity(0.35), radius: 12)
                             .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                            .blendMode(.destinationOut)
+                            .accessibilityHidden(true)
+                            .allowsHitTesting(false)
+                    } else {
+                        Color.black.opacity(0.48)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
                     }
-                    .compositingGroup()
 
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Theme.accent, lineWidth: 3)
-                    .frame(width: highlightFrame.width, height: highlightFrame.height)
-                    .shadow(color: Theme.accent.opacity(0.35), radius: 12)
-                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                    .accessibilityHidden(true)
-
-                tooltip(for: step, screenSize: proxy.size, highlightFrame: highlightFrame)
+                    tooltip(
+                        for: step,
+                        stepIndex: layout.stepIndex,
+                        screenSize: proxy.size,
+                        safeAreaInsets: proxy.safeAreaInsets,
+                        highlightFrame: highlightFrame ?? layout.calloutReferenceFrame.insetBy(dx: -8, dy: -8),
+                        onBack: { requestStep(layout.stepIndex - 1, proxy: proxy) },
+                        onNext: { requestStep(layout.stepIndex + 1, proxy: proxy) }
+                    )
+                } else {
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                }
             }
             .contentShape(Rectangle())
             .onAppear {
-                prepareCurrentStep()
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
-            }
-            .onChange(of: stepIndex) { _ in
-                prepareCurrentStep()
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+                resolveStepIfPossible(0, proxy: proxy, animated: false)
             }
             .onChange(of: frames) { _ in
-                logFrameIfNeeded(for: step.id, targetFrame: targetFrame, overlayFrame: overlayFrame)
+                if let pendingStepIndex {
+                    resolveStepIfPossible(pendingStepIndex, proxy: proxy, animated: true)
+                } else if resolvedLayout == nil {
+                    resolveStepIfPossible(0, proxy: proxy, animated: false)
+                } else {
+                    refreshResolvedFrameIfNeeded(proxy: proxy)
+                }
             }
+            .onDisappear { pendingStepIndex = nil }
         }
         .transition(.opacity)
         .zIndex(20)
     }
 
-    private func frame(for target: HomeTutorialTarget, in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
-        if let frame = frames[target], frame.width > 1, frame.height > 1 {
-            return relativeFrame(forGlobalFrame: frame, inOverlay: overlayFrame)
-        }
-
-        if target == .bottomNavigation {
-            return bottomNavigationFrame(in: proxy, overlayFrame: overlayFrame)
-        }
-
-        return CGRect(
-            x: proxy.size.width - 64,
-            y: max(proxy.safeAreaInsets.top, 12) + 8,
-            width: 44,
-            height: 44
-        )
+    private func frame(for target: HomeTutorialTarget) -> CGRect? {
+        guard let frame = frames[target], isValid(frame) else { return nil }
+        return frame
     }
 
-    private func bottomNavigationFrame(in proxy: GeometryProxy, overlayFrame: CGRect) -> CGRect {
-        let screenBounds = UIScreen.main.bounds
-        let tabBarHeight: CGFloat = 58
-        let bottomInset = max(proxy.safeAreaInsets.bottom, 0)
-        let globalY = screenBounds.height - bottomInset - tabBarHeight
-        let localY = globalY - overlayFrame.minY
-        let localX = max(8 - overlayFrame.minX, 8)
-        let availableWidth = min(screenBounds.width, proxy.size.width + max(overlayFrame.minX, 0))
-
-        return CGRect(
-            x: localX,
-            y: max(localY, 8),
-            width: max(0, availableWidth - 16),
-            height: tabBarHeight
-        )
-    }
-
-    private func relativeFrame(forGlobalFrame frame: CGRect, inOverlay overlayFrame: CGRect) -> CGRect {
-        CGRect(
-            x: frame.minX - overlayFrame.minX,
-            y: frame.minY - overlayFrame.minY,
-            width: frame.width,
-            height: frame.height
-        )
-    }
-
-    private func tooltip(for step: HomeTutorialStep, screenSize: CGSize, highlightFrame: CGRect) -> some View {
+    private func tooltip(
+        for step: HomeTutorialStep,
+        stepIndex: Int,
+        screenSize: CGSize,
+        safeAreaInsets: EdgeInsets,
+        highlightFrame: CGRect,
+        onBack: @escaping () -> Void,
+        onNext: @escaping () -> Void
+    ) -> some View {
         let cardWidth = min(screenSize.width - 32, 340)
         let appearsBelow = highlightFrame.midY < screenSize.height * 0.56
+        let halfHeight = calloutSize.height / 2
+        let topBound = safeAreaInsets.top + halfHeight + 16
+        let bottomBound = screenSize.height - safeAreaInsets.bottom - halfHeight - 16
         let yPosition = appearsBelow
-            ? min(highlightFrame.maxY + 112, screenSize.height - 126)
-            : max(highlightFrame.minY - 112, 126)
+            ? min(highlightFrame.maxY + halfHeight + 16, bottomBound)
+            : max(highlightFrame.minY - halfHeight - 16, topBound)
         let xPosition = min(max(highlightFrame.midX, cardWidth / 2 + 16), screenSize.width - cardWidth / 2 - 16)
 
         return VStack(alignment: .leading, spacing: 12) {
@@ -1573,14 +1573,17 @@ private struct HomeTutorialOverlay: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                Button("Skip", action: onComplete)
+                Button("Skip") {
+                    pendingStepIndex = nil
+                    onComplete()
+                }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.inkSecondary)
 
                 Spacer()
 
                 if stepIndex > 0 {
-                    Button("Back") { stepIndex -= 1 }
+                    Button("Back", action: onBack)
                         .buttonStyle(HomeTutorialSecondaryButtonStyle())
                 }
 
@@ -1588,7 +1591,7 @@ private struct HomeTutorialOverlay: View {
                     if stepIndex == steps.count - 1 {
                         onComplete()
                     } else {
-                        stepIndex += 1
+                        onNext()
                     }
                 }
                 .buttonStyle(HomeTutorialPrimaryButtonStyle())
@@ -1605,33 +1608,129 @@ private struct HomeTutorialOverlay: View {
                 .stroke(Theme.line.opacity(0.9))
         )
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        .onGeometryChange(for: CGSize.self, of: { $0.size }) { calloutSize = $0 }
         .position(x: xPosition, y: yPosition)
     }
 
-    private func prepareCurrentStep() {
-        let target = steps[stepIndex].id
-
-        switch target {
-        case .streak, .calmNow:
-            logScrollDecision(for: target, skippedScroll: true)
+    private func requestStep(_ index: Int, proxy: GeometryProxy) {
+        guard steps.indices.contains(index) else {
+            pendingStepIndex = nil
             return
-        case .devotional, .dailyRhythm, .meditations, .bottomNavigation:
-            logScrollDecision(for: target, skippedScroll: false)
-            onScrollToTarget(target)
+        }
+
+        // A second navigation tap supersedes an unresolved request instead of
+        // leaving the callout controls permanently disabled.
+        pendingStepIndex = index
+        let target = steps[index].id
+
+        if let targetFrame = frame(for: target), isReadyForTransition(targetFrame, in: proxy) {
+            logScrollDecision(for: target, skippedScroll: true)
+            resolveStepIfPossible(index, proxy: proxy, animated: true)
+            return
+        }
+
+        logScrollDecision(for: target, skippedScroll: false)
+        showPendingStep(index)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { onScrollToTarget(target) }
+    }
+
+    private func resolveStepIfPossible(
+        _ index: Int,
+        proxy: GeometryProxy,
+        animated: Bool
+    ) {
+        let target = steps[index].id
+        guard let targetFrame = frame(for: target), isReadyForTransition(targetFrame, in: proxy) else {
+            logFrameResolution(for: target, targetFrame: frames[target], passedValidation: false)
+            return
+        }
+
+        let update = {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: index,
+                targetFrame: targetFrame,
+                calloutReferenceFrame: targetFrame
+            )
+            pendingStepIndex = nil
+        }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25), update)
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction, update)
+        }
+
+        logFrameResolution(for: target, targetFrame: targetFrame, passedValidation: true)
+    }
+
+    private func isValid(_ frame: CGRect) -> Bool {
+        frame.minX.isFinite && frame.minY.isFinite &&
+            frame.width.isFinite && frame.height.isFinite &&
+            frame.width > 1 && frame.height > 1
+    }
+
+    private func showPendingStep(_ index: Int) {
+        guard let currentLayout = resolvedLayout else { return }
+        let update = {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: index,
+                targetFrame: nil,
+                calloutReferenceFrame: currentLayout.calloutReferenceFrame
+            )
+        }
+
+        if reduceMotion {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction, update)
+        } else {
+            withAnimation(.easeInOut(duration: 0.25), update)
         }
     }
 
-    private func logFrameIfNeeded(for target: HomeTutorialTarget, targetFrame: CGRect, overlayFrame: CGRect) {
+    private func isReadyForTransition(_ frame: CGRect, in proxy: GeometryProxy) -> Bool {
+        guard isValid(frame) else { return false }
+        let visibleBounds = CGRect(origin: .zero, size: proxy.size)
+        let intersection = visibleBounds.intersection(frame)
+        return !intersection.isNull &&
+            intersection.width > 1 &&
+            intersection.height >= min(frame.height, 44)
+    }
+
+    private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
+        guard let layout = resolvedLayout else { return }
+        let target = steps[layout.stepIndex].id
+        guard let targetFrame = frame(for: target),
+              isReadyForTransition(targetFrame, in: proxy),
+              targetFrame != layout.targetFrame else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: layout.stepIndex,
+                targetFrame: targetFrame,
+                calloutReferenceFrame: targetFrame
+            )
+        }
+    }
+
+    private func logFrameResolution(
+        for target: HomeTutorialTarget,
+        targetFrame: CGRect?,
+        passedValidation: Bool
+    ) {
         #if DEBUG
-        guard target == .streak || target == .calmNow else { return }
-        print("[HomeTutorial] step=\(target.rawValue) targetFrame=\(targetFrame) overlayFrame=\(overlayFrame)")
+        print("[HomeTutorial] target=\(target.rawValue) frame=\(String(describing: targetFrame)) valid=\(passedValidation)")
         #endif
     }
 
     private func logScrollDecision(for target: HomeTutorialTarget, skippedScroll: Bool) {
         #if DEBUG
-        guard target == .streak || target == .calmNow else { return }
-        print("[HomeTutorial] step=\(target.rawValue) skippedScroll=\(skippedScroll)")
+        print("[HomeTutorial] target=\(target.rawValue) skippedScroll=\(skippedScroll)")
         #endif
     }
 }
