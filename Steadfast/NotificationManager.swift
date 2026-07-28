@@ -8,6 +8,11 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     private override init() {}
 
+    static let dailyPeaceReminderIdentifier = "steadfast.peacePractice.daily"
+    static let dailyPeaceReminderEnabledKey = "peace_practice_reminder_enabled"
+    static let dailyPeaceReminderHourKey = "peace_practice_reminder_hour"
+    static let dailyPeaceReminderMinuteKey = "peace_practice_reminder_minute"
+
     enum RhythmType: String {
         case morning
         case midday
@@ -91,6 +96,115 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             @unknown default:
                 DispatchQueue.main.async { self.scheduleDailyFromSettings() }
             }
+        }
+    }
+
+    /// Refreshes notifications that the user has already authorized without ever
+    /// presenting the system permission prompt. Safe to call during app launch.
+    func scheduleAuthorizedNotificationsFromSettings() {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized
+                    || settings.authorizationStatus == .provisional
+                    || settings.authorizationStatus == .ephemeral else { return }
+
+            DispatchQueue.main.async {
+                self.scheduleDailyFromSettings()
+                self.scheduleStoredDailyPeaceReminderIfEnabled()
+            }
+        }
+    }
+
+    /// Requests permission only when necessary, then replaces the single daily
+    /// peace-practice reminder. Completion is always delivered on the main queue.
+    func enableDailyPeaceReminder(
+        hour: Int,
+        minute: Int,
+        completion: @escaping (Bool) -> Void
+    ) {
+        let center = UNUserNotificationCenter.current()
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: Self.dailyPeaceReminderEnabledKey)
+        defaults.set(max(0, min(hour, 23)), forKey: Self.dailyPeaceReminderHourKey)
+        defaults.set(max(0, min(minute, 59)), forKey: Self.dailyPeaceReminderMinuteKey)
+        center.removePendingNotificationRequests(withIdentifiers: [Self.dailyPeaceReminderIdentifier])
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                self.scheduleDailyPeaceReminder(hour: hour, minute: minute, completion: completion)
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    if let error { print("🔔 peace reminder authorization error:", error) }
+                    guard granted else {
+                        DispatchQueue.main.async { completion(false) }
+                        return
+                    }
+                    self.scheduleDailyPeaceReminder(hour: hour, minute: minute, completion: completion)
+                }
+            case .denied:
+                DispatchQueue.main.async { completion(false) }
+            @unknown default:
+                DispatchQueue.main.async { completion(false) }
+            }
+        }
+    }
+
+    func disableDailyPeaceReminder() {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: Self.dailyPeaceReminderEnabledKey)
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [Self.dailyPeaceReminderIdentifier]
+        )
+    }
+
+    private func scheduleStoredDailyPeaceReminderIfEnabled() {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: Self.dailyPeaceReminderEnabledKey) else { return }
+        let hour = defaults.integer(forKey: Self.dailyPeaceReminderHourKey)
+        let minute = defaults.integer(forKey: Self.dailyPeaceReminderMinuteKey)
+        scheduleDailyPeaceReminder(hour: hour, minute: minute) { _ in }
+    }
+
+    private func scheduleDailyPeaceReminder(
+        hour: Int,
+        minute: Int,
+        completion: @escaping (Bool) -> Void
+    ) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.dailyPeaceReminderIdentifier])
+
+        let content = UNMutableNotificationContent()
+        content.title = "Your moment of peace"
+        content.body = "Take 5 minutes to breathe, pray, and reconnect with God."
+        content.sound = .default
+        content.userInfo = ["notificationType": "daily_peace_practice"]
+
+        var calendar = Calendar.autoupdatingCurrent
+        calendar.timeZone = .autoupdatingCurrent
+        var components = DateComponents()
+        components.calendar = calendar
+        components.timeZone = .autoupdatingCurrent
+        components.hour = max(0, min(hour, 23))
+        components.minute = max(0, min(minute, 59))
+        components.second = 0
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        let request = UNNotificationRequest(
+            identifier: Self.dailyPeaceReminderIdentifier,
+            content: content,
+            trigger: trigger
+        )
+        center.add(request) { error in
+            let succeeded = error == nil
+            if let error { print("🔔 peace reminder add error:", error) }
+            if succeeded {
+                let defaults = UserDefaults.standard
+                defaults.set(true, forKey: Self.dailyPeaceReminderEnabledKey)
+                defaults.set(components.hour, forKey: Self.dailyPeaceReminderHourKey)
+                defaults.set(components.minute, forKey: Self.dailyPeaceReminderMinuteKey)
+                defaults.set(true, forKey: "notif_enabled")
+            }
+            DispatchQueue.main.async { completion(succeeded) }
         }
     }
 
