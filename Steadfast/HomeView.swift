@@ -1659,22 +1659,27 @@ private struct HomeTutorialOverlay: View {
         logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
     }
 
-    private func commitResolvedStep(_ index: Int, targetFrame: CGRect, animated: Bool) {
-        let update = {
-            resolvedLayout = ResolvedHomeTutorialLayout(
-                stepIndex: index,
-                targetFrame: targetFrame,
-                calloutReferenceFrame: targetFrame
-            )
-            pendingStepIndex = nil
-        }
+    private func commitResolvedStep(_ stepIndex: Int, targetFrame: CGRect, animated: Bool) {
         if animated && !reduceMotion {
-            withAnimation(.easeInOut(duration: 0.25), update)
+            withAnimation(.easeInOut(duration: 0.25)) {
+                applyResolvedStep(stepIndex, targetFrame: targetFrame)
+            }
         } else {
             var transaction = Transaction()
             transaction.disablesAnimations = true
-            withTransaction(transaction, update)
+            withTransaction(transaction) {
+                applyResolvedStep(stepIndex, targetFrame: targetFrame)
+            }
         }
+    }
+
+    private func applyResolvedStep(_ stepIndex: Int, targetFrame: CGRect) {
+        resolvedLayout = ResolvedHomeTutorialLayout(
+            stepIndex: stepIndex,
+            targetFrame: targetFrame,
+            calloutReferenceFrame: targetFrame
+        )
+        pendingStepIndex = nil
     }
 
     private func isValid(_ frame: CGRect) -> Bool {
@@ -1683,23 +1688,28 @@ private struct HomeTutorialOverlay: View {
             frame.width > 1 && frame.height > 1
     }
 
-    private func showPendingStep(_ index: Int) {
+    private func showPendingStep(_ stepIndex: Int) {
         guard let currentLayout = resolvedLayout else { return }
-        let update = {
-            resolvedLayout = ResolvedHomeTutorialLayout(
-                stepIndex: index,
-                targetFrame: nil,
-                calloutReferenceFrame: currentLayout.calloutReferenceFrame
-            )
-        }
 
         if reduceMotion {
             var transaction = Transaction()
             transaction.disablesAnimations = true
-            withTransaction(transaction, update)
+            withTransaction(transaction) {
+                applyPendingStep(stepIndex, calloutReferenceFrame: currentLayout.calloutReferenceFrame)
+            }
         } else {
-            withAnimation(.easeInOut(duration: 0.25), update)
+            withAnimation(.easeInOut(duration: 0.25)) {
+                applyPendingStep(stepIndex, calloutReferenceFrame: currentLayout.calloutReferenceFrame)
+            }
         }
+    }
+
+    private func applyPendingStep(_ stepIndex: Int, calloutReferenceFrame: CGRect) {
+        resolvedLayout = ResolvedHomeTutorialLayout(
+            stepIndex: stepIndex,
+            targetFrame: nil,
+            calloutReferenceFrame: calloutReferenceFrame
+        )
     }
 
     private func isReadyForTransition(_ frame: CGRect, in proxy: GeometryProxy) -> Bool {
@@ -1727,24 +1737,6 @@ private struct HomeTutorialOverlay: View {
                 calloutReferenceFrame: targetFrame
             )
         }
-
-        let update = {
-            resolvedLayout = ResolvedHomeTutorialLayout(
-                stepIndex: index,
-                targetFrame: targetFrame,
-                calloutReferenceFrame: targetFrame
-            )
-            pendingStepIndex = nil
-        }
-        if animated && !reduceMotion {
-            withAnimation(.easeInOut(duration: 0.25), update)
-        } else {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction, update)
-        }
-
-        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
     }
 
     private func logFrameResolution(
