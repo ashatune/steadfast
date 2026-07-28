@@ -1606,19 +1606,19 @@ private struct HomeTutorialOverlay: View {
         // A second navigation tap supersedes an unresolved request instead of
         // leaving the callout controls permanently disabled.
         pendingStepIndex = index
-        let target = steps[index].id
+        let requestedTarget = steps[index].id
 
-        if let targetFrame = frame(for: target), isReadyForTransition(targetFrame, in: proxy) {
-            logScrollDecision(for: target, skippedScroll: true)
+        if let targetFrame = frame(for: requestedTarget), isReadyForTransition(targetFrame, in: proxy) {
+            logScrollDecision(for: requestedTarget, skippedScroll: true)
             resolveStepIfPossible(index, proxy: proxy, animated: true)
             return
         }
 
-        logScrollDecision(for: target, skippedScroll: false)
+        logScrollDecision(for: requestedTarget, skippedScroll: false)
         showPendingStep(index)
         var transaction = Transaction()
         transaction.disablesAnimations = true
-        withTransaction(transaction) { onScrollToTarget(target) }
+        withTransaction(transaction) { onScrollToTarget(requestedTarget) }
     }
 
     private func resolveStepIfPossible(
@@ -1626,9 +1626,18 @@ private struct HomeTutorialOverlay: View {
         proxy: GeometryProxy,
         animated: Bool
     ) {
-        let target = steps[index].id
-        guard let targetFrame = frame(for: target), isReadyForTransition(targetFrame, in: proxy) else {
-            logFrameResolution(for: target, targetFrame: frames[target], passedValidation: false)
+        guard steps.indices.contains(index) else {
+            pendingStepIndex = nil
+            return
+        }
+
+        let requestedTarget = steps[index].id
+        guard let targetFrame = frame(for: requestedTarget), isReadyForTransition(targetFrame, in: proxy) else {
+            logFrameResolution(
+                for: requestedTarget,
+                targetFrame: frames[requestedTarget],
+                passedValidation: false
+            )
             return
         }
 
@@ -1648,7 +1657,7 @@ private struct HomeTutorialOverlay: View {
             withTransaction(transaction, update)
         }
 
-        logFrameResolution(for: target, targetFrame: targetFrame, passedValidation: true)
+        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
     }
 
     private func isValid(_ frame: CGRect) -> Bool {
@@ -1674,11 +1683,6 @@ private struct HomeTutorialOverlay: View {
         } else {
             withAnimation(.easeInOut(duration: 0.25), update)
         }
-
-        logScrollDecision(for: target, skippedScroll: false)
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) { onScrollToTarget(target) }
     }
 
     private func isReadyForTransition(_ frame: CGRect, in proxy: GeometryProxy) -> Bool {
@@ -1692,8 +1696,8 @@ private struct HomeTutorialOverlay: View {
 
     private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
         guard let layout = resolvedLayout else { return }
-        let target = steps[layout.stepIndex].id
-        guard let targetFrame = frame(for: target),
+        let resolvedTarget = steps[layout.stepIndex].id
+        guard let targetFrame = frame(for: resolvedTarget),
               isReadyForTransition(targetFrame, in: proxy),
               targetFrame != layout.targetFrame else { return }
 
