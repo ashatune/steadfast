@@ -1464,6 +1464,7 @@ private struct HomeTutorialOverlay: View {
                                 .blendMode(.destinationOut)
                         }
                         .compositingGroup()
+                        .allowsHitTesting(false)
 
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(Theme.accent, lineWidth: 3)
@@ -1471,6 +1472,7 @@ private struct HomeTutorialOverlay: View {
                         .shadow(color: Theme.accent.opacity(0.35), radius: 12)
                         .position(x: highlightFrame.midX, y: highlightFrame.midY)
                         .accessibilityHidden(true)
+                        .allowsHitTesting(false)
 
                     tooltip(
                         for: step,
@@ -1484,6 +1486,7 @@ private struct HomeTutorialOverlay: View {
                 } else {
                     Color.black.opacity(0.48)
                         .ignoresSafeArea()
+                        .allowsHitTesting(false)
                 }
             }
             .contentShape(Rectangle())
@@ -1499,6 +1502,7 @@ private struct HomeTutorialOverlay: View {
                     refreshResolvedFrameIfNeeded(proxy: proxy)
                 }
             }
+            .onDisappear { pendingStepIndex = nil }
         }
         .transition(.opacity)
         .zIndex(20)
@@ -1545,7 +1549,10 @@ private struct HomeTutorialOverlay: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                Button("Skip", action: onComplete)
+                Button("Skip") {
+                    pendingStepIndex = nil
+                    onComplete()
+                }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.inkSecondary)
 
@@ -1584,7 +1591,13 @@ private struct HomeTutorialOverlay: View {
     }
 
     private func requestStep(_ index: Int, proxy: GeometryProxy) {
-        guard steps.indices.contains(index), pendingStepIndex == nil else { return }
+        guard steps.indices.contains(index) else {
+            pendingStepIndex = nil
+            return
+        }
+
+        // A second navigation tap supersedes an unresolved request instead of
+        // leaving the callout controls permanently disabled.
         pendingStepIndex = index
         let target = steps[index].id
 
@@ -1636,13 +1649,9 @@ private struct HomeTutorialOverlay: View {
         guard isValid(frame) else { return false }
         let visibleBounds = CGRect(origin: .zero, size: proxy.size)
         let intersection = visibleBounds.intersection(frame)
-        guard !intersection.isNull else { return false }
-
-        let requiredWidth = min(frame.width, visibleBounds.width) * 0.9
-        let hasUsefulVisibleHeight = intersection.height >= min(frame.height, 44)
-        return intersection.width >= requiredWidth &&
-            hasUsefulVisibleHeight &&
-            visibleBounds.minY...visibleBounds.maxY ~= frame.midY
+        return !intersection.isNull &&
+            intersection.width > 1 &&
+            intersection.height >= min(frame.height, 44)
     }
 
     private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
