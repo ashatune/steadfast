@@ -812,25 +812,6 @@ private struct DevotionalVerseStoryView: View {
                 .ignoresSafeArea()
 
                 VStack {
-                    HStack {
-                        Spacer()
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(.black.opacity(0.32), in: Circle())
-                                .overlay(
-                                    Circle().stroke(.white.opacity(0.22), lineWidth: 1)
-                                )
-                        }
-                        .accessibilityLabel("Close devotional story")
-                    }
-                    .padding(.top, max(geo.safeAreaInsets.top, 16) + 8)
-                    .padding(.horizontal, 18)
-
                     Spacer()
 
                     VStack(spacing: 14) {
