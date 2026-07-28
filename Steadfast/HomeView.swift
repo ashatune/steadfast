@@ -579,6 +579,8 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .homeTutorialTarget(.dailyDevotional)
+        .id(HomeTutorialTarget.dailyDevotional)
     }
 
     private var anchorRhythmCard: some View {
