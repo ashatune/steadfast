@@ -64,21 +64,21 @@ enum PrayerMeditationLibrary {
         PrayerMeditation(
             title: "Panic Attack Relief",
             audio: .local(name: "PanicMeditation", ext: "mp3"),
-            coverName: "explorePanic",
+            coverName: "panicMedCard",
             displayDuration: "8:00",
             playbackBackgroundName: "steadfastFiverrSplashScreen"
         ),
         PrayerMeditation(
             title: "Healing and Renewal",
             audio: .local(name: "healingMeditation", ext: "mp3"),
-            coverName: "exploreHealing",
+            coverName: "healingMedCard",
             displayDuration: "4:00",
             playbackBackgroundName: "steadfastFiverrSplashScreen"
         ),
         PrayerMeditation(
             title: "Lord’s Prayer",
             audio: .local(name: "TheLordsPrayer", ext: "mp3"),
-            coverName: "exploreLordsPrayer",
+            coverName: "lordsPrayerMedCard",
             displayDuration: "4:45",
             playbackBackgroundName: "steadfastFiverrSplashScreen"
         )
