@@ -2,6 +2,12 @@ import SwiftUI
 import UIKit
 
 enum OnboardingPalette {
+    static let pageBackground = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.07, green: 0.06, blue: 0.16, alpha: 1)
+            : UIColor(red: 0.94, green: 0.95, blue: 1.0, alpha: 1)
+    })
+
     static let primaryText = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(white: 1.0, alpha: 0.98)
