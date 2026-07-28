@@ -183,6 +183,7 @@ struct HomeView: View {
                     .transition(.opacity)
 
                 streakSection
+                    .frame(maxWidth: .infinity)
                     .homeTutorialTarget(.streak)
                     .id(HomeTutorialTarget.streak)
                     .padding(.horizontal, sidePadding)
@@ -206,6 +207,9 @@ struct HomeView: View {
                     .padding(.top, 8)
 
                 rhythmCardsSection
+                    .frame(maxWidth: .infinity)
+                    .homeTutorialTarget(.dailyDevotional)
+                    .id(HomeTutorialTarget.dailyDevotional)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 2)
 
@@ -1427,7 +1431,7 @@ private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
     static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
 
     static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { existing, _ in existing })
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
 
@@ -1510,6 +1514,8 @@ private struct HomeTutorialOverlay: View {
                     resolveStepIfPossible(pendingStepIndex, proxy: proxy, animated: true)
                 } else if resolvedLayout == nil {
                     resolveStepIfPossible(0, proxy: proxy, animated: false)
+                } else {
+                    refreshResolvedFrameIfNeeded(proxy: proxy)
                 }
             }
         }
@@ -1652,8 +1658,27 @@ private struct HomeTutorialOverlay: View {
         guard !intersection.isNull else { return false }
 
         let requiredWidth = min(frame.width, visibleBounds.width) * 0.9
-        let requiredHeight = min(frame.height, visibleBounds.height) * 0.9
-        return intersection.width >= requiredWidth && intersection.height >= requiredHeight
+        let hasUsefulVisibleHeight = intersection.height >= min(frame.height, 44)
+        return intersection.width >= requiredWidth &&
+            hasUsefulVisibleHeight &&
+            visibleBounds.minY...visibleBounds.maxY ~= frame.midY
+    }
+
+    private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
+        guard let layout = resolvedLayout else { return }
+        let target = steps[layout.stepIndex].id
+        guard let targetFrame = frame(for: target),
+              isReadyForTransition(targetFrame, in: proxy),
+              targetFrame != layout.targetFrame else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: layout.stepIndex,
+                targetFrame: targetFrame
+            )
+        }
     }
 
     private func logFrameResolution(
