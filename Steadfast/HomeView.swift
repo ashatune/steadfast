@@ -235,7 +235,12 @@ struct HomeView: View {
             .overlay {
                 if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
                     HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
-                        scrollProxy.scrollTo(target, anchor: .center)
+                        switch target {
+                        case .explore:
+                            scrollProxy.scrollTo(target, anchor: .bottom)
+                        default:
+                            scrollProxy.scrollTo(target, anchor: .center)
+                        }
                     }, onComplete: {
                         hasSeenHomeTutorial = true
                     })
@@ -1405,8 +1410,7 @@ private struct HomeTutorialStep: Identifiable {
 
 private struct ResolvedHomeTutorialLayout {
     let stepIndex: Int
-    let targetFrame: CGRect?
-    let calloutReferenceFrame: CGRect
+    let targetFrame: CGRect
 }
 
 private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
@@ -1438,6 +1442,7 @@ private struct HomeTutorialOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var resolvedLayout: ResolvedHomeTutorialLayout?
     @State private var pendingStepIndex: Int?
+    @State private var resolutionTask: Task<Void, Never>?
     @State private var calloutSize = CGSize(width: 340, height: 220)
 
     private let steps: [HomeTutorialStep] = [
@@ -1454,39 +1459,33 @@ private struct HomeTutorialOverlay: View {
             ZStack {
                 if let layout = resolvedLayout {
                     let step = steps[layout.stepIndex]
-                    let highlightFrame = layout.targetFrame?.insetBy(dx: -8, dy: -8)
+                    let highlightFrame = layout.targetFrame.insetBy(dx: -8, dy: -8)
 
-                    if let highlightFrame {
-                        Color.black.opacity(0.48)
-                            .ignoresSafeArea()
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .frame(width: highlightFrame.width, height: highlightFrame.height)
-                                    .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                                    .blendMode(.destinationOut)
-                            }
-                            .compositingGroup()
-                            .allowsHitTesting(false)
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .frame(width: highlightFrame.width, height: highlightFrame.height)
+                                .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                                .blendMode(.destinationOut)
+                        }
+                        .compositingGroup()
+                        .allowsHitTesting(false)
 
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Theme.accent, lineWidth: 3)
-                            .frame(width: highlightFrame.width, height: highlightFrame.height)
-                            .shadow(color: Theme.accent.opacity(0.35), radius: 12)
-                            .position(x: highlightFrame.midX, y: highlightFrame.midY)
-                            .accessibilityHidden(true)
-                            .allowsHitTesting(false)
-                    } else {
-                        Color.black.opacity(0.48)
-                            .ignoresSafeArea()
-                            .allowsHitTesting(false)
-                    }
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Theme.accent, lineWidth: 3)
+                        .frame(width: highlightFrame.width, height: highlightFrame.height)
+                        .shadow(color: Theme.accent.opacity(0.35), radius: 12)
+                        .position(x: highlightFrame.midX, y: highlightFrame.midY)
+                        .accessibilityHidden(true)
+                        .allowsHitTesting(false)
 
                     tooltip(
                         for: step,
                         stepIndex: layout.stepIndex,
                         screenSize: proxy.size,
                         safeAreaInsets: proxy.safeAreaInsets,
-                        highlightFrame: highlightFrame ?? layout.calloutReferenceFrame.insetBy(dx: -8, dy: -8),
+                        highlightFrame: highlightFrame,
                         onBack: { requestStep(layout.stepIndex - 1, proxy: proxy) },
                         onNext: { requestStep(layout.stepIndex + 1, proxy: proxy) }
                     )
@@ -1498,18 +1497,18 @@ private struct HomeTutorialOverlay: View {
             }
             .contentShape(Rectangle())
             .onAppear {
-                resolveStepIfPossible(0, proxy: proxy, animated: false)
+                resolveStepIfPossible(0, visibleSize: proxy.size, animated: false, allowPartialVisibility: false)
             }
             .onChange(of: frames) { _ in
                 if let pendingStepIndex {
-                    resolveStepIfPossible(pendingStepIndex, proxy: proxy, animated: true)
+                    resolveStepIfPossible(pendingStepIndex, visibleSize: proxy.size, animated: true, allowPartialVisibility: true)
                 } else if resolvedLayout == nil {
-                    resolveStepIfPossible(0, proxy: proxy, animated: false)
+                    resolveStepIfPossible(0, visibleSize: proxy.size, animated: false, allowPartialVisibility: false)
                 } else {
                     refreshResolvedFrameIfNeeded(proxy: proxy)
                 }
             }
-            .onDisappear { pendingStepIndex = nil }
+            .onDisappear { cancelPendingResolution() }
         }
         .transition(.opacity)
         .zIndex(20)
@@ -1598,7 +1597,7 @@ private struct HomeTutorialOverlay: View {
     }
 
     private func completeTutorial() {
-        pendingStepIndex = nil
+        cancelPendingResolution()
 
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -1612,51 +1611,58 @@ private struct HomeTutorialOverlay: View {
         print("[HomeTutorial] advance current=\(String(describing: currentIndex)) requested=\(index) target=\(requestedID) total=\(steps.count)")
         #endif
 
-        guard steps.indices.contains(index) else {
-            pendingStepIndex = nil
-            return
-        }
+        guard steps.indices.contains(index), pendingStepIndex == nil else { return }
 
-        // A second navigation tap supersedes an unresolved request instead of
-        // leaving the callout controls permanently disabled.
         pendingStepIndex = index
         let requestedTarget = steps[index].id
 
-        if let targetFrame = frame(for: requestedTarget), isReadyForTransition(targetFrame, in: proxy) {
+        if let targetFrame = frame(for: requestedTarget),
+           isVisibleBeforeScroll(targetFrame, visibleSize: proxy.size) {
             logScrollDecision(for: requestedTarget, skippedScroll: true)
             commitResolvedStep(index, targetFrame: targetFrame, animated: true)
             return
         }
 
         logScrollDecision(for: requestedTarget, skippedScroll: false)
-        showPendingStep(index)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { onScrollToTarget(requestedTarget) }
+        guard pendingStepIndex == index else { return }
+        scheduleResolution(for: index, target: requestedTarget, visibleSize: proxy.size)
     }
 
+    @discardableResult
     private func resolveStepIfPossible(
         _ index: Int,
-        proxy: GeometryProxy,
-        animated: Bool
-    ) {
+        visibleSize: CGSize,
+        animated: Bool,
+        allowPartialVisibility: Bool
+    ) -> Bool {
         guard steps.indices.contains(index) else {
-            pendingStepIndex = nil
-            return
+            cancelPendingResolution()
+            return false
         }
 
+        if let pendingStepIndex, pendingStepIndex != index { return false }
+
         let requestedTarget = steps[index].id
-        guard let targetFrame = frame(for: requestedTarget), isReadyForTransition(targetFrame, in: proxy) else {
+        guard let targetFrame = frame(for: requestedTarget) else {
             logFrameResolution(
                 for: requestedTarget,
                 targetFrame: frames[requestedTarget],
                 passedValidation: false
             )
-            return
+            return false
         }
+
+        let isVisible = allowPartialVisibility
+            ? hasEnteredViewport(targetFrame, visibleSize: visibleSize)
+            : isVisibleBeforeScroll(targetFrame, visibleSize: visibleSize)
+        guard isVisible else { return false }
 
         commitResolvedStep(index, targetFrame: targetFrame, animated: animated)
         logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
+        return true
     }
 
     private func commitResolvedStep(_ stepIndex: Int, targetFrame: CGRect, animated: Bool) {
@@ -1676,10 +1682,11 @@ private struct HomeTutorialOverlay: View {
     private func applyResolvedStep(_ stepIndex: Int, targetFrame: CGRect) {
         resolvedLayout = ResolvedHomeTutorialLayout(
             stepIndex: stepIndex,
-            targetFrame: targetFrame,
-            calloutReferenceFrame: targetFrame
+            targetFrame: targetFrame
         )
         pendingStepIndex = nil
+        resolutionTask?.cancel()
+        resolutionTask = nil
     }
 
     private func isValid(_ frame: CGRect) -> Bool {
@@ -1688,44 +1695,62 @@ private struct HomeTutorialOverlay: View {
             frame.width > 1 && frame.height > 1
     }
 
-    private func showPendingStep(_ stepIndex: Int) {
-        guard let currentLayout = resolvedLayout else { return }
-
-        if reduceMotion {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                applyPendingStep(stepIndex, calloutReferenceFrame: currentLayout.calloutReferenceFrame)
-            }
-        } else {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                applyPendingStep(stepIndex, calloutReferenceFrame: currentLayout.calloutReferenceFrame)
-            }
-        }
-    }
-
-    private func applyPendingStep(_ stepIndex: Int, calloutReferenceFrame: CGRect) {
-        resolvedLayout = ResolvedHomeTutorialLayout(
-            stepIndex: stepIndex,
-            targetFrame: nil,
-            calloutReferenceFrame: calloutReferenceFrame
-        )
-    }
-
-    private func isReadyForTransition(_ frame: CGRect, in proxy: GeometryProxy) -> Bool {
+    private func isVisibleBeforeScroll(_ frame: CGRect, visibleSize: CGSize) -> Bool {
         guard isValid(frame) else { return false }
-        let visibleBounds = CGRect(origin: .zero, size: proxy.size)
+        let visibleBounds = CGRect(origin: .zero, size: visibleSize)
         let intersection = visibleBounds.intersection(frame)
         return !intersection.isNull &&
             intersection.width > 1 &&
             intersection.height >= min(frame.height, 44)
     }
 
+    private func hasEnteredViewport(_ frame: CGRect, visibleSize: CGSize) -> Bool {
+        guard isValid(frame) else { return false }
+        let intersection = CGRect(origin: .zero, size: visibleSize).intersection(frame)
+        return !intersection.isNull && intersection.width > 1 && intersection.height > 1
+    }
+
+    private func scheduleResolution(for index: Int, target: HomeTutorialTarget, visibleSize: CGSize) {
+        resolutionTask?.cancel()
+        resolutionTask = Task { @MainActor in
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            if resolveStepIfPossible(
+                index,
+                visibleSize: visibleSize,
+                animated: true,
+                allowPartialVisibility: true
+            ) { return }
+
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            if resolveStepIfPossible(
+                index,
+                visibleSize: visibleSize,
+                animated: true,
+                allowPartialVisibility: true
+            ) { return }
+
+            guard pendingStepIndex == index else { return }
+            pendingStepIndex = nil
+            resolutionTask = nil
+            #if DEBUG
+            print("[HomeTutorial] unable to resolve target=\(target.rawValue); keeping committed step visible")
+            #endif
+        }
+    }
+
+    private func cancelPendingResolution() {
+        resolutionTask?.cancel()
+        resolutionTask = nil
+        pendingStepIndex = nil
+    }
+
     private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
         guard let layout = resolvedLayout else { return }
         let resolvedTarget = steps[layout.stepIndex].id
         guard let targetFrame = frame(for: resolvedTarget),
-              isReadyForTransition(targetFrame, in: proxy),
+              hasEnteredViewport(targetFrame, visibleSize: proxy.size),
               targetFrame != layout.targetFrame else { return }
 
         var transaction = Transaction()
@@ -1733,8 +1758,7 @@ private struct HomeTutorialOverlay: View {
         withTransaction(transaction) {
             resolvedLayout = ResolvedHomeTutorialLayout(
                 stepIndex: layout.stepIndex,
-                targetFrame: targetFrame,
-                calloutReferenceFrame: targetFrame
+                targetFrame: targetFrame
             )
         }
     }
