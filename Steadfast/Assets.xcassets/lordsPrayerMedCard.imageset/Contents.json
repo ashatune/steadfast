@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "LordsPrayerCover1.png",
+      "filename" : "lordsPrayerMedCard.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "LordsPrayerCover1 1.png",
+      "filename" : "lordsPrayerMedCard@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "LordsPrayerCover1 2.png",
+      "filename" : "lordsPrayerMedCard@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
