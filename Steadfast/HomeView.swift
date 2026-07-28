@@ -1529,6 +1529,7 @@ private struct HomeTutorialOverlay: View {
         onBack: @escaping () -> Void,
         onNext: @escaping () -> Void
     ) -> some View {
+        let isLastStep = stepIndex == steps.count - 1
         let cardWidth = min(screenSize.width - 32, 340)
         let appearsBelow = highlightFrame.midY < screenSize.height * 0.56
         let halfHeight = calloutSize.height / 2
@@ -1557,8 +1558,7 @@ private struct HomeTutorialOverlay: View {
 
             HStack(spacing: 10) {
                 Button("Skip") {
-                    pendingStepIndex = nil
-                    onComplete()
+                    completeTutorial()
                 }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.inkSecondary)
@@ -1571,12 +1571,12 @@ private struct HomeTutorialOverlay: View {
                         .disabled(pendingStepIndex != nil)
                 }
 
-                Button(stepIndex == steps.count - 1 ? "Done" : "Next") {
-                    if stepIndex == steps.count - 1 {
-                        onComplete()
-                    } else {
-                        onNext()
+                Button(isLastStep ? "Done" : "Next") {
+                    guard !isLastStep else {
+                        completeTutorial()
+                        return
                     }
+                    onNext()
                 }
                 .buttonStyle(HomeTutorialPrimaryButtonStyle())
                 .disabled(pendingStepIndex != nil)
@@ -1595,6 +1595,14 @@ private struct HomeTutorialOverlay: View {
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
         .onGeometryChange(for: CGSize.self, of: { $0.size }) { calloutSize = $0 }
         .position(x: xPosition, y: yPosition)
+    }
+
+    private func completeTutorial() {
+        pendingStepIndex = nil
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { onComplete() }
     }
 
     private func requestStep(_ index: Int, proxy: GeometryProxy) {
