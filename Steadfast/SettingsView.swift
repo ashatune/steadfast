@@ -121,7 +121,7 @@ struct SettingsView: View {
                     Text("Onboarding")
                         .foregroundStyle(Theme.sectionTitle)
                 } footer: {
-                    Text("Re-running onboarding will show the intro slides and 30-second practice again on next open.")
+                    Text("Re-running onboarding will show the four introduction slides again on next open.")
                         .font(.footnote)
                         .foregroundStyle(Theme.inkSecondary)
                 }
