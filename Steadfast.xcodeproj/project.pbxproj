@@ -17,16 +17,16 @@
 		246995CE2EBCF3B20098BB6A /* SteadfastWatchApp Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 246995AB2EBCF3B10098BB6A /* SteadfastWatchApp Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		246BB0A62FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
 		246BB0A72FD9158E00B2E82B /* DeepLinkRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */; };
-		24DA00012F00000100DA0001 /* DailyAnchorResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */; };
-		24DA00022F00000100DA0001 /* DailyAnchorResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */; };
-		24DA00042F00000100DA0001 /* AnchorOfDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */; };
-		24DA00052F00000100DA0001 /* AnchorOfDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */; };
 		2476296D2F5A63F8001DFEA3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2476296C2F5A63F8001DFEA3 /* GoogleService-Info.plist */; };
 		247629702F5A7FDA001DFEA3 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2476296F2F5A7FDA001DFEA3 /* FirebaseAnalytics */; };
 		247629722F5A7FDA001DFEA3 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 247629712F5A7FDA001DFEA3 /* FirebaseCrashlytics */; };
 		247629742F5A7FDA001DFEA3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 247629732F5A7FDA001DFEA3 /* FirebaseFirestore */; };
 		24B500542E56A6C000AC82BE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 24B500532E56A6C000AC82BE /* LaunchScreen.storyboard */; };
 		24B500642E57D2B700AC82BE /* meditate1.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 24B500632E57D2B700AC82BE /* meditate1.m4a */; };
+		24DA00012F00000100DA0001 /* DailyAnchorResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */; };
+		24DA00022F00000100DA0001 /* DailyAnchorResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */; };
+		24DA00042F00000100DA0001 /* AnchorOfDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */; };
+		24DA00052F00000100DA0001 /* AnchorOfDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,14 +110,14 @@
 		246995BA2EBCF3B20098BB6A /* SteadfastWatchApp Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SteadfastWatchApp Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		246995C42EBCF3B20098BB6A /* SteadfastWatchApp Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SteadfastWatchApp Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		246BB0A52FD9158E00B2E82B /* DeepLinkRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRoute.swift; sourceTree = "<group>"; };
-		24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyAnchorResolver.swift; sourceTree = "<group>"; };
-		24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorOfDayStore.swift; sourceTree = "<group>"; };
 		2476296C2F5A63F8001DFEA3 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		24B500532E56A6C000AC82BE /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		24B500632E57D2B700AC82BE /* meditate1.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = meditate1.m4a; sourceTree = "<group>"; };
 		24B5FFB72E52646B00AC82BE /* Steadfast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steadfast.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24B5FFC92E52646C00AC82BE /* SteadfastTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SteadfastTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		24B5FFD32E52646C00AC82BE /* SteadfastUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SteadfastUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		24DA00002F00000100DA0001 /* DailyAnchorResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyAnchorResolver.swift; sourceTree = "<group>"; };
+		24DA00032F00000100DA0001 /* AnchorOfDayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorOfDayStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -782,7 +782,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.1.12;
 				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -812,7 +812,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.1.12;
 				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1049,7 +1049,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.1.12;
 				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1084,7 +1084,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.1.12;
 				PRODUCT_BUNDLE_IDENTIFIER = com.steadfastmeditation.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

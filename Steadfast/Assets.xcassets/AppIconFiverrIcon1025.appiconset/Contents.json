@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "ICON 1024.png",
+      "filename" : "Steadfast-AppIcon-1024-Opaque.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "ICON 1025.png",
+      "filename" : "Steadfast-AppIcon-1024-Opaque 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "ICON 1026.png",
+      "filename" : "Steadfast-AppIcon-1024-Opaque 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
