@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "panicMedCard.png",
+      "filename" : "onboardingSlide2Image.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "panicMedCard 1.png",
+      "filename" : "onboardingSlide2Image 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "panicMedCard 2.png",
+      "filename" : "onboardingSlide2Image 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
