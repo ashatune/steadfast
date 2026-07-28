@@ -13,7 +13,7 @@ enum PeaceReminderSelection: String, CaseIterable, Identifiable {
         case .morning: return "Morning"
         case .midday: return "Midday"
         case .evening: return "Evening"
-        case .custom: return "Choose a time"
+        case .custom: return "Custom"
         }
     }
 
@@ -51,6 +51,10 @@ struct PeacePracticeOnboardingSlide: View {
     @Binding var selection: PeaceReminderSelection
     @Binding var customTime: Date
     let isActive: Bool
+    @State private var isShowingCustomTimeSheet = false
+    @State private var pendingCustomTime = Date()
+    @State private var selectionBeforeCustomSheet: PeaceReminderSelection = .morning
+    @State private var hasCommittedCustomTime = false
 
     private let columns = [
         GridItem(.flexible(), spacing: 10),
@@ -58,10 +62,25 @@ struct PeacePracticeOnboardingSlide: View {
     ]
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 14) {
+        ViewThatFits(in: .vertical) {
+            slideContent
+
+            ScrollView {
+                slideContent
+            }
+            .scrollIndicators(.hidden)
+        }
+        .sheet(isPresented: $isShowingCustomTimeSheet) {
+            customTimeSheet
+                .presentationDetents([.height(330)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var slideContent: some View {
+        VStack(spacing: 10) {
                 ThirtyDayPeacePath(isActive: isActive)
-                    .frame(height: 150)
+                    .frame(height: 130)
                     .padding(.horizontal, 4)
 
                 Text("YOUR 30-DAY PEACE PRACTICE")
@@ -69,29 +88,22 @@ struct PeacePracticeOnboardingSlide: View {
                     .tracking(1.2)
                     .foregroundStyle(Theme.accent)
 
-                Text("Small moments can create steadier days")
+                Text("Small moments create steadier days")
                     .font(.system(.title2, design: .rounded, weight: .bold))
                     .foregroundStyle(OnboardingPalette.primaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Give yourself 5 minutes a day for prayer, breathing, or reflection—and build a more peaceful rhythm over the next 30 days.")
+                Text("Build a more peaceful rhythm with 5 minutes of prayer, breathing, or reflection each day.")
                     .font(.body)
                     .foregroundStyle(OnboardingPalette.secondaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(spacing: 4) {
-                    Text("When would you like your daily moment of peace?")
-                        .font(.headline)
-                        .foregroundStyle(OnboardingPalette.primaryText)
-                        .multilineTextAlignment(.center)
-                    Text("Choose a time that feels realistic for your routine.")
-                        .font(.footnote)
-                        .foregroundStyle(OnboardingPalette.secondaryText)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 2)
+                Text("Choose your daily reminder")
+                    .font(.headline)
+                    .foregroundStyle(OnboardingPalette.primaryText)
+                    .multilineTextAlignment(.center)
 
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(PeaceReminderSelection.allCases) { option in
@@ -99,36 +111,29 @@ struct PeacePracticeOnboardingSlide: View {
                     }
                 }
 
-                if selection == .custom {
-                    DatePicker("Daily reminder time", selection: $customTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(.compact)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(OnboardingPalette.primaryText)
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 48)
-                        .background(OnboardingPalette.controlFill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .accessibilityLabel("Custom daily reminder time")
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 8)
-            .frame(maxWidth: 620)
-            .frame(maxWidth: .infinity)
         }
-        .scrollIndicators(.hidden)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 6)
+        .frame(maxWidth: 620)
+        .frame(maxWidth: .infinity)
     }
 
     private func reminderOption(_ option: PeaceReminderSelection) -> some View {
         let isSelected = selection == option
         return Button {
-            selection = option
+            if option == .custom {
+                selectionBeforeCustomSheet = selection
+                pendingCustomTime = customTime
+                isShowingCustomTimeSheet = true
+            } else {
+                selection = option
+            }
         } label: {
             VStack(spacing: 2) {
                 Text(option.title)
                     .font(.subheadline.weight(.semibold))
-                if let time = option.timeLabel {
-                    Text(time).font(.caption)
-                }
+                Text(optionTimeLabel(option))
+                    .font(.caption)
             }
             .foregroundStyle(isSelected ? Theme.accent : OnboardingPalette.primaryText)
             .frame(maxWidth: .infinity, minHeight: 48)
@@ -142,8 +147,70 @@ struct PeacePracticeOnboardingSlide: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(option.timeLabel.map { "\(option.title), \($0)" } ?? option.title)
+        .accessibilityLabel(accessibilityLabel(for: option))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func optionTimeLabel(_ option: PeaceReminderSelection) -> String {
+        if option == .custom {
+            return hasCommittedCustomTime || selection == .custom ? formattedCustomTime : "Choose a time"
+        }
+        return option.timeLabel ?? ""
+    }
+
+    private func accessibilityLabel(for option: PeaceReminderSelection) -> String {
+        switch option {
+        case .morning: return "Morning reminder, 8:00 AM"
+        case .midday: return "Midday reminder, 12:30 PM"
+        case .evening: return "Evening reminder, 7:00 PM"
+        case .custom:
+            return hasCommittedCustomTime || selection == .custom
+                ? "Custom reminder, \(formattedCustomTime)"
+                : "Custom reminder time"
+        }
+    }
+
+    private var formattedCustomTime: String {
+        customTime.formatted(date: .omitted, time: .shortened)
+    }
+
+    private var customTimeSheet: some View {
+        NavigationStack {
+            VStack(spacing: 8) {
+                DatePicker(
+                    "Choose your reminder time",
+                    selection: $pendingCustomTime,
+                    displayedComponents: .hourAndMinute
+                )
+                .labelsHidden()
+                .datePickerStyle(.wheel)
+                .accessibilityLabel("Reminder time")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(OnboardingPalette.pageBackground.ignoresSafeArea())
+            .navigationTitle("Choose your reminder time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        selection = selectionBeforeCustomSheet
+                        isShowingCustomTimeSheet = false
+                    }
+                    .accessibilityLabel("Cancel custom reminder time")
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        customTime = pendingCustomTime
+                        hasCommittedCustomTime = true
+                        selection = .custom
+                        isShowingCustomTimeSheet = false
+                    }
+                    .fontWeight(.bold)
+                    .tint(Theme.accent)
+                    .accessibilityLabel("Done choosing reminder time")
+                }
+            }
+        }
     }
 }
 
