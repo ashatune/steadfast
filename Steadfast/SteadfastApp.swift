@@ -83,7 +83,7 @@ struct SteadfastApp: App {
             }
             // One-time startup setup
             .onAppear {
-                NotificationManager.shared.requestAndScheduleDailyCheckins()
+                NotificationManager.shared.scheduleAuthorizedNotificationsFromSettings()
                 StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                 SoundManager.shared.configureAudioSession(playThroughSilentSwitch: true)
                 TTSManager.shared.preparePreferredVoice(languages: ["en-US","en-GB"])

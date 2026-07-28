@@ -6,6 +6,9 @@ struct OnboardingFlowView: View {
     @AppStorage("didCompleteOnboardingMeditation") private var didCompleteOnboardingMeditation = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedPage = 0
+    @State private var reminderSelection: PeaceReminderSelection = .morning
+    @State private var customReminderTime = PeaceReminderSelection.morning.date
+    @State private var isSchedulingReminder = false
 
     private let pages = OnboardingPage.all
 
@@ -27,12 +30,19 @@ struct OnboardingFlowView: View {
                             )
                             .tag(index + 1)
                         }
+
+                        PeacePracticeOnboardingSlide(
+                            selection: $reminderSelection,
+                            customTime: $customReminderTime,
+                            isActive: selectedPage == 4
+                        )
+                        .tag(4)
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: selectedPage)
 
                     OnboardingPageIndicator(
-                        pageCount: 4,
+                        pageCount: 5,
                         selectedPage: selectedPage
                     )
                     .padding(.top, 10)
@@ -68,6 +78,16 @@ struct OnboardingFlowView: View {
     }
 
     private var navigationControls: some View {
+        Group {
+            if selectedPage == 4 {
+                finalPageControls
+            } else {
+                standardNavigationControls
+            }
+        }
+    }
+
+    private var standardNavigationControls: some View {
         HStack(spacing: 18) {
             Button("Skip", action: completeOnboarding)
                 .font(.headline)
@@ -77,21 +97,50 @@ struct OnboardingFlowView: View {
 
             Spacer(minLength: 0)
 
-            Button(selectedPage == 3 ? "Get Started" : "Next") {
-                if selectedPage == 3 {
-                    completeOnboarding()
-                } else {
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
-                        selectedPage += 1
-                    }
+            Button("Next") {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                    selectedPage += 1
                 }
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
             .frame(maxWidth: 210)
-            .accessibilityLabel(selectedPage == 3 ? "Get Started" : "Next")
+            .accessibilityLabel("Next")
         }
         .frame(maxWidth: 520)
         .frame(maxWidth: .infinity)
+    }
+
+    private var finalPageControls: some View {
+        VStack(spacing: 8) {
+            Button("Set My Daily Reminder", action: setDailyReminder)
+                .buttonStyle(OnboardingPrimaryButtonStyle())
+                .disabled(isSchedulingReminder)
+                .accessibilityLabel("Set My Daily Reminder")
+
+            Button("Not Now") {
+                NotificationManager.shared.disableDailyPeaceReminder()
+                completeOnboarding()
+            }
+            .font(.headline)
+            .foregroundStyle(OnboardingPalette.secondaryText)
+            .frame(minHeight: 44)
+            .accessibilityLabel("Not Now, finish onboarding without a reminder")
+        }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func setDailyReminder() {
+        guard !isSchedulingReminder else { return }
+        isSchedulingReminder = true
+        let components = reminderSelection.timeComponents(customTime: customReminderTime)
+        NotificationManager.shared.enableDailyPeaceReminder(
+            hour: components.hour ?? 8,
+            minute: components.minute ?? 0
+        ) { _ in
+            isSchedulingReminder = false
+            completeOnboarding()
+        }
     }
 
     private func completeOnboarding() {
