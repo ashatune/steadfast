@@ -1606,6 +1606,12 @@ private struct HomeTutorialOverlay: View {
     }
 
     private func requestStep(_ index: Int, proxy: GeometryProxy) {
+        #if DEBUG
+        let currentIndex = resolvedLayout?.stepIndex
+        let requestedID = steps.indices.contains(index) ? steps[index].id.rawValue : "outOfBounds"
+        print("[HomeTutorial] advance current=\(String(describing: currentIndex)) requested=\(index) target=\(requestedID) total=\(steps.count)")
+        #endif
+
         guard steps.indices.contains(index) else {
             pendingStepIndex = nil
             return
@@ -1618,7 +1624,7 @@ private struct HomeTutorialOverlay: View {
 
         if let targetFrame = frame(for: requestedTarget), isReadyForTransition(targetFrame, in: proxy) {
             logScrollDecision(for: requestedTarget, skippedScroll: true)
-            resolveStepIfPossible(index, proxy: proxy, animated: true)
+            commitResolvedStep(index, targetFrame: targetFrame, animated: true)
             return
         }
 
@@ -1649,6 +1655,11 @@ private struct HomeTutorialOverlay: View {
             return
         }
 
+        commitResolvedStep(index, targetFrame: targetFrame, animated: animated)
+        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
+    }
+
+    private func commitResolvedStep(_ index: Int, targetFrame: CGRect, animated: Bool) {
         let update = {
             resolvedLayout = ResolvedHomeTutorialLayout(
                 stepIndex: index,
@@ -1664,8 +1675,6 @@ private struct HomeTutorialOverlay: View {
             transaction.disablesAnimations = true
             withTransaction(transaction, update)
         }
-
-        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
     }
 
     private func isValid(_ frame: CGRect) -> Bool {
@@ -1718,6 +1727,24 @@ private struct HomeTutorialOverlay: View {
                 calloutReferenceFrame: targetFrame
             )
         }
+
+        let update = {
+            resolvedLayout = ResolvedHomeTutorialLayout(
+                stepIndex: index,
+                targetFrame: targetFrame,
+                calloutReferenceFrame: targetFrame
+            )
+            pendingStepIndex = nil
+        }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25), update)
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction, update)
+        }
+
+        logFrameResolution(for: requestedTarget, targetFrame: targetFrame, passedValidation: true)
     }
 
     private func logFrameResolution(
