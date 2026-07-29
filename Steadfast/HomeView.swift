@@ -29,7 +29,6 @@ struct HomeView: View {
     @State private var previousDevotionalCompletion = false
     @State private var previousAnchorCompletion = false
     @State private var didInitializeCompletionState = false
-    @State private var tutorialFrames: [HomeTutorialTarget: CGRect] = [:]
 
     enum TopTab { case home, reframe }
     private enum ExpandedRhythmCard { case devotionalVerse, devotional, anchor }
@@ -85,7 +84,6 @@ struct HomeView: View {
             }
             .toolbarBackground(.clear, for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
@@ -229,12 +227,10 @@ struct HomeView: View {
                 libraryFooterSection
             }
             }
-            .coordinateSpace(name: HomeTutorialCoordinateSpace.name)
             .background(Theme.bg.ignoresSafeArea())
-            .onPreferenceChange(HomeTutorialTargetFramePreferenceKey.self) { tutorialFrames = $0 }
-            .overlay {
+            .overlayPreferenceValue(HomeTutorialTargetAnchorPreferenceKey.self) { tutorialAnchors in
                 if hasCompletedOnboarding && !hasSeenHomeTutorial && topTab == .home {
-                    HomeTutorialOverlay(frames: tutorialFrames, onScrollToTarget: { target in
+                    HomeTutorialOverlay(anchors: tutorialAnchors, onScrollToTarget: { target in
                         switch target {
                         case .explore:
                             scrollProxy.scrollTo(target, anchor: .bottom)
@@ -1398,10 +1394,6 @@ enum HomeTutorialTarget: String, CaseIterable, Hashable {
     case explore
 }
 
-private enum HomeTutorialCoordinateSpace {
-    static let name = "homeTutorial"
-}
-
 private struct HomeTutorialStep: Identifiable {
     let id: HomeTutorialTarget
     let title: String
@@ -1413,34 +1405,36 @@ private struct ResolvedHomeTutorialLayout {
     let targetFrame: CGRect
 }
 
-private struct HomeTutorialTargetFramePreferenceKey: PreferenceKey {
-    static var defaultValue: [HomeTutorialTarget: CGRect] = [:]
+private struct HomeTutorialTargetAnchorPreferenceKey: PreferenceKey {
+    static var defaultValue: [HomeTutorialTarget: Anchor<CGRect>] = [:]
 
-    static func reduce(value: inout [HomeTutorialTarget: CGRect], nextValue: () -> [HomeTutorialTarget: CGRect]) {
+    static func reduce(
+        value: inout [HomeTutorialTarget: Anchor<CGRect>],
+        nextValue: () -> [HomeTutorialTarget: Anchor<CGRect>]
+    ) {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
 
 private extension View {
     func homeTutorialTarget(_ target: HomeTutorialTarget) -> some View {
-        background(
-            GeometryReader { proxy in
-                Color.clear.preference(
-                    key: HomeTutorialTargetFramePreferenceKey.self,
-                    value: [target: proxy.frame(in: .named(HomeTutorialCoordinateSpace.name))]
-                )
-            }
-        )
+        anchorPreference(
+            key: HomeTutorialTargetAnchorPreferenceKey.self,
+            value: .bounds
+        ) { anchor in
+            [target: anchor]
+        }
     }
 }
 
 private struct HomeTutorialOverlay: View {
-    let frames: [HomeTutorialTarget: CGRect]
+    let anchors: [HomeTutorialTarget: Anchor<CGRect>]
     let onScrollToTarget: (HomeTutorialTarget) -> Void
     let onComplete: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var resolvedLayout: ResolvedHomeTutorialLayout?
+    @State private var frames: [HomeTutorialTarget: CGRect] = [:]
     @State private var pendingStepIndex: Int?
     @State private var resolutionTask: Task<Void, Never>?
     @State private var calloutSize = CGSize(width: 340, height: 220)
@@ -1456,6 +1450,8 @@ private struct HomeTutorialOverlay: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let viewportFrames = anchors.mapValues { proxy[$0] }
+
             ZStack {
                 if let layout = resolvedLayout {
                     let step = steps[layout.stepIndex]
@@ -1497,21 +1493,37 @@ private struct HomeTutorialOverlay: View {
             }
             .contentShape(Rectangle())
             .onAppear {
-                resolveStepIfPossible(0, visibleSize: proxy.size, animated: false, allowPartialVisibility: false)
+                receiveFrames(viewportFrames, visibleSize: proxy.size)
             }
-            .onChange(of: frames) { _ in
-                if let pendingStepIndex {
-                    resolveStepIfPossible(pendingStepIndex, visibleSize: proxy.size, animated: true, allowPartialVisibility: true)
-                } else if resolvedLayout == nil {
-                    resolveStepIfPossible(0, visibleSize: proxy.size, animated: false, allowPartialVisibility: false)
-                } else {
-                    refreshResolvedFrameIfNeeded(proxy: proxy)
-                }
+            .onChange(of: viewportFrames) { updatedFrames in
+                receiveFrames(updatedFrames, visibleSize: proxy.size)
             }
             .onDisappear { cancelPendingResolution() }
         }
         .transition(.opacity)
         .zIndex(20)
+    }
+
+    private func receiveFrames(_ updatedFrames: [HomeTutorialTarget: CGRect], visibleSize: CGSize) {
+        frames = updatedFrames
+
+        if let pendingStepIndex {
+            resolveStepIfPossible(
+                pendingStepIndex,
+                visibleSize: visibleSize,
+                animated: true,
+                allowPartialVisibility: true
+            )
+        } else if resolvedLayout == nil {
+            resolveStepIfPossible(
+                0,
+                visibleSize: visibleSize,
+                animated: false,
+                allowPartialVisibility: false
+            )
+        } else {
+            refreshResolvedFrameIfNeeded(visibleSize: visibleSize)
+        }
     }
 
     private func frame(for target: HomeTutorialTarget) -> CGRect? {
@@ -1746,11 +1758,11 @@ private struct HomeTutorialOverlay: View {
         pendingStepIndex = nil
     }
 
-    private func refreshResolvedFrameIfNeeded(proxy: GeometryProxy) {
+    private func refreshResolvedFrameIfNeeded(visibleSize: CGSize) {
         guard let layout = resolvedLayout else { return }
         let resolvedTarget = steps[layout.stepIndex].id
         guard let targetFrame = frame(for: resolvedTarget),
-              hasEnteredViewport(targetFrame, visibleSize: proxy.size),
+              hasEnteredViewport(targetFrame, visibleSize: visibleSize),
               targetFrame != layout.targetFrame else { return }
 
         var transaction = Transaction()
