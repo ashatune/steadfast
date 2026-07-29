@@ -18,24 +18,46 @@ struct DailyRhythmView: View {
     ]
     
     var body: some View {
+        visibleRhythmContent
+            .background { navigationTriggers }
+            // Theme (no background here—HomeView owns page bg)
+            .tint(Theme.accent)
+            .foregroundStyle(Theme.ink)
+            .onAppear {
+                handlePendingRhythmDeepLink(vm.pendingDeepLink)
+            }
+            .onChange(of: vm.pendingDeepLink) { dest in
+                handlePendingRhythmDeepLink(dest)
+            }
+    }
+
+    private var visibleRhythmContent: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Daily Rhythm").font(.title3).bold().foregroundStyle(Theme.sectionTitle)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(slots) { slot in
-                        ScalingDailyCard(
-                            slot: slot,
-                            isCompleted: completionState(for: slot),
-                            baseSize: CGSize(width: cardWidth, height: cardHeight),
-                            onTap: action(for: slot)
-                        )
-                    }
+
+            rhythmCards
+        }
+    }
+
+    private var rhythmCards: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(slots) { slot in
+                    ScalingDailyCard(
+                        slot: slot,
+                        isCompleted: completionState(for: slot),
+                        baseSize: CGSize(width: cardWidth, height: cardHeight),
+                        onTap: action(for: slot)
+                    )
                 }
-                .padding(.vertical, 0)
             }
-            
-            // Hidden navigation triggers
+            .padding(.vertical, 0)
+        }
+    }
+
+    @ViewBuilder
+    private var navigationTriggers: some View {
+        Group {
             NavigationLink("", isActive: $showMorning) {
                 MorningRhythmAudioPlayerView()
             }.hidden()
@@ -47,15 +69,6 @@ struct DailyRhythmView: View {
             NavigationLink("", isActive: $showEvening) {
                 EveningRhythmAudioPlayerView()
             }.hidden()
-        }
-        // Theme (no background here—HomeView owns page bg)
-        .tint(Theme.accent)
-        .foregroundStyle(Theme.ink)
-        .onAppear {
-            handlePendingRhythmDeepLink(vm.pendingDeepLink)
-        }
-        .onChange(of: vm.pendingDeepLink) { dest in
-            handlePendingRhythmDeepLink(dest)
         }
     }
 
