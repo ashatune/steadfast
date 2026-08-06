@@ -55,6 +55,10 @@ struct PrayersView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .simultaneousGesture(TapGesture().onEnded {
+                                AnalyticsService.meditation("meditation_opened", contentID: m.analyticsID,
+                                    category: "prayer", source: "explore")
+                            })
                         }
 
                         // 2) Placeholder cards to complete the last row (non-tappable)
@@ -84,6 +88,9 @@ struct PrayersView: View {
             MeditationDurationPickerSheet(
                 selectedDuration: selectedQuickStartDuration ?? MeditationDurationOption.default
             ) { duration in
+                AnalyticsService.log("quick_start_started", parameters: [
+                    "duration_minutes": Int(duration.seconds / 60), "entry_point": "explore"
+                ])
                 selectedQuickStartDuration = duration
                 showQuickStartDurations = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -95,6 +102,7 @@ struct PrayersView: View {
         }
         .navigationTitle("Prayerful Meditations")
         .navigationBarTitleDisplayMode(.inline)
+        .analyticsScreen("meditation_library", screenClass: "PrayersView")
         .onAppear {
             handlePendingDeepLink(vm.pendingDeepLink)
         }

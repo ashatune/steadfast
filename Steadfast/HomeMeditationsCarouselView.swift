@@ -23,6 +23,10 @@ struct HomeMeditationsCarouselView: View {
                             MeditationCard(meditation: meditation, baseSize: cardSize)
                         }
                         .buttonStyle(.plain)
+                        .simultaneousGesture(TapGesture().onEnded {
+                            AnalyticsService.meditation("meditation_opened", contentID: meditation.analyticsID,
+                                category: "prayer", source: "home")
+                        })
                     }
 
                     Button {
