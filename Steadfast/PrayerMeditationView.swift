@@ -63,6 +63,9 @@ private struct UnsupportedPrayerMeditationAudioView: View {
             .padding(24)
         }
         .toolbar(.hidden, for: .navigationBar)
-        .analyticsScreen("meditation_detail", screenClass: "UnsupportedPrayerMeditationAudioView")
+        .analyticsScreen(
+            "meditation_detail",
+            screenClass: "UnsupportedPrayerMeditationAudioView"
+        )
     }
 }
