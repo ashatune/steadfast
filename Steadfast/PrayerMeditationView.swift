@@ -20,7 +20,9 @@ struct PrayerMeditationView: View {
                 title: meditation.title,
                 backgroundImageName: meditation.playbackBackgroundName
             )
+            .analyticsScreen("meditation_detail", screenClass: "UnsupportedPrayerMeditationAudioView")
         }
+        .analyticsScreen("meditation_detail", screenClass: "PrayerMeditationView")
     }
 }
 

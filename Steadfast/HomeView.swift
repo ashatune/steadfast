@@ -1384,6 +1384,7 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
         }
         .scaleEffect(animateCompletion ? 1.04 : 1)
         .accessibilityHidden(true)
+        .analyticsScreen("home", screenClass: "HomeView")
     }
 }
 
