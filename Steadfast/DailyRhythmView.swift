@@ -94,9 +94,18 @@ struct DailyRhythmView: View {
     
     private func action(for slot: DailySlot) -> (() -> Void)? {
         switch slot.title {
-        case "Morning": return { showMorning = true }
-        case "Midday":  return { showMidday  = true }
-        case "Evening": return { showEvening = true }
+        case "Morning": return {
+            AnalyticsService.log("daily_rhythm_opened", parameters: ["entry_point": "home", "source": "morning"])
+            showMorning = true
+        }
+        case "Midday": return {
+            AnalyticsService.log("daily_rhythm_opened", parameters: ["entry_point": "home", "source": "midday"])
+            showMidday = true
+        }
+        case "Evening": return {
+            AnalyticsService.log("daily_rhythm_opened", parameters: ["entry_point": "home", "source": "evening"])
+            showEvening = true
+        }
         default:        return nil
         }
     }
