@@ -69,6 +69,7 @@ struct LibraryView: View {
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
+        .analyticsScreen("explore", screenClass: "LibraryView")
     }
 
 

@@ -197,6 +197,7 @@ struct SettingsView: View {
         .foregroundStyle(Theme.ink)
             .background(Theme.bg.ignoresSafeArea())
             .onAppear { refreshAuth() }
+            .analyticsScreen("settings", screenClass: "SettingsView")
 
             // Alerts
             .alert("Notifications are disabled", isPresented: $showingDeniedAlert) {

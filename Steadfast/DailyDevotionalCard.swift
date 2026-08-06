@@ -132,6 +132,7 @@ struct DailyDevotionalDetailView: View {
     @State private var showAnchorPromptDurationPicker = false
     @State private var selectedMeditationDuration: MeditationDurationOption?
     @State private var selectedAnchorPromptDuration: MeditationDurationOption?
+    @State private var hasLoggedDevotionalOpened = false
 
     private var anchorOfDay: Verse {
         DailyVerseProvider.shared.verse(for: Date(), calendar: Calendar.current)
@@ -188,11 +189,21 @@ struct DailyDevotionalDetailView: View {
         .navigationTitle("Daily Devotional")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(showReturnTomorrow)
+        .analyticsScreen("daily_devotional", screenClass: "DailyDevotionalDetailView")
+        .onAppear {
+            guard !hasLoggedDevotionalOpened else { return }
+            hasLoggedDevotionalOpened = true
+            AnalyticsService.log("devotional_opened", parameters: ["content_id": devotional.id])
+        }
         .toolbar {
             if !showReturnTomorrow {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        let wasSaved = savedStore.isSaved(devotionalID: devotional.id)
                         savedStore.toggleSave(devotional: devotional)
+                        if !wasSaved {
+                            AnalyticsService.log("devotional_saved", parameters: ["content_id": devotional.id])
+                        }
                     } label: {
                         Image(systemName: savedStore.isSaved(devotionalID: devotional.id) ? "bookmark.fill" : "bookmark")
                             .font(.headline)
