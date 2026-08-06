@@ -6,20 +6,22 @@ struct PrayerMeditationView: View {
 
     @ViewBuilder
     var body: some View {
-        switch meditation.audio {
-        case .local(let name, let ext):
-            RhythmAudioPlayerView(
-                title: meditation.title,
-                subtitle: meditation.subtitle,
-                audioFileName: name,
-                audioFileExtension: ext,
-                backgroundImageName: meditation.playbackBackgroundName
-            )
-        case .remote:
-            UnsupportedPrayerMeditationAudioView(
-                title: meditation.title,
-                backgroundImageName: meditation.playbackBackgroundName
-            )
+        Group {
+            switch meditation.audio {
+            case .local(let name, let ext):
+                RhythmAudioPlayerView(
+                    title: meditation.title,
+                    subtitle: meditation.subtitle,
+                    audioFileName: name,
+                    audioFileExtension: ext,
+                    backgroundImageName: meditation.playbackBackgroundName
+                )
+            case .remote:
+                UnsupportedPrayerMeditationAudioView(
+                    title: meditation.title,
+                    backgroundImageName: meditation.playbackBackgroundName
+                )
+            }
         }
         .analyticsScreen("meditation_detail", screenClass: "PrayerMeditationView")
     }
