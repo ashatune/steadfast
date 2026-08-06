@@ -132,6 +132,7 @@ struct DailyDevotionalDetailView: View {
     @State private var showAnchorPromptDurationPicker = false
     @State private var selectedMeditationDuration: MeditationDurationOption?
     @State private var selectedAnchorPromptDuration: MeditationDurationOption?
+    @State private var hasLoggedDevotionalOpened = false
 
     private var anchorOfDay: Verse {
         DailyVerseProvider.shared.verse(for: Date(), calendar: Calendar.current)
@@ -190,6 +191,8 @@ struct DailyDevotionalDetailView: View {
         .navigationBarBackButtonHidden(showReturnTomorrow)
         .analyticsScreen("daily_devotional", screenClass: "DailyDevotionalDetailView")
         .onAppear {
+            guard !hasLoggedDevotionalOpened else { return }
+            hasLoggedDevotionalOpened = true
             AnalyticsService.log("devotional_opened", parameters: ["content_id": devotional.id])
         }
         .toolbar {

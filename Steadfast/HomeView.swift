@@ -87,6 +87,7 @@ struct HomeView: View {
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
+        .analyticsScreen("home", screenClass: "HomeView")
 
         // Sheets
         .sheet(isPresented: $showProfileSheet) {
