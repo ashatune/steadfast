@@ -15,14 +15,13 @@ struct PrayerMeditationView: View {
                 audioFileExtension: ext,
                 backgroundImageName: meditation.playbackBackgroundName
             )
+
         case .remote:
             UnsupportedPrayerMeditationAudioView(
                 title: meditation.title,
                 backgroundImageName: meditation.playbackBackgroundName
             )
-            .analyticsScreen("meditation_detail", screenClass: "UnsupportedPrayerMeditationAudioView")
         }
-        .analyticsScreen("meditation_detail", screenClass: "PrayerMeditationView")
     }
 }
 
