@@ -21,6 +21,7 @@ struct PrayerMeditationView: View {
                 backgroundImageName: meditation.playbackBackgroundName
             )
         }
+        .analyticsScreen("meditation_detail", screenClass: "PrayerMeditationView")
     }
 }
 

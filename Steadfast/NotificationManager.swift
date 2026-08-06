@@ -88,6 +88,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             case .notDetermined, .ephemeral:
                 center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                     DispatchQueue.main.async {
+                        AnalyticsService.log("notification_permission_result", parameters: [
+                            "permission_status": granted ? "authorized" : "denied"
+                        ])
                         if let error = error { print("🔔 requestAuthorization error:", error) }
                         print("🔔 granted:", granted)
                         if granted { self.scheduleDailyFromSettings() }
@@ -134,6 +137,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 self.scheduleDailyPeaceReminder(hour: hour, minute: minute, completion: completion)
             case .notDetermined:
                 center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    AnalyticsService.log("notification_permission_result", parameters: [
+                        "permission_status": granted ? "authorized" : "denied"
+                    ])
                     if let error { print("🔔 peace reminder authorization error:", error) }
                     guard granted else {
                         DispatchQueue.main.async { completion(false) }

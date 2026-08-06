@@ -188,7 +188,10 @@ struct HomeView: View {
                     .padding(.top, 4)
 
                 // Big SOS button
-                SOSButton { vm.showSOS = true }
+                SOSButton {
+                    AnalyticsService.log("calm_now_started", parameters: ["entry_point": "home"])
+                    vm.showSOS = true
+                }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .overlay(alignment: .center) {
                         Color.clear
@@ -1380,6 +1383,7 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
         }
         .scaleEffect(animateCompletion ? 1.04 : 1)
         .accessibilityHidden(true)
+        .analyticsScreen("home", screenClass: "HomeView")
     }
 }
 
@@ -1438,6 +1442,9 @@ private struct HomeTutorialOverlay: View {
     @State private var pendingStepIndex: Int?
     @State private var resolutionTask: Task<Void, Never>?
     @State private var calloutSize = CGSize(width: 340, height: 220)
+    @State private var hasLoggedStart = false
+    @State private var loggedSteps: Set<Int> = []
+    @State private var hasLoggedCompletion = false
 
     private let steps: [HomeTutorialStep] = [
         HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
@@ -1569,6 +1576,8 @@ private struct HomeTutorialOverlay: View {
 
             HStack(spacing: 10) {
                 Button("Skip") {
+                    AnalyticsService.tutorial("home_tutorial_skipped", stepIndex: stepIndex + 1,
+                        stepName: step.id.rawValue, totalSteps: steps.count)
                     completeTutorial()
                 }
                     .font(.subheadline.weight(.semibold))
@@ -1577,16 +1586,26 @@ private struct HomeTutorialOverlay: View {
                 Spacer()
 
                 if stepIndex > 0 {
-                    Button("Back", action: onBack)
+                    Button("Back") {
+                        AnalyticsService.tutorial("home_tutorial_back_tapped", stepIndex: stepIndex + 1,
+                            stepName: step.id.rawValue, totalSteps: steps.count)
+                        onBack()
+                    }
                         .buttonStyle(HomeTutorialSecondaryButtonStyle())
                         .disabled(pendingStepIndex != nil)
                 }
 
                 Button(isLastStep ? "Done" : "Next") {
                     guard !isLastStep else {
+                        guard !hasLoggedCompletion else { return }
+                        hasLoggedCompletion = true
+                        AnalyticsService.tutorial("home_tutorial_completed", stepIndex: stepIndex + 1,
+                            stepName: step.id.rawValue, totalSteps: steps.count)
                         completeTutorial()
                         return
                     }
+                    AnalyticsService.tutorial("home_tutorial_next_tapped", stepIndex: stepIndex + 1,
+                        stepName: step.id.rawValue, totalSteps: steps.count)
                     onNext()
                 }
                 .buttonStyle(HomeTutorialPrimaryButtonStyle())
@@ -1699,6 +1718,14 @@ private struct HomeTutorialOverlay: View {
         pendingStepIndex = nil
         resolutionTask?.cancel()
         resolutionTask = nil
+        if !hasLoggedStart {
+            hasLoggedStart = true
+            AnalyticsService.tutorial("home_tutorial_started", totalSteps: steps.count)
+        }
+        if loggedSteps.insert(stepIndex).inserted {
+            AnalyticsService.tutorial("home_tutorial_step_viewed", stepIndex: stepIndex + 1,
+                stepName: steps[stepIndex].id.rawValue, totalSteps: steps.count)
+        }
     }
 
     private func isValid(_ frame: CGRect) -> Bool {

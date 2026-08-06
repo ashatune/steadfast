@@ -44,6 +44,7 @@ struct SavedDevotionalsView: View {
         }
         .navigationTitle("Saved Devotionals")
         .navigationBarTitleDisplayMode(.inline)
+        .analyticsScreen("saved_devotionals", screenClass: "SavedDevotionalsView")
     }
 }
 

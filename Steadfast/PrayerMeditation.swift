@@ -45,6 +45,15 @@ struct PrayerMeditation: Identifiable, Equatable {
     }
 }
 
+extension PrayerMeditation {
+    var analyticsID: String {
+        switch audio {
+        case .local(let name, _): return name.lowercased()
+        case .remote(let url): return url.lastPathComponent.lowercased()
+        }
+    }
+}
+
 enum PrayerMeditationLibrary {
     static let all: [PrayerMeditation] = [
         PrayerMeditation(
