@@ -22,6 +22,7 @@ struct PrayerMeditationView: View {
             )
             .analyticsScreen("meditation_detail", screenClass: "UnsupportedPrayerMeditationAudioView")
         }
+        .analyticsScreen("meditation_detail", screenClass: "PrayerMeditationView")
     }
 }
 
