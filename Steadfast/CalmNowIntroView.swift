@@ -185,6 +185,7 @@ struct CalmNowIntroView: View {
                 }
             }
         }
+        .analyticsScreen("calm_now", screenClass: "CalmNowIntroView")
         .onAppear {
             startBreathingLoop()
             startBackgroundMusic()
