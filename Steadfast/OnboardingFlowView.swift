@@ -9,6 +9,8 @@ struct OnboardingFlowView: View {
     @State private var reminderSelection: PeaceReminderSelection = .morning
     @State private var customReminderTime = PeaceReminderSelection.morning.date
     @State private var isSchedulingReminder = false
+    @State private var hasLoggedStart = false
+    @State private var loggedSteps: Set<Int> = []
 
     private let pages = OnboardingPage.all
 
@@ -56,6 +58,9 @@ struct OnboardingFlowView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .analyticsScreen("onboarding", screenClass: "OnboardingFlowView")
+        .onAppear { logPresentationIfNeeded() }
+        .onChange(of: selectedPage) { _ in logCurrentStepIfNeeded() }
     }
 
     private func welcomePage(availableHeight: CGFloat) -> some View {
@@ -89,7 +94,11 @@ struct OnboardingFlowView: View {
 
     private var standardNavigationControls: some View {
         HStack(spacing: 18) {
-            Button("Skip", action: completeOnboarding)
+            Button("Skip") {
+                AnalyticsService.onboarding("onboarding_skipped", totalSteps: 5,
+                    completionMethod: "skip", reminderSelection: analyticsReminderSelection)
+                finishOnboarding(method: "skip", reminder: analyticsReminderSelection)
+            }
                 .font(.headline)
                 .foregroundStyle(OnboardingPalette.secondaryText)
                 .frame(minWidth: 64, minHeight: 52)
@@ -98,6 +107,8 @@ struct OnboardingFlowView: View {
             Spacer(minLength: 0)
 
             Button("Next") {
+                AnalyticsService.onboarding("onboarding_next_tapped", stepIndex: selectedPage + 1,
+                    stepName: stepName(for: selectedPage), totalSteps: 5)
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
                     selectedPage += 1
                 }
@@ -119,7 +130,7 @@ struct OnboardingFlowView: View {
 
             Button("Not Now") {
                 NotificationManager.shared.disableDailyPeaceReminder()
-                completeOnboarding()
+                finishOnboarding(method: "get_started", reminder: "disabled")
             }
             .font(.headline)
             .foregroundStyle(OnboardingPalette.secondaryText)
@@ -139,8 +150,41 @@ struct OnboardingFlowView: View {
             minute: components.minute ?? 0
         ) { _ in
             isSchedulingReminder = false
-            completeOnboarding()
+            finishOnboarding(method: "get_started", reminder: analyticsReminderSelection)
         }
+    }
+
+    private var analyticsReminderSelection: String {
+        switch reminderSelection {
+        case .morning: return "morning"
+        case .midday: return "midday"
+        case .evening: return "evening"
+        case .custom: return "custom"
+        }
+    }
+
+    private func stepName(for index: Int) -> String {
+        ["welcome", "calm_now", "daily_rhythm", "carry_peace", "peace_reminder"].indices.contains(index)
+            ? ["welcome", "calm_now", "daily_rhythm", "carry_peace", "peace_reminder"][index] : "unknown"
+    }
+
+    private func logPresentationIfNeeded() {
+        guard !hasLoggedStart else { return }
+        hasLoggedStart = true
+        AnalyticsService.onboarding("onboarding_started", totalSteps: 5)
+        logCurrentStepIfNeeded()
+    }
+
+    private func logCurrentStepIfNeeded() {
+        guard loggedSteps.insert(selectedPage).inserted else { return }
+        AnalyticsService.onboarding("onboarding_step_viewed", stepIndex: selectedPage + 1,
+            stepName: stepName(for: selectedPage), totalSteps: 5)
+    }
+
+    private func finishOnboarding(method: String, reminder: String) {
+        AnalyticsService.onboarding("onboarding_completed", totalSteps: 5,
+            completionMethod: method, reminderSelection: reminder)
+        completeOnboarding()
     }
 
     private func completeOnboarding() {

@@ -188,11 +188,19 @@ struct DailyDevotionalDetailView: View {
         .navigationTitle("Daily Devotional")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(showReturnTomorrow)
+        .analyticsScreen("daily_devotional", screenClass: "DailyDevotionalDetailView")
+        .onAppear {
+            AnalyticsService.log("devotional_opened", parameters: ["content_id": devotional.id])
+        }
         .toolbar {
             if !showReturnTomorrow {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        let wasSaved = savedStore.isSaved(devotionalID: devotional.id)
                         savedStore.toggleSave(devotional: devotional)
+                        if !wasSaved {
+                            AnalyticsService.log("devotional_saved", parameters: ["content_id": devotional.id])
+                        }
                     } label: {
                         Image(systemName: savedStore.isSaved(devotionalID: devotional.id) ? "bookmark.fill" : "bookmark")
                             .font(.headline)

@@ -379,6 +379,8 @@ struct RhythmAudioPlayerView: View {
     @StateObject private var viewModel: MorningRhythmAudioPlayerViewModel
     @State private var hasProcessedCompletion = false
     @State private var dismissAfterOverlay = false
+    @State private var hasLoggedMeditationStart = false
+    @State private var hasLoggedMeditationCompletion = false
 
     init(
         title: String,
@@ -542,19 +544,49 @@ struct RhythmAudioPlayerView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .analyticsScreen("meditation_player", screenClass: "RhythmAudioPlayerView")
         .onAppear {
             if let rhythmType {
                 hasProcessedCompletion = rhythmType.isCompleted(in: streakManager)
                 viewModel.onPlaybackEnded = {
+                    logMeditationCompletionIfNeeded()
                     completeRhythmAndMaybeDismiss(shouldDismiss: false)
                 }
             } else {
                 hasProcessedCompletion = false
-                viewModel.onPlaybackEnded = nil
+                viewModel.onPlaybackEnded = { logMeditationCompletionIfNeeded() }
             }
             dismissAfterOverlay = false
             viewModel.configureIfNeeded()
         }
+        .onChange(of: viewModel.isPlaying) { isPlaying in
+            guard isPlaying, !hasLoggedMeditationStart else { return }
+            hasLoggedMeditationStart = true
+            AnalyticsService.meditation("meditation_started", contentID: audioFileName.lowercased(),
+                category: rhythmType == nil ? "prayer" : "daily_rhythm",
+                durationMinutes: analyticsDurationMinutes, source: rhythmType == nil ? "meditation_detail" : "daily_rhythm")
+        }
+        .onDisappear {
+            if hasLoggedMeditationStart && !hasLoggedMeditationCompletion && viewModel.currentTime > 1 {
+                AnalyticsService.meditation("meditation_exited_early", contentID: audioFileName.lowercased(),
+                    category: rhythmType == nil ? "prayer" : "daily_rhythm",
+                    durationMinutes: analyticsDurationMinutes, completed: false)
+            }
+            viewModel.cleanup()
+        }
+    }
+
+    private var analyticsDurationMinutes: Int? {
+        guard viewModel.duration.isFinite, viewModel.duration > 0 else { return nil }
+        return max(1, Int((viewModel.duration / 60).rounded()))
+    }
+
+    private func logMeditationCompletionIfNeeded() {
+        guard hasLoggedMeditationStart, !hasLoggedMeditationCompletion else { return }
+        hasLoggedMeditationCompletion = true
+        AnalyticsService.meditation("meditation_completed", contentID: audioFileName.lowercased(),
+            category: rhythmType == nil ? "prayer" : "daily_rhythm",
+            durationMinutes: analyticsDurationMinutes, completed: true)
     }
 
     private func controlButton(systemImage: String, size: CGFloat, action: @escaping () -> Void) -> some View {

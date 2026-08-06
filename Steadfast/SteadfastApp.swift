@@ -10,6 +10,16 @@ final class SteadfastAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        #if canImport(FirebaseCore)
+        FirebaseApp.configure()
+        if let app = FirebaseApp.app() {
+            let options = app.options
+            print("Firebase configured at app launch")
+            print("Firebase runtime config: appName=\(app.name) projectID=\(options.projectID ?? "nil") googleAppID=\(options.googleAppID) bundleID=\(options.bundleID)")
+        } else {
+            print("Firebase runtime config unavailable: FirebaseApp.app() == nil")
+        }
+        #endif
         NotificationManager.shared.configure()
         WatchAnchorSyncManager.shared.activate()
         return true
@@ -55,7 +65,6 @@ struct SteadfastApp: App {
 
         print("🚀 SteadfastApp init reached")
         configureBrandedNavigationTitles()
-        configureFirebaseIfNeeded()
     }
 
     var body: some Scene {
@@ -131,21 +140,4 @@ struct SteadfastApp: App {
         showBlock = isOutdated(current, comparedTo: c.minVersion)
     }
 
-    private func configureFirebaseIfNeeded() {
-        #if canImport(FirebaseCore)
-        if FirebaseApp.app() == nil {
-            FirebaseApp.configure()
-            print("Firebase configured at app launch")
-        } else {
-            print("Firebase already configured")
-        }
-
-        if let app = FirebaseApp.app() {
-            let options = app.options
-            print("Firebase runtime config: appName=\(app.name) projectID=\(options.projectID ?? "nil") googleAppID=\(options.googleAppID) bundleID=\(options.bundleID)")
-        } else {
-            print("Firebase runtime config unavailable: FirebaseApp.app() == nil")
-        }
-        #endif
-    }
 }
