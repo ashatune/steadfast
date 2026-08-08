@@ -174,7 +174,7 @@ struct SettingsView: View {
             }
 
 #if DEBUG
-                Section {
+               /* Section {
                     Button {
                         AppReviewManager.shared.attemptPromptIfEligible(
                             reason: "debug settings force prompt",
@@ -187,7 +187,7 @@ struct SettingsView: View {
                     Text("DEBUG: Immediately attempts the in-app review prompt to verify TestFlight behavior.")
                         .font(.footnote)
                         .foregroundStyle(Theme.inkSecondary)
-                }
+                }*/
 #endif
 
         }
