@@ -27,6 +27,7 @@ struct EveningFlowView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var stage: Stage = .greeting
+    @State private var reviewSessionID = UUID()
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -263,7 +264,7 @@ struct EveningFlowView: View {
                                 .foregroundColor(inkSecondary)
                                 .multilineTextAlignment(.center)
                                 .transition(.opacity)
-                            Button("Close") { AppReviewManager.shared.registerMeaningfulEvent(); stopAll(); dismiss() }
+                            Button("Close") { AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID); stopAll(); dismiss() }
                                 .buttonStyle(.borderedProminent)
                                 .padding(.top, 6)
                                 .transition(.opacity)

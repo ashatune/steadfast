@@ -159,36 +159,24 @@ struct SettingsView: View {
                                 .foregroundStyle(Theme.inkSecondary)
                         }
 
-                    Text("Built with care by the Steadfast Team.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.inkSecondary)
+                        Text("Built with care by the Steadfast Team.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.inkSecondary)
+                    }
 
-                    // Opens your contact page
                     Link(destination: URL(string: "mailto:support@steadfast.app")!) {
                         Label("Contact Steadfast", systemImage: "paperplane.fill")
                     }
-                }
+
+                    Link(destination: URL(string: "https://apps.apple.com/app/id6759298860?action=write-review")!) {
+                        Label("Rate Steadfast", systemImage: "star")
+                    }
+                    .accessibilityLabel("Rate Steadfast")
+                    .accessibilityHint("Opens the App Store to rate or review Steadfast")
             } header: {
                 Text("About & Contact")
                     .foregroundStyle(Theme.sectionTitle)
             }
-
-#if DEBUG
-               /* Section {
-                    Button {
-                        AppReviewManager.shared.attemptPromptIfEligible(
-                            reason: "debug settings force prompt",
-                            force: true
-                        )
-                    } label: {
-                        Label("Force review prompt (DEBUG)", systemImage: "star.square.on.square.fill")
-                    }
-
-                    Text("DEBUG: Immediately attempts the in-app review prompt to verify TestFlight behavior.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.inkSecondary)
-                }*/
-#endif
 
         }
         .navigationTitle("Settings")

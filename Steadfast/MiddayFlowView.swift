@@ -24,6 +24,7 @@ struct MiddayFlowView: View {
     enum Phase { case inhale, hold1, exhale, hold2 }
 
     @State private var stage: Stage = .welcome
+    @State private var reviewSessionID = UUID()
     @State private var remaining: Int = 90
 
     @Environment(\.colorScheme) private var colorScheme
@@ -148,7 +149,7 @@ struct MiddayFlowView: View {
                             Text("Nice reset.").font(.title3).bold().foregroundColor(Theme.sectionTitle)
                             Text("Carry this steadiness into your next step.")
                                 .foregroundColor(inkSecondary)
-                            Button("Close") { AppReviewManager.shared.registerMeaningfulEvent(); stopAll(); dismiss() }
+                            Button("Close") { AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID); stopAll(); dismiss() }
                                 .buttonStyle(.borderedProminent)
                                 .padding(.top, 6)
                         }
