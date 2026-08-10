@@ -477,6 +477,29 @@ struct DailyDevotionalImplementationTests {
         #expect(background.usesRemoteImage)
         #expect(devotional.id == "captured")
     }
+
+    @Test func sharePayloadRetainsAValidRenderedImage() {
+        let image = TestImageLoader.sampleImage()
+
+        let payload = SharePayload(image: image, fallbackText: "Fallback")
+
+        #expect(payload.activityItems.count == 1)
+        #expect(payload.activityItems.first as? UIImage === image)
+    }
+
+    @Test func sharePayloadUsesMeaningfulTextWhenRenderingFails() {
+        let payload = SharePayload(image: nil, fallbackText: "  A completed Steadfast experience  ")
+
+        #expect(payload.activityItems.count == 1)
+        #expect(payload.activityItems.first as? String == "A completed Steadfast experience")
+    }
+
+    @Test func sharePayloadNeverContainsAnEmptyActivityItem() {
+        let payload = SharePayload(image: nil, fallbackText: "   \n")
+
+        #expect(payload.activityItems.count == 1)
+        #expect(payload.activityItems.first as? String == "Shared from Steadfast")
+    }
 }
 
 private final class TestImageLoader: DevotionalVerseRemoteImageLoading {
