@@ -999,10 +999,12 @@ private struct DevotionalVerseStoryContent: View {
                     Text("“\(devotional.verseText)”")
                         .font(.system(size: 30, weight: .semibold, design: .serif))
                         .lineSpacing(8)
-                        .lineLimit(10)
+                        .lineLimit(nil)
                         .minimumScaleFactor(0.72)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
                         .shadow(color: .black.opacity(0.36), radius: 10, x: 0, y: 5)
 
                     Text(devotional.verseReference)
@@ -1010,6 +1012,8 @@ private struct DevotionalVerseStoryContent: View {
                         .tracking(1.2)
                         .foregroundStyle(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 30)
@@ -1034,16 +1038,18 @@ private struct DevotionalVerseStoryBackground: View {
     let background: DevotionalVerseStoryBackgroundSnapshot
 
     var body: some View {
-        ZStack {
-            Color.black
+        GeometryReader { proxy in
+            ZStack {
+                Color.black
 
-            backgroundImage
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+                backgroundImage
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
     }
 
