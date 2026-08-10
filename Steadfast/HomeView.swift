@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import UIKit
+import CryptoKit
 
 struct HomeView: View {
     @AppStorage("displayName") private var storedDisplayName = ""
@@ -127,7 +128,10 @@ struct HomeView: View {
                 }
             }
         ) { presentation in
-            DevotionalVerseStoryView(devotional: presentation.devotional) { capturedDevotional in
+            DevotionalVerseStoryView(
+                devotional: presentation.devotional,
+                background: presentation.background
+            ) { capturedDevotional in
                 pendingDevotionalDetail = capturedDevotional
                 presentedDevotionalStory = nil
             }
@@ -262,6 +266,9 @@ struct HomeView: View {
         .onChange(of: scenePhase) { phase in
             guard phase == .active else { return }
             devotionalVM.refreshIfDayChanged(now: Date())
+        }
+        .onChange(of: devotionalVM.devotional?.imageURL) { _ in
+            prefetchStoryImageIfNeeded()
         }
         .onChange(of: devotionalVM.devotional?.id) { _ in
             guard devotionalDeepLinkPending else { return }
@@ -533,10 +540,44 @@ struct HomeView: View {
     }
 
     private func presentDevotionalStory(with devotional: DailyDevotional? = nil) {
-        presentedDevotionalStory = DevotionalStoryPresentationResolver.presentation(
+        DevotionalTimingLog.event("👆 User tapped Open Verse Story")
+        let presentation = DevotionalStoryPresentationResolver.presentation(
             for: devotional ?? devotionalVM.devotional,
             now: Date()
         )
+
+        // A local devotional (or a remote devotional without an image) is already
+        // final content, so open it immediately. Only defer presentation when
+        // there is an actual remote image to preload.
+        guard presentation.devotional.imageURL != nil else {
+            presentedDevotionalStory = presentation
+            DevotionalTimingLog.event("⚡ Presenting immediately with final local background")
+            return
+        }
+
+        Task {
+            let preparedPresentation = await DevotionalStoryPresentationResolver.preloadRemoteBackground(
+                for: presentation,
+                imageLoader: DevotionalVerseRemoteImageLoader.shared
+            )
+            guard devotionalVM.devotional?.id == presentation.devotional.id else { return }
+            presentedDevotionalStory = preparedPresentation
+            DevotionalTimingLog.event("⚡ Full-screen story presentation triggered with resolved background")
+        }
+    }
+
+    private func prefetchStoryImageIfNeeded() {
+        guard let devotional = devotionalVM.devotional,
+              !devotional.id.hasPrefix("placeholder-"),
+              let imageURL = devotional.imageURL
+        else { return }
+
+        DevotionalTimingLog.event("🖼 Story preload started")
+        Task {
+            let image = await DevotionalVerseRemoteImageLoader.shared.prefetchImage(from: imageURL)
+            guard devotionalVM.devotional?.id == devotional.id else { return }
+            DevotionalTimingLog.event(image == nil ? "⚠️ Story image unavailable; local background is final" : "✅ Story image READY")
+        }
     }
 
     private var devotionalRhythmCard: some View {
@@ -772,29 +813,23 @@ private struct LibraryShortcutCard: View {
 
 private struct DevotionalVerseStoryView: View {
     let devotional: DailyDevotional
-    let imageLoader: any DevotionalVerseRemoteImageLoading
     let onContinueToDevotional: (DailyDevotional) -> Void
 
     init(
         devotional: DailyDevotional,
-        imageLoader: any DevotionalVerseRemoteImageLoading = DevotionalVerseRemoteImageLoader.shared,
+        background: DevotionalVerseStoryBackgroundSnapshot,
         onContinueToDevotional: @escaping (DailyDevotional) -> Void
     ) {
         self.devotional = devotional
-        self.imageLoader = imageLoader
         self.onContinueToDevotional = onContinueToDevotional
-        _resolvedBackground = State(initialValue: DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional))
+        self.background = background
     }
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
     @State private var sharePayload: SharePayload?
     @State private var showSavedConfirmation = false
-    @State private var resolvedBackground: DevotionalVerseStoryBackgroundSnapshot
-
-    private var fallbackBackgroundName: String {
-        DevotionalVerseStoryAssets.backgroundName(for: devotional.date)
-    }
+    let background: DevotionalVerseStoryBackgroundSnapshot
 
     private var isSaved: Bool {
         savedStore.isSaved(devotionalID: devotional.id)
@@ -808,7 +843,7 @@ private struct DevotionalVerseStoryView: View {
 
                 DevotionalVerseStoryContent(
                     devotional: devotional,
-                    background: resolvedBackground,
+                    background: background,
                     logoSize: 72,
                     showsChromeSafePadding: true
                 )
@@ -877,12 +912,6 @@ private struct DevotionalVerseStoryView: View {
                 .padding(.top, 12)
                 .padding(.trailing, 18)
         }
-        .task(id: devotional.id) {
-            await resolveRemoteBackgroundIfNeeded(for: devotional)
-        }
-        .onChange(of: devotional.id) { _ in
-            resolvedBackground = DevotionalVerseStoryBackgroundSnapshot(fallbackAssetName: fallbackBackgroundName)
-        }
         .sheet(item: $sharePayload) { payload in
             ShareSheet(payload: payload)
         }
@@ -941,10 +970,9 @@ private struct DevotionalVerseStoryView: View {
 
     @MainActor
     private func shareDevotionalVerse() {
-        let backgroundSnapshot = resolvedBackground
         let image = DevotionalVerseStoryRenderer.renderImage(
             devotional: devotional,
-            background: backgroundSnapshot
+            background: background
         )
         sharePayload = SharePayload(
             image: image,
@@ -952,20 +980,6 @@ private struct DevotionalVerseStoryView: View {
         )
     }
 
-    @MainActor
-    private func resolveRemoteBackgroundIfNeeded(for devotional: DailyDevotional) async {
-        let fallback = DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional)
-        resolvedBackground = fallback
-
-        let requestedDevotionalID = devotional.id
-        let resolved = await DevotionalVerseStoryBackgroundResolver.resolve(
-            devotional: devotional,
-            fallbackAssetName: fallback.fallbackAssetName,
-            imageLoader: imageLoader
-        )
-        guard requestedDevotionalID == self.devotional.id else { return }
-        resolvedBackground = resolved
-    }
 }
 
 private struct DevotionalVerseStoryContent: View {
@@ -1082,11 +1096,35 @@ struct DevotionalVerseStoryBackgroundSnapshot {
 struct PresentedDevotionalStory: Identifiable {
     let id = UUID()
     let devotional: DailyDevotional
+    let background: DevotionalVerseStoryBackgroundSnapshot
+
+    init(
+        devotional: DailyDevotional,
+        background: DevotionalVerseStoryBackgroundSnapshot? = nil
+    ) {
+        self.devotional = devotional
+        self.background = background ?? .initial(for: devotional)
+    }
 }
 
 enum DevotionalStoryPresentationResolver {
     static func presentation(for devotional: DailyDevotional?, now: Date = Date()) -> PresentedDevotionalStory {
         PresentedDevotionalStory(devotional: devotional ?? DailyDevotional.fallback(for: now))
+    }
+
+    static func preloadRemoteBackground(
+        for presentation: PresentedDevotionalStory,
+        imageLoader: any DevotionalVerseRemoteImageLoading
+    ) async -> PresentedDevotionalStory {
+        let background = await DevotionalVerseStoryBackgroundResolver.resolve(
+            devotional: presentation.devotional,
+            fallbackAssetName: presentation.background.fallbackAssetName,
+            imageLoader: imageLoader
+        )
+        return PresentedDevotionalStory(
+            devotional: presentation.devotional,
+            background: background
+        )
     }
 }
 
@@ -1113,34 +1151,151 @@ enum DevotionalVerseStoryBackgroundResolver {
     }
 }
 
-final class DevotionalVerseRemoteImageLoader: DevotionalVerseRemoteImageLoading {
+actor DevotionalVerseRemoteImageLoader: DevotionalVerseRemoteImageLoading {
     static let shared = DevotionalVerseRemoteImageLoader()
 
     private let session: URLSession
     private let cache = NSCache<NSURL, UIImage>()
+    private let fileManager: FileManager
+    private let cacheDirectory: URL
+    private var inFlightTasks: [URL: Task<UIImage?, Never>] = [:]
+    private let maximumDiskCacheBytes = 50 * 1_024 * 1_024
 
-    init(session: URLSession = .shared) {
+    init(
+        session: URLSession = .shared,
+        fileManager: FileManager = .default,
+        cacheDirectory: URL? = nil
+    ) {
         self.session = session
+        self.fileManager = fileManager
+        self.cacheDirectory = cacheDirectory ?? fileManager.urls(
+            for: .cachesDirectory,
+            in: .userDomainMask
+        )[0].appendingPathComponent("DevotionalStoryImages", isDirectory: true)
     }
 
     func loadImage(from url: URL) async -> UIImage? {
         let cacheKey = url as NSURL
         if let cached = cache.object(forKey: cacheKey) {
+            DevotionalTimingLog.event("🖼 Story image found in memory cache")
             return cached
         }
 
-        do {
-            let (data, response) = try await session.data(from: url)
-            if let httpResponse = response as? HTTPURLResponse,
-               !(200...299).contains(httpResponse.statusCode) {
+        if let existingTask = inFlightTasks[url] {
+            DevotionalTimingLog.event("🖼 Awaiting existing story image request")
+            return await existingTask.value
+        }
+
+        let diskURL = diskCacheURL(for: url)
+        let session = self.session
+        let fileManager = self.fileManager
+        let cacheDirectory = self.cacheDirectory
+        let maximumDiskCacheBytes = self.maximumDiskCacheBytes
+        let task = Task<UIImage?, Never> {
+            if let data = try? Data(contentsOf: diskURL),
+               let image = Self.prepareImage(from: data) {
+                DevotionalTimingLog.event("🖼 Story image found in disk cache")
+                DevotionalTimingLog.event("🖼 Image decode/preparation completed")
+                return image
+            }
+
+            DevotionalTimingLog.event("🖼 Story image network download started")
+            do {
+                let (data, response) = try await session.data(from: url)
+                if let httpResponse = response as? HTTPURLResponse,
+                   !(200...299).contains(httpResponse.statusCode) {
+                    return nil
+                }
+                DevotionalTimingLog.event("🖼 Story image network download completed")
+                guard let image = Self.prepareImage(from: data) else { return nil }
+                DevotionalTimingLog.event("🖼 Image decode/preparation completed")
+
+                try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+                try? data.write(to: diskURL, options: .atomic)
+                Self.trimDiskCache(
+                    in: cacheDirectory,
+                    fileManager: fileManager,
+                    maximumBytes: maximumDiskCacheBytes
+                )
+                return image
+            } catch {
                 return nil
             }
-            guard let image = UIImage(data: data) else { return nil }
-            cache.setObject(image, forKey: cacheKey)
-            return image
-        } catch {
-            return nil
         }
+
+        inFlightTasks[url] = task
+        let image = await task.value
+        inFlightTasks[url] = nil
+        if let image {
+            cache.setObject(image, forKey: cacheKey)
+        }
+        return image
+    }
+
+    @discardableResult
+    func prefetchImage(from url: URL) async -> UIImage? {
+        await loadImage(from: url)
+    }
+
+    private func diskCacheURL(for url: URL) -> URL {
+        let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+        return cacheDirectory.appendingPathComponent(digest).appendingPathExtension("image")
+    }
+
+    private nonisolated static func prepareImage(from data: Data) -> UIImage? {
+        guard let image = UIImage(data: data) else { return nil }
+        return image.preparingForDisplay() ?? image
+    }
+
+    private nonisolated static func trimDiskCache(
+        in directory: URL,
+        fileManager: FileManager,
+        maximumBytes: Int
+    ) {
+        let keys: Set<URLResourceKey> = [.contentModificationDateKey, .fileSizeKey]
+        guard let files = try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: Array(keys),
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        var entries = files.compactMap { url -> (URL, Date, Int)? in
+            guard let values = try? url.resourceValues(forKeys: keys) else { return nil }
+            return (url, values.contentModificationDate ?? .distantPast, values.fileSize ?? 0)
+        }.sorted { $0.1 > $1.1 }
+        var totalBytes = entries.reduce(0) { $0 + $1.2 }
+
+        while totalBytes > maximumBytes, let oldest = entries.popLast() {
+            try? fileManager.removeItem(at: oldest.0)
+            totalBytes -= oldest.2
+        }
+    }
+}
+
+enum DevotionalTimingLog {
+#if DEBUG
+    private static let lock = NSLock()
+    private static var fetchStart = ProcessInfo.processInfo.systemUptime
+#endif
+
+    static func beginFetch() {
+#if DEBUG
+        lock.lock()
+        fetchStart = ProcessInfo.processInfo.systemUptime
+        lock.unlock()
+        print("📖 Devotional fetch started: +0.00s")
+#endif
+    }
+
+    static func event(_ message: String) {
+#if DEBUG
+        lock.lock()
+        let elapsed = ProcessInfo.processInfo.systemUptime - fetchStart
+        lock.unlock()
+        print(String(format: "%@ +%.2fs", message, elapsed))
+#endif
     }
 }
 

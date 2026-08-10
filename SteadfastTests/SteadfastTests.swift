@@ -365,6 +365,88 @@ struct DailyDevotionalImplementationTests {
         #expect(!presentation.devotional.verseText.isEmpty)
         #expect(!presentation.devotional.verseReference.isEmpty)
         #expect(!presentation.devotional.body.isEmpty)
+        #expect(!presentation.background.usesRemoteImage)
+    }
+
+    @Test func storyPresentationPreloadsRemoteBackgroundBeforePresentation() async {
+        let image = TestImageLoader.sampleImage()
+        let loader = TestImageLoader(result: image)
+        let devotional = DailyDevotional(
+            id: "remote-presentation",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: URL(string: "https://example.com/story.jpg")
+        )
+        let initial = DevotionalStoryPresentationResolver.presentation(for: devotional)
+
+        let prepared = await DevotionalStoryPresentationResolver.preloadRemoteBackground(
+            for: initial,
+            imageLoader: loader
+        )
+
+        #expect(prepared.devotional.id == devotional.id)
+        #expect(prepared.background.usesRemoteImage)
+        #expect(loader.loadedURLs == [devotional.imageURL!])
+    }
+
+    @Test func storyPresentationUsesFinalLocalBackgroundWhenRemotePreloadFails() async {
+        let loader = TestImageLoader(result: nil)
+        let devotional = DailyDevotional(
+            id: "failed-remote-presentation",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: URL(string: "https://example.com/broken.jpg")
+        )
+        let initial = DevotionalStoryPresentationResolver.presentation(for: devotional)
+
+        let prepared = await DevotionalStoryPresentationResolver.preloadRemoteBackground(
+            for: initial,
+            imageLoader: loader
+        )
+
+        #expect(!prepared.background.usesRemoteImage)
+        #expect(prepared.background.fallbackAssetName == initial.background.fallbackAssetName)
+    }
+
+    @Test func storyImageLoaderDeduplicatesRequestsAndPersistsDiskCache() async throws {
+        let cacheDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: cacheDirectory) }
+        let imageData = try #require(TestImageLoader.sampleImage().pngData())
+        StoryImageURLProtocol.reset(responseData: imageData)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StoryImageURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let url = URL(string: "https://example.com/persisted-story.png")!
+        let loader = DevotionalVerseRemoteImageLoader(
+            session: session,
+            cacheDirectory: cacheDirectory
+        )
+
+        async let first = loader.prefetchImage(from: url)
+        async let second = loader.loadImage(from: url)
+        let (firstImage, secondImage) = await (first, second)
+
+        #expect(firstImage != nil)
+        #expect(secondImage != nil)
+        #expect(StoryImageURLProtocol.requestCount == 1)
+
+        let relaunchedLoader = DevotionalVerseRemoteImageLoader(
+            session: session,
+            cacheDirectory: cacheDirectory
+        )
+        let diskImage = await relaunchedLoader.loadImage(from: url)
+
+        #expect(diskImage != nil)
+        #expect(StoryImageURLProtocol.requestCount == 1)
     }
 
     @Test func initialStoryBackgroundIsLocalAssetWithoutImageURL() {
@@ -522,4 +604,44 @@ private final class TestImageLoader: DevotionalVerseRemoteImageLoading {
             context.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
         }
     }
+}
+
+private final class StoryImageURLProtocol: URLProtocol {
+    private static let lock = NSLock()
+    private static var data = Data()
+    private static var requests = 0
+
+    static var requestCount: Int {
+        lock.withLock { requests }
+    }
+
+    static func reset(responseData: Data) {
+        lock.withLock {
+            data = responseData
+            requests = 0
+        }
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        let responseData = Self.lock.withLock { () -> Data in
+            Self.requests += 1
+            return Self.data
+        }
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) { [self] in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "image/png"]
+            )!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: responseData)
+            client?.urlProtocolDidFinishLoading(self)
+        }
+    }
+
+    override func stopLoading() {}
 }
