@@ -31,6 +31,7 @@ struct MorningFlowView: View {
 
     // Flow state
     @State private var stage: Stage = .greeting
+    @State private var reviewSessionID = UUID()
     @State private var remaining: Int = 180
     @State private var startTime: Date?
 
@@ -244,7 +245,7 @@ struct MorningFlowView: View {
                             Text("Take this steady heart into your day.")
                                 .foregroundColor(inkSecondary)
                             Button("Close") {
-                                AppReviewManager.shared.registerMeaningfulEvent()
+                                AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID)
                                 dismissAndStop() }
                                 .buttonStyle(.borderedProminent)
                                 .padding(.top, 6)

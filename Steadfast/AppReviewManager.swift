@@ -2,141 +2,84 @@ import Foundation
 import StoreKit
 import UIKit
 
-/// Central place to track launches & "meaningful" usage and decide when to ask for a review.
+/// Tracks successful exercise sessions and owns the app's single automatic review milestone.
+@MainActor
 final class AppReviewManager {
     static let shared = AppReviewManager()
 
+    /// This is the existing meaningful-event key, retained so existing completion history is preserved.
+    static let qualifyingCompletionCountKey = "steadfast.review.meaningfulEvents"
+    static let automaticAttemptedKey = "steadfast.review.automaticAttempted"
+
     private let defaults = UserDefaults.standard
+    private let legacyPromptAttemptsKey = "steadfast.review.promptAttempts"
+    private let legacyDidReviewKey = "steadfast.review.didReview"
+    private let legacyPendingRequestKeys = [
+        "steadfast.review.requestOnNextLaunch",
+        "steadfast.review.pendingRequest"
+    ]
+    private let requiredCompletionCount = 2
+    private var acceptedSessionIDs = Set<UUID>()
+    private var requestScheduled = false
 
-    private let launchesKey      = "steadfast.review.launches"
-    private let eventsKey        = "steadfast.review.meaningfulEvents"
-    private let didReviewKey     = "steadfast.review.didReview"
-    private let lastPromptKey    = "steadfast.review.lastPromptDate"
-    private let firstLaunchKey   = "steadfast.review.firstLaunch"
-    private let promptAttemptsKey = "steadfast.review.promptAttempts"
+    private init() {
+        migrateLegacyState()
+    }
 
-    // DEBUG override to force attempts during development
-    #if DEBUG
-    var debugAlwaysPrompt: Bool = false
-    #endif
-
-    private init() {}
-
-    // MARK: - Tracking
-
-    /// Call once per app launch or per "session".
-    func registerLaunch() {
-        let newCount = defaults.integer(forKey: launchesKey) + 1
-        defaults.set(newCount, forKey: launchesKey)
-        if defaults.object(forKey: firstLaunchKey) == nil {
-            defaults.set(Date(), forKey: firstLaunchKey)
+    /// Records one genuinely completed exercise session. Reusing a session ID is intentionally ignored.
+    func registerQualifyingCompletion(sessionID: UUID) {
+        guard acceptedSessionIDs.insert(sessionID).inserted else {
+            log("ignored duplicate completion for session \(sessionID)")
+            return
         }
-    }
 
-    /// Call when the user completes a grounding / daily rhythm / SOS success.
-    func registerMeaningfulEvent() {
-        let newCount = defaults.integer(forKey: eventsKey) + 1
-        defaults.set(newCount, forKey: eventsKey)
-    }
+        let newCount = defaults.integer(forKey: Self.qualifyingCompletionCountKey) + 1
+        defaults.set(newCount, forKey: Self.qualifyingCompletionCountKey)
+        log("accepted completion; persisted count is \(newCount)")
 
-    func attemptPromptIfEligible(reason: String, force: Bool = false) {
-        let hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
+        guard newCount >= requiredCompletionCount,
+              !defaults.bool(forKey: Self.automaticAttemptedKey),
+              !requestScheduled else {
+            log("automatic request already attempted or milestone not reached")
+            return
+        }
+
+        // Let completion state, animations, navigation, streaks, and audio cleanup settle first.
+        requestScheduled = true
         Task { @MainActor in
-            guard shouldPrompt(hasCompletedOnboarding: hasCompletedOnboarding, force: force) else {
-                log("skipping requestReview due to gating (reason: \(reason))")
-                return
-            }
-            requestInAppReviewIfAvailable(reason: reason)
+            try? await Task.sleep(for: .milliseconds(750))
+            requestScheduled = false
+            requestAutomaticReviewIfPossible()
         }
     }
 
-    // MARK: - Decision logic
-
-    /// Returns true if we *should* show our custom review prompt right now.
-    private func shouldPrompt(hasCompletedOnboarding: Bool, force: Bool) -> Bool {
-        #if DEBUG
-        if force || debugAlwaysPrompt { return true }
-        #endif
-        // Don’t ask people who haven't finished onboarding
-        guard hasCompletedOnboarding else { return false }
-
-        // Don’t bug people who already chose to review / opted out
-        if defaults.bool(forKey: didReviewKey) { return false }
-
-        let launches  = defaults.integer(forKey: launchesKey)
-        let events    = defaults.integer(forKey: eventsKey)
-
-        // Wait until they've used the app a bit
-        guard launches >= 5 else { return false }
-
-        // Require multiple "happy path" events (finished flows, etc.)
-        guard events >= 3 else { return false }
-
-        // Require a few days since first launch
-        if let first = defaults.object(forKey: firstLaunchKey) as? Date {
-            if let days = Calendar.current.dateComponents([.day], from: first, to: Date()).day,
-               days < 3 {
-                return false
-            }
-        }
-
-        // Optional: don't show more than once every 30 days
-        if let last = defaults.object(forKey: lastPromptKey) as? Date {
-            if let days = Calendar.current.dateComponents([.day], from: last, to: Date()).day,
-               days < 30 {
-                return false
-            }
-        }
-
-        // Cap attempts to avoid spamming
-        let attempts = defaults.integer(forKey: promptAttemptsKey)
-        guard attempts < 3 else { return false }
-
-        return true
-    }
-
-    func markPromptShown() {
-        defaults.set(Date(), forKey: lastPromptKey)
-        let attempts = defaults.integer(forKey: promptAttemptsKey) + 1
-        defaults.set(attempts, forKey: promptAttemptsKey)
-    }
-
-    /// Mark that the user either *left* a review or chose "No thanks".
-    func markDidReview() {
-        defaults.set(true, forKey: didReviewKey)
-    }
-
-    // MARK: - Actions
-
-    /// Open the App Store page directly on the write-a-review screen.
-    @MainActor
-    func openAppStoreReviewPage() {
-        // Steadfast App Store ID
-        let appID = "6751298616"
-
-        guard let url = URL(string: "https://apps.apple.com/app/id\(appID)?action=write-review") else {
+    private func requestAutomaticReviewIfPossible() {
+        guard !defaults.bool(forKey: Self.automaticAttemptedKey),
+              let scene = UIApplication.shared.connectedScenes.first(where: {
+                  $0.activationState == .foregroundActive && $0 is UIWindowScene
+              }) as? UIWindowScene else {
+            log("review request skipped because there is no active foreground UIWindowScene")
             return
         }
 
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
-        markDidReview()
+        // StoreKit may choose not to display a sheet. Consuming the attempt here prevents retries.
+        defaults.set(true, forKey: Self.automaticAttemptedKey)
+        log("invoking StoreKit automatic review request")
+        AppStore.requestReview(in: scene)
     }
 
-    /// If you ever want the native in-app popup instead.
-    @MainActor
-    func requestInAppReviewIfAvailable(reason: String) {
-        guard let scene = UIApplication.shared.connectedScenes
-            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene else {
-            log("could not find foreground UIWindowScene for requestReview (reason: \(reason))")
-            return
+    private func migrateLegacyState() {
+        if defaults.integer(forKey: legacyPromptAttemptsKey) > 0 || defaults.bool(forKey: legacyDidReviewKey) {
+            defaults.set(true, forKey: Self.automaticAttemptedKey)
         }
-
-        log("attempted requestReview (reason: \(reason))")
-        SKStoreReviewController.requestReview(in: scene)
-        markPromptShown()
+        // Historical pending flags must never result in a launch-time request.
+        legacyPendingRequestKeys.forEach { defaults.removeObject(forKey: $0) }
+        log("persisted qualifying count: \(defaults.integer(forKey: Self.qualifyingCompletionCountKey)); attempted: \(defaults.bool(forKey: Self.automaticAttemptedKey))")
     }
 
     private func log(_ message: String) {
-        print("ReviewPromptManager: \(message)")
+        #if DEBUG
+        print("AppReviewManager: \(message)")
+        #endif
     }
 }

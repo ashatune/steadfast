@@ -49,8 +49,6 @@ struct RootView: View {
             }
         }
         .onAppear {
-            AppReviewManager.shared.registerLaunch()
-            AppReviewManager.shared.attemptPromptIfEligible(reason: "app launch")
             vm.consumePendingRouteFromDefaults()
         }
         .tint(Theme.accent)

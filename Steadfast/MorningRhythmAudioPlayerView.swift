@@ -378,6 +378,7 @@ struct RhythmAudioPlayerView: View {
     @EnvironmentObject private var streakManager: StreakManager
     @StateObject private var viewModel: MorningRhythmAudioPlayerViewModel
     @State private var hasProcessedCompletion = false
+    @State private var reviewSessionID = UUID()
     @State private var dismissAfterOverlay = false
     @State private var hasLoggedMeditationStart = false
     @State private var hasLoggedMeditationCompletion = false
@@ -622,7 +623,7 @@ struct RhythmAudioPlayerView: View {
 
         rhythmType.markCompleted(in: streakManager)
         StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
-        AppReviewManager.shared.registerMeaningfulEvent()
+        AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID)
 
         if streakManager.pendingMilestone == nil, shouldDismiss {
             closePlayerAndDismiss()

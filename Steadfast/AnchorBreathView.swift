@@ -58,6 +58,7 @@ struct AnchorBreathView: View {
     @State private var isShowingIntroPrompts = false
     @State private var currentIntroPromptIndex = 0
     @State private var introPromptTask: DispatchWorkItem?
+    @State private var reviewSessionID = UUID()
 
     enum Phase { case intro, inhale, hold, exhale }
     private var resolvedBgm: MediaSource? {
@@ -527,8 +528,9 @@ struct AnchorBreathView: View {
         fadeMusicVolume(to: 0.0, over: 0.35)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             teardown()
-            AppReviewManager.shared.registerMeaningfulEvent()
-            AppReviewManager.shared.attemptPromptIfEligible(reason: "completed meditation")
+            if launchSource == .standard {
+                AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID)
+            }
             switch launchSource {
             case .onboarding:
                 onCompleted?()

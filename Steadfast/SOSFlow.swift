@@ -1142,8 +1142,7 @@ private struct SOSDone: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                Button("Done") { AppReviewManager.shared.registerMeaningfulEvent();
-                    dismiss() }
+                Button("Done") { dismiss() }
                     .buttonStyle(.borderedProminent)
             }
             .padding(.top, 6)
