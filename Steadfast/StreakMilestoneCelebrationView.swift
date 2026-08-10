@@ -5,8 +5,7 @@ struct StreakMilestoneCelebrationView: View {
     let milestone: Int
     let onDone: () -> Void
 
-    @State private var shareImage: UIImage?
-    @State private var showShareSheet = false
+    @State private var sharePayload: SharePayload?
 
     var body: some View {
         ZStack {
@@ -38,8 +37,13 @@ struct StreakMilestoneCelebrationView: View {
 
                 VStack(spacing: 10) {
                     Button("Share") {
-                        shareImage = MilestoneCardRenderer.renderImage(milestone: milestone)
-                        showShareSheet = shareImage != nil
+                        let image = MilestoneCardRenderer.renderImage(milestone: milestone)
+                        sharePayload = SharePayload(
+                            image: image,
+                            fallbackText: milestone == 1
+                                ? "Day 1 complete with Steadfast 🙏"
+                                : "\(milestone) day streak with Steadfast 🙏"
+                        )
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.accent)
@@ -55,10 +59,8 @@ struct StreakMilestoneCelebrationView: View {
                 .padding(.bottom, 28)
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let shareImage {
-                ShareSheet(activityItems: [shareImage])
-            }
+        .sheet(item: $sharePayload) { payload in
+            ShareSheet(payload: payload)
         }
         .onAppear { Haptics.success() }
     }
@@ -168,19 +170,12 @@ private enum MilestoneCardRenderer {
     static func renderImage(milestone: Int) -> UIImage? {
         let view = ShareableStreakCardView(milestone: milestone)
         let renderer = ImageRenderer(content: view)
-        renderer.scale = UIScreen.main.scale
+        // The card is already laid out at its export pixel dimensions. Scaling
+        // it again to the device scale creates an unnecessarily huge image that
+        // share extensions can fail to decode under their memory limits.
+        renderer.scale = 1
         return renderer.uiImage
     }
-}
-
-private struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {

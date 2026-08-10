@@ -788,8 +788,7 @@ private struct DevotionalVerseStoryView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
-    @State private var shareImage: UIImage?
-    @State private var showShareSheet = false
+    @State private var sharePayload: SharePayload?
     @State private var showSavedConfirmation = false
     @State private var resolvedBackground: DevotionalVerseStoryBackgroundSnapshot
 
@@ -885,10 +884,8 @@ private struct DevotionalVerseStoryView: View {
         .onChange(of: devotional.id) { _ in
             resolvedBackground = DevotionalVerseStoryBackgroundSnapshot(fallbackAssetName: fallbackBackgroundName)
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let shareImage {
-                DevotionalVerseShareSheet(activityItems: [shareImage])
-            }
+        .sheet(item: $sharePayload) { payload in
+            ShareSheet(payload: payload)
         }
     }
 
@@ -946,11 +943,14 @@ private struct DevotionalVerseStoryView: View {
     @MainActor
     private func shareDevotionalVerse() {
         let backgroundSnapshot = resolvedBackground
-        shareImage = DevotionalVerseStoryRenderer.renderImage(
+        let image = DevotionalVerseStoryRenderer.renderImage(
             devotional: devotional,
             background: backgroundSnapshot
         )
-        showShareSheet = shareImage != nil
+        sharePayload = SharePayload(
+            image: image,
+            fallbackText: "“\(devotional.verseText)” — \(devotional.verseReference)"
+        )
     }
 
     @MainActor
@@ -1183,16 +1183,6 @@ enum DevotionalVerseStoryRenderer {
         renderer.scale = 1
         return renderer.uiImage
     }
-}
-
-private struct DevotionalVerseShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 private enum RhythmTimelineMetrics {
