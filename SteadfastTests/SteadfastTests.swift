@@ -365,6 +365,55 @@ struct DailyDevotionalImplementationTests {
         #expect(!presentation.devotional.verseText.isEmpty)
         #expect(!presentation.devotional.verseReference.isEmpty)
         #expect(!presentation.devotional.body.isEmpty)
+        #expect(!presentation.background.usesRemoteImage)
+    }
+
+    @Test func storyPresentationPreloadsRemoteBackgroundBeforePresentation() async {
+        let image = TestImageLoader.sampleImage()
+        let loader = TestImageLoader(result: image)
+        let devotional = DailyDevotional(
+            id: "remote-presentation",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: URL(string: "https://example.com/story.jpg")
+        )
+        let initial = DevotionalStoryPresentationResolver.presentation(for: devotional)
+
+        let prepared = await DevotionalStoryPresentationResolver.preloadRemoteBackground(
+            for: initial,
+            imageLoader: loader
+        )
+
+        #expect(prepared.devotional.id == devotional.id)
+        #expect(prepared.background.usesRemoteImage)
+        #expect(loader.loadedURLs == [devotional.imageURL!])
+    }
+
+    @Test func storyPresentationUsesFinalLocalBackgroundWhenRemotePreloadFails() async {
+        let loader = TestImageLoader(result: nil)
+        let devotional = DailyDevotional(
+            id: "failed-remote-presentation",
+            date: Date(),
+            title: "Title",
+            verseReference: "Ref",
+            verseText: "Verse",
+            body: "Body",
+            cta: nil,
+            imageURL: URL(string: "https://example.com/broken.jpg")
+        )
+        let initial = DevotionalStoryPresentationResolver.presentation(for: devotional)
+
+        let prepared = await DevotionalStoryPresentationResolver.preloadRemoteBackground(
+            for: initial,
+            imageLoader: loader
+        )
+
+        #expect(!prepared.background.usesRemoteImage)
+        #expect(prepared.background.fallbackAssetName == initial.background.fallbackAssetName)
     }
 
     @Test func initialStoryBackgroundIsLocalAssetWithoutImageURL() {

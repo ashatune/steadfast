@@ -127,7 +127,10 @@ struct HomeView: View {
                 }
             }
         ) { presentation in
-            DevotionalVerseStoryView(devotional: presentation.devotional) { capturedDevotional in
+            DevotionalVerseStoryView(
+                devotional: presentation.devotional,
+                background: presentation.background
+            ) { capturedDevotional in
                 pendingDevotionalDetail = capturedDevotional
                 presentedDevotionalStory = nil
             }
@@ -533,10 +536,25 @@ struct HomeView: View {
     }
 
     private func presentDevotionalStory(with devotional: DailyDevotional? = nil) {
-        presentedDevotionalStory = DevotionalStoryPresentationResolver.presentation(
+        let presentation = DevotionalStoryPresentationResolver.presentation(
             for: devotional ?? devotionalVM.devotional,
             now: Date()
         )
+
+        // A local devotional (or a remote devotional without an image) is already
+        // final content, so open it immediately. Only defer presentation when
+        // there is an actual remote image to preload.
+        guard presentation.devotional.imageURL != nil else {
+            presentedDevotionalStory = presentation
+            return
+        }
+
+        Task {
+            presentedDevotionalStory = await DevotionalStoryPresentationResolver.preloadRemoteBackground(
+                for: presentation,
+                imageLoader: DevotionalVerseRemoteImageLoader.shared
+            )
+        }
     }
 
     private var devotionalRhythmCard: some View {
@@ -772,29 +790,23 @@ private struct LibraryShortcutCard: View {
 
 private struct DevotionalVerseStoryView: View {
     let devotional: DailyDevotional
-    let imageLoader: any DevotionalVerseRemoteImageLoading
     let onContinueToDevotional: (DailyDevotional) -> Void
 
     init(
         devotional: DailyDevotional,
-        imageLoader: any DevotionalVerseRemoteImageLoading = DevotionalVerseRemoteImageLoader.shared,
+        background: DevotionalVerseStoryBackgroundSnapshot,
         onContinueToDevotional: @escaping (DailyDevotional) -> Void
     ) {
         self.devotional = devotional
-        self.imageLoader = imageLoader
         self.onContinueToDevotional = onContinueToDevotional
-        _resolvedBackground = State(initialValue: DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional))
+        self.background = background
     }
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
     @State private var sharePayload: SharePayload?
     @State private var showSavedConfirmation = false
-    @State private var resolvedBackground: DevotionalVerseStoryBackgroundSnapshot
-
-    private var fallbackBackgroundName: String {
-        DevotionalVerseStoryAssets.backgroundName(for: devotional.date)
-    }
+    let background: DevotionalVerseStoryBackgroundSnapshot
 
     private var isSaved: Bool {
         savedStore.isSaved(devotionalID: devotional.id)
@@ -808,7 +820,7 @@ private struct DevotionalVerseStoryView: View {
 
                 DevotionalVerseStoryContent(
                     devotional: devotional,
-                    background: resolvedBackground,
+                    background: background,
                     logoSize: 72,
                     showsChromeSafePadding: true
                 )
@@ -877,12 +889,6 @@ private struct DevotionalVerseStoryView: View {
                 .padding(.top, 12)
                 .padding(.trailing, 18)
         }
-        .task(id: devotional.id) {
-            await resolveRemoteBackgroundIfNeeded(for: devotional)
-        }
-        .onChange(of: devotional.id) { _ in
-            resolvedBackground = DevotionalVerseStoryBackgroundSnapshot(fallbackAssetName: fallbackBackgroundName)
-        }
         .sheet(item: $sharePayload) { payload in
             ShareSheet(payload: payload)
         }
@@ -941,10 +947,9 @@ private struct DevotionalVerseStoryView: View {
 
     @MainActor
     private func shareDevotionalVerse() {
-        let backgroundSnapshot = resolvedBackground
         let image = DevotionalVerseStoryRenderer.renderImage(
             devotional: devotional,
-            background: backgroundSnapshot
+            background: background
         )
         sharePayload = SharePayload(
             image: image,
@@ -952,20 +957,6 @@ private struct DevotionalVerseStoryView: View {
         )
     }
 
-    @MainActor
-    private func resolveRemoteBackgroundIfNeeded(for devotional: DailyDevotional) async {
-        let fallback = DevotionalVerseStoryBackgroundSnapshot.initial(for: devotional)
-        resolvedBackground = fallback
-
-        let requestedDevotionalID = devotional.id
-        let resolved = await DevotionalVerseStoryBackgroundResolver.resolve(
-            devotional: devotional,
-            fallbackAssetName: fallback.fallbackAssetName,
-            imageLoader: imageLoader
-        )
-        guard requestedDevotionalID == self.devotional.id else { return }
-        resolvedBackground = resolved
-    }
 }
 
 private struct DevotionalVerseStoryContent: View {
@@ -1082,11 +1073,35 @@ struct DevotionalVerseStoryBackgroundSnapshot {
 struct PresentedDevotionalStory: Identifiable {
     let id = UUID()
     let devotional: DailyDevotional
+    let background: DevotionalVerseStoryBackgroundSnapshot
+
+    init(
+        devotional: DailyDevotional,
+        background: DevotionalVerseStoryBackgroundSnapshot? = nil
+    ) {
+        self.devotional = devotional
+        self.background = background ?? .initial(for: devotional)
+    }
 }
 
 enum DevotionalStoryPresentationResolver {
     static func presentation(for devotional: DailyDevotional?, now: Date = Date()) -> PresentedDevotionalStory {
         PresentedDevotionalStory(devotional: devotional ?? DailyDevotional.fallback(for: now))
+    }
+
+    static func preloadRemoteBackground(
+        for presentation: PresentedDevotionalStory,
+        imageLoader: any DevotionalVerseRemoteImageLoading
+    ) async -> PresentedDevotionalStory {
+        let background = await DevotionalVerseStoryBackgroundResolver.resolve(
+            devotional: presentation.devotional,
+            fallbackAssetName: presentation.background.fallbackAssetName,
+            imageLoader: imageLoader
+        )
+        return PresentedDevotionalStory(
+            devotional: presentation.devotional,
+            background: background
+        )
     }
 }
 
