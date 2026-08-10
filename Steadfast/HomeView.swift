@@ -813,7 +813,6 @@ private struct DevotionalVerseStoryView: View {
                     showsChromeSafePadding: true
                 )
                 .frame(width: geo.size.width, height: geo.size.height)
-                .ignoresSafeArea()
 
                 VStack {
                     Spacer()
@@ -1028,7 +1027,6 @@ private struct DevotionalVerseStoryContent: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
     }
 }
 
@@ -1036,34 +1034,16 @@ private struct DevotionalVerseStoryBackground: View {
     let background: DevotionalVerseStoryBackgroundSnapshot
 
     var body: some View {
-        GeometryReader { geo in
-            let screenSize = UIScreen.main.bounds.size
-            let fullWidth = max(
-                geo.size.width + geo.safeAreaInsets.leading + geo.safeAreaInsets.trailing,
-                screenSize.width
-            )
-            let fullHeight = max(
-                geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom,
-                screenSize.height
-            )
-            let centerX = geo.size.width / 2 + (geo.safeAreaInsets.trailing - geo.safeAreaInsets.leading) / 2
-            let centerY = geo.size.height / 2 + (geo.safeAreaInsets.bottom - geo.safeAreaInsets.top) / 2
+        ZStack {
+            Color.black
 
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
-
-                backgroundImage
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: fullWidth, height: fullHeight)
-                    .position(x: centerX, y: centerY)
-                    .clipped()
-            }
-            .frame(width: fullWidth, height: fullHeight)
-            .position(x: centerX, y: centerY)
+            backgroundImage
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
         }
-        .background(Color.black.ignoresSafeArea())
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
     }
 
