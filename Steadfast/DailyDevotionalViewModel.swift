@@ -62,12 +62,14 @@ final class DailyDevotionalViewModel: ObservableObject {
         let attemptedDayKey = dayKey ?? Self.dayKey(for: date, calendar: calendar)
         lastAttemptedDayKey = attemptedDayKey
         isLoading = true
+        DevotionalTimingLog.beginFetch()
         print("📖 DevotionalVM load called")
         fetchDevotional { [weak self] devotional in
             guard let self else { return }
             Task { @MainActor in
                 self.devotional = devotional
                 self.isLoading = false
+                DevotionalTimingLog.event("📖 Devotional ready (\(devotional.id.hasPrefix("placeholder-") ? "local fallback" : "Firestore"))")
                 self.afterLoad(devotional)
                 let source = devotional.id.hasPrefix("placeholder-") ? "placeholder" : "firestore devotional"
                 print("DailyDevotionalViewModel: loadDevotional complete -> \(source) (id=\(devotional.id))")
