@@ -813,7 +813,6 @@ private struct DevotionalVerseStoryView: View {
                     showsChromeSafePadding: true
                 )
                 .frame(width: geo.size.width, height: geo.size.height)
-                .ignoresSafeArea()
 
                 VStack {
                     Spacer()
@@ -1000,10 +999,12 @@ private struct DevotionalVerseStoryContent: View {
                     Text("“\(devotional.verseText)”")
                         .font(.system(size: 30, weight: .semibold, design: .serif))
                         .lineSpacing(8)
-                        .lineLimit(10)
+                        .lineLimit(nil)
                         .minimumScaleFactor(0.72)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
                         .shadow(color: .black.opacity(0.36), radius: 10, x: 0, y: 5)
 
                     Text(devotional.verseReference)
@@ -1011,6 +1012,8 @@ private struct DevotionalVerseStoryContent: View {
                         .tracking(1.2)
                         .foregroundStyle(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 30)
@@ -1028,7 +1031,6 @@ private struct DevotionalVerseStoryContent: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
     }
 }
 
@@ -1036,34 +1038,18 @@ private struct DevotionalVerseStoryBackground: View {
     let background: DevotionalVerseStoryBackgroundSnapshot
 
     var body: some View {
-        GeometryReader { geo in
-            let screenSize = UIScreen.main.bounds.size
-            let fullWidth = max(
-                geo.size.width + geo.safeAreaInsets.leading + geo.safeAreaInsets.trailing,
-                screenSize.width
-            )
-            let fullHeight = max(
-                geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom,
-                screenSize.height
-            )
-            let centerX = geo.size.width / 2 + (geo.safeAreaInsets.trailing - geo.safeAreaInsets.leading) / 2
-            let centerY = geo.size.height / 2 + (geo.safeAreaInsets.bottom - geo.safeAreaInsets.top) / 2
-
+        GeometryReader { proxy in
             ZStack {
                 Color.black
-                    .ignoresSafeArea()
 
                 backgroundImage
                     .resizable()
                     .scaledToFill()
-                    .frame(width: fullWidth, height: fullHeight)
-                    .position(x: centerX, y: centerY)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                     .clipped()
             }
-            .frame(width: fullWidth, height: fullHeight)
-            .position(x: centerX, y: centerY)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .background(Color.black.ignoresSafeArea())
         .ignoresSafeArea()
     }
 
