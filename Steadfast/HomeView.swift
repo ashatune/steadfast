@@ -188,7 +188,7 @@ struct HomeView: View {
 
                 SteadfastRhythmCard(progress: weeklyRhythmStore.progress(at: now)) {
                     AnalyticsService.log("weekly_rhythm_card_tapped", parameters: ["weekly_progress": weeklyRhythmStore.progress(at: now).completedSessions])
-                    vm.selectedTab = .meditate
+                    showAnchorDurationPicker = true
                 }
                     .frame(maxWidth: .infinity)
                     .homeTutorialTarget(.rhythm)
