@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct EveningFlowView: View {
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     // Timer starts ONLY at circle stage
     var circleTotalSeconds: Int = 60
     var inhaleSecs: Int = 3
@@ -264,7 +265,7 @@ struct EveningFlowView: View {
                                 .foregroundColor(inkSecondary)
                                 .multilineTextAlignment(.center)
                                 .transition(.opacity)
-                            Button("Close") { AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID); stopAll(); dismiss() }
+                            Button("Close") { weeklyRhythmStore.recordSessionCompletion(eventID: reviewSessionID, sessionIdentifier: "evening_flow", sessionType: "daily_rhythm"); AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID); stopAll(); dismiss() }
                                 .buttonStyle(.borderedProminent)
                                 .padding(.top, 6)
                                 .transition(.opacity)

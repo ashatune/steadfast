@@ -34,6 +34,7 @@ struct SteadfastApp: App {
     @StateObject private var appVM = AppViewModel()
     @StateObject private var savedDevotionals = SavedDevotionalsStore()
     @StateObject private var streakManager = StreakManager()
+    @StateObject private var weeklyRhythmStore = WeeklyRhythmStore()
     @Environment(\.scenePhase) private var scenePhase
 
     // Splash
@@ -74,6 +75,7 @@ struct SteadfastApp: App {
                     .environmentObject(appVM)
                     .environmentObject(savedDevotionals)
                     .environmentObject(streakManager)
+                    .environmentObject(weeklyRhythmStore)
                     .environmentObject(flags) // 👈 expose flags to the tree
                     .overlay { if showSplash { SplashView().transition(.opacity) } }
 

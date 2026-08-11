@@ -11,6 +11,7 @@ struct HomeView: View {
 
     @EnvironmentObject var vm: AppViewModel
     @EnvironmentObject private var streakManager: StreakManager
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     @State private var showAnchorFlow = false
     @State private var showAnchorDurationPicker = false
     @State private var selectedAnchorDuration: MeditationDurationOption?
@@ -185,10 +186,13 @@ struct HomeView: View {
                     .padding(.top, 8)
                     .transition(.opacity)
 
-                streakSection
+                SteadfastRhythmCard(progress: weeklyRhythmStore.progress(at: now)) {
+                    AnalyticsService.log("weekly_rhythm_card_tapped", parameters: ["weekly_progress": weeklyRhythmStore.progress(at: now).completedSessions])
+                    showAnchorDurationPicker = true
+                }
                     .frame(maxWidth: .infinity)
-                    .homeTutorialTarget(.streak)
-                    .id(HomeTutorialTarget.streak)
+                    .homeTutorialTarget(.rhythm)
+                    .id(HomeTutorialTarget.rhythm)
                     .padding(.horizontal, sidePadding)
                     .padding(.top, 4)
 
@@ -361,6 +365,11 @@ struct HomeView: View {
         let wasComplete = streakManager.hasDevotionalCompletion(on: now)
         if !wasComplete {
             streakManager.markDevotionalCompleted(on: now)
+            weeklyRhythmStore.recordDailySessionCompletion(
+                sessionIdentifier: "daily_devotional",
+                sessionType: "devotional",
+                completedAt: now
+            )
             StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
             playCompletionFeedback()
         }
@@ -681,50 +690,6 @@ struct HomeView: View {
                     .foregroundStyle(Theme.inkSecondary)
             }
         }
-    }
-
-    private var streakSection: some View {
-        let days = streakManager.statusForLast7Days()
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Text(streakManager.streakText(prefix: ""))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.accent)
-                Spacer()
-                Text("This week")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.inkSecondary)
-            }
-
-            HStack(spacing: 10) {
-                ForEach(days) { day in
-                    VStack(spacing: 6) {
-                        Text(day.label)
-                            .font(.caption.weight(day.isToday ? .semibold : .regular))
-                            .foregroundStyle(day.isToday ? Theme.ink : Theme.inkSecondary)
-
-                        Circle()
-                            .fill(day.isCompleted ? Theme.accent.opacity(day.isToday ? 0.55 : 0.35) : Theme.line)
-                            .frame(width: 12, height: 12)
-                            .overlay(
-                                Circle()
-                                    .stroke(day.isToday ? Theme.accent.opacity(0.45) : Color.clear, lineWidth: 2)
-                                    .frame(width: 18, height: 18)
-                            )
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.surface.opacity(0.9))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Theme.line)
-        )
     }
 
     private var libraryFooterSection: some View {
@@ -1522,7 +1487,7 @@ private struct CollapsibleRhythmCard<CollapsedContent: View, ExpandedContent: Vi
 // MARK: - Home tutorial overlay
 
 enum HomeTutorialTarget: String, CaseIterable, Hashable {
-    case streak
+    case rhythm
     case calmNow
     case dailyDevotional
     case dailyRhythm
@@ -1579,7 +1544,7 @@ private struct HomeTutorialOverlay: View {
     @State private var hasLoggedCompletion = false
 
     private let steps: [HomeTutorialStep] = [
-        HomeTutorialStep(id: .streak, title: "Track your journey", description: "Keep an eye on your streak as you build a steady rhythm of mindfulness, scripture, and calm."),
+        HomeTutorialStep(id: .rhythm, title: "Build your weekly rhythm", description: "Create space for three meaningful moments of mindfulness, scripture, and calm each week."),
         HomeTutorialStep(id: .calmNow, title: "Need calm right now?", description: "Tap here when you need quick relief from anxiety, a calming breath, or a peaceful reset."),
         HomeTutorialStep(id: .dailyDevotional, title: "Your daily devotional", description: "Start here for daily encouragement, scripture, reflection, and a simple path to grow in faith."),
         HomeTutorialStep(id: .dailyRhythm, title: "Find calm throughout your day", description: "Use Daily Rhythm to meet each part of your day with a moment of peace, prayer, and grounding."),
