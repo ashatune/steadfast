@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MiddayFlowView: View {
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     // Total flow length
     var totalSeconds: Int = 90
     var boxCount: Int = 4     // 4–4–4–4 box breathing
@@ -149,7 +150,7 @@ struct MiddayFlowView: View {
                             Text("Nice reset.").font(.title3).bold().foregroundColor(Theme.sectionTitle)
                             Text("Carry this steadiness into your next step.")
                                 .foregroundColor(inkSecondary)
-                            Button("Close") { AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID); stopAll(); dismiss() }
+                            Button("Close") { weeklyRhythmStore.recordSessionCompletion(eventID: reviewSessionID, sessionIdentifier: "midday_flow", sessionType: "daily_rhythm"); AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID); stopAll(); dismiss() }
                                 .buttonStyle(.borderedProminent)
                                 .padding(.top, 6)
                         }

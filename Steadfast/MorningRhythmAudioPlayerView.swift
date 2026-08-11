@@ -376,6 +376,7 @@ struct RhythmAudioPlayerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     @StateObject private var viewModel: MorningRhythmAudioPlayerViewModel
     @State private var hasProcessedCompletion = false
     @State private var reviewSessionID = UUID()
@@ -622,6 +623,11 @@ struct RhythmAudioPlayerView: View {
         guard let rhythmType else { return }
 
         rhythmType.markCompleted(in: streakManager)
+        weeklyRhythmStore.recordSessionCompletion(
+            eventID: reviewSessionID,
+            sessionIdentifier: audioFileName.lowercased(),
+            sessionType: "daily_rhythm"
+        )
         StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
         AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID)
 

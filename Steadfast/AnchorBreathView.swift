@@ -30,6 +30,7 @@ struct AnchorBreathView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streakManager: StreakManager
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     @State private var phase: Phase = .intro
     @State private var countdown: Int = 90
     @State private var phaseRemaining: Int = 0
@@ -556,6 +557,13 @@ struct AnchorBreathView: View {
             hasRecordedCompletion = true
             streakManager.markAnchorCompleted()
             StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
+        }
+        if launchSource == .standard {
+            weeklyRhythmStore.recordSessionCompletion(
+                eventID: reviewSessionID,
+                sessionIdentifier: recordsAnchorCompletion ? "anchor_of_the_day" : "quick_start_meditation",
+                sessionType: recordsAnchorCompletion ? "anchor" : "guided_meditation"
+            )
         }
         withAnimation(.easeInOut(duration: 0.35)) {
             showCompletion = true

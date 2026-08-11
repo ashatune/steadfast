@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MorningFlowView: View {
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     let verse: Verse
     private let ambientTrack = "wanderingMeditation.mp3"
 
@@ -245,6 +246,7 @@ struct MorningFlowView: View {
                             Text("Take this steady heart into your day.")
                                 .foregroundColor(inkSecondary)
                             Button("Close") {
+                                weeklyRhythmStore.recordSessionCompletion(eventID: reviewSessionID, sessionIdentifier: "morning_flow", sessionType: "daily_rhythm")
                                 AppReviewManager.shared.registerQualifyingCompletion(sessionID: reviewSessionID)
                                 dismissAndStop() }
                                 .buttonStyle(.borderedProminent)
