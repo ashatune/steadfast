@@ -124,6 +124,7 @@ struct DailyDevotionalDetailView: View {
     let devotional: DailyDevotional
     @EnvironmentObject private var savedStore: SavedDevotionalsStore
     @EnvironmentObject private var streakManager: StreakManager
+    @EnvironmentObject private var weeklyRhythmStore: WeeklyRhythmStore
     @Environment(\.dismiss) private var dismiss
     @State private var showMeditation = false
     @State private var showReturnTomorrow = false
@@ -172,6 +173,10 @@ struct DailyDevotionalDetailView: View {
 
                     Button("Done") {
                         streakManager.markDevotionalCompleted()
+                        weeklyRhythmStore.recordDailySessionCompletion(
+                            sessionIdentifier: "daily_devotional",
+                            sessionType: "devotional"
+                        )
                         StreakNotificationManager.shared.reevaluateReminder(streakManager: streakManager)
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showReturnTomorrow = true

@@ -87,6 +87,104 @@ struct SteadfastTests {
     }
 }
 
+@MainActor
+struct WeeklyRhythmStoreTests {
+    private func calendar(_ identifier: String = "America/Chicago") -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        calendar.timeZone = TimeZone(identifier: identifier)!
+        return calendar
+    }
+
+    private func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int = 12, in calendar: Calendar) -> Date {
+        calendar.date(from: DateComponents(timeZone: calendar.timeZone, year: year, month: month, day: day, hour: hour))!
+    }
+
+    private func store(calendar: Calendar) -> (WeeklyRhythmStore, UserDefaults, String) {
+        let suite = "WeeklyRhythmStoreTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        return (WeeklyRhythmStore(defaults: defaults, calendar: calendar), defaults, suite)
+    }
+
+    @Test func weekRunsFromLocalMondayThroughSunday() {
+        let cal = calendar()
+        let (store, defaults, suite) = store(calendar: cal)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let sunday = date(2026, 8, 16, 23, in: cal)
+        let interval = store.weekInterval(containing: sunday)!
+
+        #expect(cal.isDate(interval.start, inSameDayAs: date(2026, 8, 10, 0, in: cal)))
+        #expect(cal.isDate(interval.end, inSameDayAs: date(2026, 8, 17, 0, in: cal)))
+    }
+
+    @Test func progressClampsAtThreeWhileAllEventsRemainRecorded() {
+        let cal = calendar()
+        let (store, defaults, suite) = store(calendar: cal)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let monday = date(2026, 8, 10, in: cal)
+
+        for index in 0..<5 {
+            store.recordSessionCompletion(eventID: UUID(), sessionIdentifier: "session-\(index)", sessionType: "test", completedAt: monday)
+        }
+        #expect(store.progress(at: monday).completedSessions == 3)
+        #expect(store.events.count == 5)
+    }
+
+    @Test func duplicateEventIsRejectedAndRemainsRejectedAfterReload() {
+        let cal = calendar()
+        let (store, defaults, suite) = store(calendar: cal)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let eventID = UUID()
+        let now = date(2026, 8, 10, in: cal)
+
+        #expect(store.recordSessionCompletion(eventID: eventID, sessionIdentifier: "anchor", sessionType: "anchor", completedAt: now))
+        #expect(!store.recordSessionCompletion(eventID: eventID, sessionIdentifier: "anchor", sessionType: "anchor", completedAt: now))
+        let reloaded = WeeklyRhythmStore(defaults: defaults, calendar: cal)
+        #expect(!reloaded.recordSessionCompletion(eventID: eventID, sessionIdentifier: "anchor", sessionType: "anchor", completedAt: now))
+        #expect(reloaded.events.count == 1)
+    }
+
+    @Test func newMondayDisplaysZeroWithoutDeletingHistory() {
+        let cal = calendar()
+        let (store, defaults, suite) = store(calendar: cal)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let sunday = date(2026, 8, 16, in: cal)
+        let monday = date(2026, 8, 17, in: cal)
+
+        store.recordSessionCompletion(eventID: UUID(), sessionIdentifier: "evening", sessionType: "daily_rhythm", completedAt: sunday)
+        #expect(store.progress(at: sunday).completedSessions == 1)
+        #expect(store.progress(at: monday).completedSessions == 0)
+        #expect(store.events.count == 1)
+    }
+
+    @Test func dailyContentOnlyRecordsOncePerLocalCalendarDay() {
+        let cal = calendar()
+        let (store, defaults, suite) = store(calendar: cal)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let morning = date(2026, 8, 10, 8, in: cal)
+        let evening = date(2026, 8, 10, 20, in: cal)
+
+        #expect(store.recordDailySessionCompletion(sessionIdentifier: "daily_devotional", sessionType: "devotional", completedAt: morning))
+        #expect(!store.recordDailySessionCompletion(sessionIdentifier: "daily_devotional", sessionType: "devotional", completedAt: evening))
+        #expect(store.events.count == 1)
+    }
+
+    @Test func goalTransitionCanOnlyOccurOnceForUniqueWeeklyEvents() {
+        let cal = calendar()
+        let (store, defaults, suite) = store(calendar: cal)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let now = date(2026, 8, 10, in: cal)
+        let ids = [UUID(), UUID(), UUID()]
+
+        for id in ids {
+            #expect(store.recordSessionCompletion(eventID: id, sessionIdentifier: "session", sessionType: "test", completedAt: now))
+        }
+        #expect(store.progress(at: now).isComplete)
+        #expect(!store.recordSessionCompletion(eventID: ids[2], sessionIdentifier: "session", sessionType: "test", completedAt: now))
+        #expect(store.progress(at: now).completedSessions == 3)
+    }
+}
+
 struct DailyDevotionalImplementationTests {
     private func calendar(_ identifier: String = "America/Chicago") -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
